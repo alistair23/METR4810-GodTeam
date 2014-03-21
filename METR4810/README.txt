@@ -1,5 +1,9 @@
 Off board program for METR4810 Group 1.
 
+Requirements:
+- Visual Studio 2012
+- OpenCV-2.4.6
+
 Currently a lot of the code is just chucked in Main.cpp, and hasn't 
 been organised properly yet. E.g. Simulator.cpp and CarController.cpp 
 aren't used right now.
