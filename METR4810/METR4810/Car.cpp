@@ -1,5 +1,11 @@
 #include "Car.h"
 
+#define _USE_MATH_DEFINES
+
+#include <math.h>
+#include "CommonFunctions.h"
+
+
 Car::Car(Point start_pos, double start_dir, double length, double width):
 	pos_(start_pos),
 	dir_(start_dir),

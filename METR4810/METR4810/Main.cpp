@@ -1,8 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
-#include <thread>
+#include <math.h>
+
+//#include <thread>
 #include <chrono>
-#include <mutex>
+//#include <mutex>
 #include <Windows.h>
 
 #include "View.h"
@@ -10,9 +13,11 @@
 #include "Racetrack.h"
 #include "Point.h"
 #include "CommonFunctions.h"
+#include "Vision.h"
 
-std::mutex rc_mutex;
+//std::mutex rc_mutex;
 
+/*
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
 void carLoop(Racetrack& r, Car& c) {
@@ -21,7 +26,7 @@ void carLoop(Racetrack& r, Car& c) {
 	double max_speed = 1;
 	double angle_thresh = 60 * M_PI / 180;
 	long long update_time = time_now();
-
+	
 	while (true) {
 		rc_mutex.lock();
 
@@ -121,9 +126,10 @@ void keyboardLoop(Car& c) {
 	}
 
 }
-
+*/
 int main(int argc, char *argv[]) {
-
+	/*
+#if 0
 	// Define a racetrack
 	std::vector<Point> path;
 	
@@ -148,6 +154,14 @@ int main(int argc, char *argv[]) {
 	thread1.join();
 	thread2.join();
 	//thread3.join();
+	
+#endif
+	*/
+#if 1
+	Vision v;
 
+	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
+	v.extractRacetrack(img_bgr);
+#endif
 	return 0;
 }

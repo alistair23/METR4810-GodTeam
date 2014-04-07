@@ -1,5 +1,7 @@
 #include "CommonFunctions.h"
 
+#include <Windows.h>	// For high resolution timing
+
 // Returns milliseconds since the reference point
 // http://gamedev.stackexchange.com/questions/26759/best-way-to-get-elapsed-time-in-miliseconds-in-windows
 long long time_now() {

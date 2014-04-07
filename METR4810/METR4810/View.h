@@ -1,12 +1,8 @@
 #ifndef _INCLUDED_VIEW_H
 #define _INCLUDED_VIEW_H
 
-#define _CRT_SECURE_NO_WARNINGS
-#define _USE_MATH_DEFINES
-
 #include <cv.h>
 #include <highgui.h>
-#include <math.h>
 
 #include "Racetrack.h"
 #include "Car.h"

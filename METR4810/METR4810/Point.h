@@ -1,10 +1,6 @@
 #ifndef _INCLUDED_POINT_H
 #define _INCLUDED_POINT_H
 
-#define _USE_MATH_DEFINES
-
-#include <math.h>
-
 class Point
 {
 

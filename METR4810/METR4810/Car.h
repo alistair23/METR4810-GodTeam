@@ -1,12 +1,7 @@
 #ifndef _INCLUDED_CAR_H
 #define _INCLUDED_CAR_H
 
-#define _USE_MATH_DEFINES
-
-#include <math.h>
-
 #include "Point.h"
-#include "CommonFunctions.h"
 
 class Car {
 

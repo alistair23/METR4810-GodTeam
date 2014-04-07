@@ -34,6 +34,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <CLRSupport>true</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -122,22 +123,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Racetrack.h" />
     <ClInclude Include="Car.h" />
     <ClInclude Include="CarController.h" />
+    <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="CommonFunctions.h" />
+    <ClInclude Include="Tile.h" />
     <ClInclude Include="View.h" />
+    <ClInclude Include="Vision.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Racetrack.cpp" />
+    <ClCompile Include="Rubbish.cpp" />
+    <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
+    <ClCompile Include="Tile.cpp" />
     <ClCompile Include="View.cpp" />
+    <ClCompile Include="Vision.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
