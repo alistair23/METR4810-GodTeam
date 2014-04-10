@@ -3,9 +3,9 @@
 
 #include <math.h>
 
-//#include <thread>
+#include <thread>
 #include <chrono>
-//#include <mutex>
+#include <mutex>
 #include <Windows.h>
 
 #include "View.h"
@@ -14,10 +14,11 @@
 #include "Point.h"
 #include "CommonFunctions.h"
 #include "Vision.h"
+#include "Globals.h"
 
-//std::mutex rc_mutex;
+std::mutex rc_mutex;
 
-/*
+
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
 void carLoop(Racetrack& r, Car& c) {
@@ -126,9 +127,9 @@ void keyboardLoop(Car& c) {
 	}
 
 }
-*/
+
 int main(int argc, char *argv[]) {
-	/*
+	
 #if 0
 	// Define a racetrack
 	std::vector<Point> path;
@@ -156,12 +157,18 @@ int main(int argc, char *argv[]) {
 	//thread3.join();
 	
 #endif
-	*/
+	
 #if 1
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
-	v.extractRacetrack(img_bgr);
+	cv::Mat img_thresh;
+	cv::Point2f centre;
+	v.transformTrackImage(img_bgr, img_thresh, centre);
+	float finish_tile_length = 1 / M_PER_PIX;
+	v.extractRacetrack(img_thresh, cv::Point2f(centre.x - 10, centre.y),
+		cv::Point2f(centre.x - 10, centre.y), M_PI, 
+		cv::Point2f(centre.x + finish_tile_length, centre.y));
 #endif
 	return 0;
 }

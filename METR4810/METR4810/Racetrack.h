@@ -9,10 +9,10 @@ class Racetrack {
 
 public:
 
-	Racetrack(std::vector<Point> midpoints = std::vector<Point>(), double width = 0.2);
+	Racetrack(std::vector<Point> midpoints = std::vector<Point>(), std::vector<double> widths = std::vector<double>());
 
 	std::vector<Point> midpoints_;
-	double width_;
+	std::vector<double> widths_;
 
 };
 

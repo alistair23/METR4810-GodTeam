@@ -1,5 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS		// Fix for opencv bug
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES		
 
 #include <math.h>
 #include <cmath>
@@ -11,10 +11,15 @@
 Vision::Vision():
 
 	// Load tile images
-	finish_tile_1(cv::imread("Resources/finish_1.jpg"), false),
-	finish_tile_2(cv::imread("Resources/finish_2.jpg"), false)
+	finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
+	finish_tile_2(cv::imread("Resources/finish_2.jpg"), 0)
 {
-
+	tiles.push_back(Tile(cv::imread("Resources/straight.jpg"), 0));
+	tiles.push_back(Tile(cv::imread("Resources/right_turn.jpg"), -1));
+	tiles.push_back(Tile(cv::imread("Resources/left_turn.jpg"), 1));
+	tiles.push_back(Tile(cv::imread("Resources/chicane.jpg"), 0));
+	tiles.push_back(Tile(cv::imread("Resources/right_hairpin.jpg"), -1));
+	tiles.push_back(Tile(cv::imread("Resources/left_hairpin.jpg"), 1));
 }
 
 cv::Point findCentre(std::vector<cv::Point> corners) 
@@ -32,9 +37,90 @@ cv::Point findCentre(std::vector<cv::Point> corners)
 
 }
 
-Racetrack Vision::extractRacetrack(cv::Mat& img_in) {
-	cv::Point pair_centre;
-	transformTrackImage(img_in, pair_centre);
+Racetrack Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position) {
+	
+	cv::Mat img_temp, grad_x, grad_y;
+	cv::blur(img_thresh, img_temp, cv::Size(10, 10));
+
+	cv::imshow("Display", img_temp);
+	cv::waitKey();
+
+	// Use Sobel operator to get image derivatives
+	cv::Sobel(img_temp, grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
+	cv::Sobel(img_temp, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
+
+	// Make color format for showing stuff
+	cv::Mat cdst;
+	cv::cvtColor(img_thresh, cdst, CV_GRAY2BGR);
+
+	std::vector<cv::Point2f> midpoints;
+	std::vector<float> angles;		// Radians, clockwise
+	std::vector<float> widths;
+	midpoints.push_back(start_position);
+	angles.push_back(start_orientation);
+	float expected_width = ROAD_WIDTH / M_PER_PIX;
+	widths.push_back(expected_width);
+	
+	float width_thresh = 0.1;	// 10 % for accepting result
+
+	float step_size = 10;
+	while (dist(midpoints.back(), end_position) > step_size) {
+
+		// Extrapolate forward using last point
+		float temp_x = midpoints.back().x + step_size * cos(angles.back());
+		float temp_y = midpoints.back().y + step_size * sin(angles.back());
+		cv::Point2f temp_p(temp_x, temp_y);
+
+		// Find the road edge on the right
+		cv::Point2f b1 = findBoundary(img_thresh, temp_p, angles.back() + M_PI_2);
+
+		// Determine the gradient at the boundary point found
+		// (e.g. for a straight road east to west, dx = 0, dy > 0)
+		short dx = -grad_x.at<short>((int)b1.y, (int)b1.x);
+		short dy = -grad_y.at<short>((int)b1.y, (int)b1.x);
+		float gradient = atan2(dy, dx);
+
+		// Find left road edge by following the gradient from b1
+		cv::Point2f b2 = findBoundary(img_thresh, b1, gradient);
+
+		float width = dist(b1, b2);
+
+		/*
+		
+				if (abs(1 - width/expected_width) > width_thresh) {
+
+			// If the width found is too far from what is expected,
+			// just extrapolate the new point from the previous point.
+			midpoints.push_back(cv::Point2f(temp_x, temp_y));
+			angles.push_back(angles.back());
+			widths.push_back(expected_width);
+		}*/
+		
+		cv::Point2f new_p = b1 + ((b2 - b1) * 0.5);
+		angles.push_back(gradient + M_PI_2);
+		midpoints.push_back(new_p);
+		widths.push_back(width);
+
+		cv::circle(cdst, origin, 2, cv::Scalar(255, 0, 0), 2);
+		cv::circle(cdst, b1, 2, cv::Scalar(0,0,255), 2);
+		cv::circle(cdst, b2, 2, cv::Scalar(0,255,255), 2);
+		cv::circle(cdst, new_p, 2, cv::Scalar(0,255,0), 2);
+	}
+
+
+	
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+
+		/*
+	cv::Mat abs_grad_x, abs_grad_y, grad;
+	convertScaleAbs( grad_x, abs_grad_x );
+	convertScaleAbs( grad_y, abs_grad_y );
+	addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad );
+
+	imshow( "Display", grad );
+	cv::waitKey();
+	*/
 	
 	Racetrack r;
 	return r;
@@ -44,11 +130,11 @@ Racetrack Vision::extractRacetrack(cv::Mat& img_in) {
 // top down view aligned with circle markers and scaled to 1mm:1pixel
 // Centre of marker pair is provided in pair_centre.
 // Returns true if success in finding marker pair
-bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
+bool Vision::transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre) {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
-	cv::imshow("Display", img_in);
-	cv::waitKey();
+	//cv::imshow("Display", img_in);
+	//cv::waitKey();
 
 	// Convert to hsv
 	cv::Mat img_hsv;
@@ -56,20 +142,19 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 
 	// Use green threshold
 	// Green is used due to high contrast between road and "grass"
-	cv::Mat img_thresh;
 	inRange(img_hsv, cv::Scalar(25, 0, 50),
 		cv::Scalar(40, 255, 255), img_thresh);
 
-	cv::imshow("Display", img_thresh);
-	cv::waitKey();
+	//cv::imshow("Display", img_thresh);
+	//cv::waitKey();
 
 	// Canny edge detection
 	cv::Mat dst;
 	int threshold = 50;
 	cv::Canny(img_thresh, dst, threshold, threshold * 3, 3);
 
-	cv::imshow("Display", dst);
-	cv::waitKey();
+	//cv::imshow("Display", dst);
+	//cv::waitKey();
 
 	// Make color format for showing stuff
 	cv::Mat cdst;
@@ -107,15 +192,15 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 	// This will be used for the perspective transform
 	int index1 = -1;
 	int index2 = -1;
-	double pair_error = 99999;
+	float pair_error = 99999;
 	float scale;
 
 	// Go through each ellipse...
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 
 		// Get an estimate of metres per pixel scale from size of ellipse
-		double diameter = (ellipses[i].size.width + ellipses[i].size.height) / 2.0;
-		double m_per_pixel = TRACK_MARK_DIAMETER / diameter;
+		float diameter = (ellipses[i].size.width + ellipses[i].size.height) / 2.0;
+		float m_per_pixel = CIRCLE_MARK_DIAMETER / diameter;
 
 		// Go through other ellipses...
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
@@ -127,21 +212,36 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 
 			// Compare distance between them to the known distance between
 			// the markers. This will be used as a confidence rating
-			double dist_in_pix = dist(ellipses[i].center, ellipses[j].center);
-			double dist_in_m = m_per_pixel * dist_in_pix;
-			double this_pair_error = abs(dist_in_m - TRACK_MARK_DIST);
+			float dist_in_pix = dist(ellipses[i].center, ellipses[j].center);
+			float dist_in_m = m_per_pixel * dist_in_pix;
+			float this_pair_error = abs(dist_in_m - CIRCLE_MARK_DIST);
 
 			if (this_pair_error < pair_error) {
 				index1 = i;
 				index2 = j;
 				pair_error = this_pair_error;
-				scale = (TRACK_MARK_DIST/PIX_M_SCALE) / dist_in_pix;
+				scale = (CIRCLE_MARK_DIST/M_PER_PIX) / dist_in_pix;
 			}
 		}
 	}
 	
 	if (index1 == -1)	// Failed to find any marker pair
 		return false;
+
+	cv::Point2f p1(ellipses[index1].center.x, ellipses[index1].center.y);
+	float foox = ellipses[index1].size.height * cos(ellipses[index1].angle) / 2;
+	float fooy = ellipses[index1].size.height * sin(ellipses[index1].angle) / 2;
+	cv::Point2f p2 = p1 + cv::Point2f(foox, fooy);
+	cv::line(cdst, p1, p2, cv::Scalar(0,0,255), 2);
+	
+	cv::Point2f bp1(ellipses[index2].center.x, ellipses[index2].center.y);
+	float bfoox = ellipses[index2].size.height * cos(ellipses[index2].angle) / 2;
+	float bfooy = ellipses[index2].size.height * sin(ellipses[index2].angle) / 2;
+	cv::Point2f bp2 = bp1 + cv::Point2f(bfoox, bfooy);
+	cv::line(cdst, bp1, bp2, cv::Scalar(255,0,0), 2);
+
+	cv::imshow("Display",cdst);
+	cv::waitKey();
 
 	float mid_x = (ellipses[index1].center.x + ellipses[index2].center.x) / 2;
 	float mid_y = (ellipses[index1].center.y + ellipses[index2].center.y) / 2;
@@ -154,15 +254,22 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 	cv::waitKey();
 	mid_x *= scale;
 	mid_y *= scale;
-	
 
-	// Check if markers detected are from a finish line
+	pair_centre.x = mid_x;
+	pair_centre.y = mid_y;
+	/*
+	// TODO handle other possible rotations, checkpoint
+	// Check if markers detected are from a finish line 
+
+	// Define origin in pixels at top left of the tile found
+	float side_length = TILE_M_LENGTH / M_PER_PIX;
+	int centre_x = FINISH_SOURCE_MARKER_X * SOURCE_M_PER_PIX / M_PER_PIX;
+	int centre_y = FINISH_SOURCE_MARKER_Y * SOURCE_M_PER_PIX / M_PER_PIX;
+	int origin_x = mid_x - centre_x;
+	int origin_y = mid_y - centre_y;
+
 	// Define region of interest 
-	float side_length = TILE_M_LENGTH / PIX_M_SCALE;
-	int centre_x = FINISH_SOURCE_MARKER_X * SOURCE_PIX_M_SCALE / PIX_M_SCALE;
-	int centre_y = FINISH_SOURCE_MARKER_Y * SOURCE_PIX_M_SCALE / PIX_M_SCALE;
-	std::cout << centre_x << " " << centre_y << " " << side_length << std::endl;
-	cv::Rect roi(mid_x - centre_x, mid_y - centre_y, side_length, side_length);
+	cv::Rect roi(origin_x, origin_y, side_length, side_length);
 	cv::Mat img_roi = img_thresh(roi);
 
 	cv::line(cdst, cv::Point2f(roi.x, roi.y), cv::Point2f(roi.x + side_length, roi.y), cv::Scalar(50, 50, 150), 2);
@@ -172,29 +279,57 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 
 	std::cout << finish_tile_1.compare(img_roi, 0) << std::endl;
 
+	*/
+
+	/*
+
 	cv::imshow("Display", cdst);
 	cv::waitKey();
 
-	/* 
-	std::vector<cv::Point2f> midpoints;
-	std::vector<float> angles;		// Radians, clockwise
-	std::vector<float> widths;
-	midpoints.push_back(cv::Point2f(midx, midy));
-	angles.push_back(angle);
-	widths.push_back(123);	// TODO
-	
-	float step_size = 50;
-	for (int i = 0; i < 1; i++) { // TODO change to while loop
-		float new_x = midpoints.back().x + step_size * cos(angles.back());
-		float new_y = midpoints.back().y + step_size * sin(angles.back());
-		cv::Point2f new_p(new_x, new_y);
-		cv::circle(cdst, new_p, 2, cv::Scalar(255,20,20), 2);
-		cv::Point2f b = findBoundary(img_thresh, new_p, angles.back());
-		cv::circle(cdst, b, 2, cv::Scalar(0,20,255), 2);
+ 	std::vector<std::vector<int>> grid;
+	for (int i = 0; i < 20; i++) {
+		std::vector <int> v;
+		grid.push_back(v);
+		for (int j = 0; j < 20; j++) {
+			grid.back().push_back(-1);
+		}
+	}
+	int grid_row_origin = 10;
+	int grid_col_origin = 10;
+ 	int row = 0;
+	int col = -1;  // TODO change this and starting rot
+	int rot = 0;
+	while (row != 0 || col != 0) {
+
+		// Define region of interest
+		cv::Rect roi(origin_x + col * side_length, origin_y + row * side_length, side_length, side_length);
+  		cv::Mat img_roi = img_thresh(roi);
+
+		int tile_type = getTileType(img_roi, rot);
+     	grid[grid_row_origin + row][grid_col_origin + col] = tile_type;
+		rot = (rot + tiles[tile_type].exit_) % 4;
+
+		// Ensure 0 <= rot <= 3
+		rot = rot % 4;
+		if (rot < 0) 
+			rot += 4;
+
+		if (rot == 0)
+			col -= 1;
+		else if (rot == 1)
+			row += 1;
+		else if (rot == 2)
+			col += 1;
+		else if (rot == 3)
+			row -= 1;
 	}
 
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	for (int row = 0; row < 20; row++) {
+		for (int col = 0; col < 20; col++) {
+			std::cout << std::right << std::setw(3) << grid[row][col];
+		}
+		std::cout << std::endl;
+	}
 	*/
 
 
@@ -218,8 +353,8 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
     cv::Point2f output_quad[4];
 	double e1x = ellipses[index1].center.x;
 	double e1y = ellipses[index1].center.y;
-	double shift_diam = (TRACK_MARK_DIAMETER * 0.5) / PIX_M_SCALE;
-	double shift_dist = TRACK_MARK_DIST / PIX_M_SCALE;
+	double shift_diam = (CIRCLE_MARK_DIAMETER * 0.5) / M_PER_PIX;
+	double shift_dist = CIRCLE_MARK_DIST / M_PER_PIX;
 
 	// This is somewhat brute forced...
 	std::vector<cv::Point2f> vertices;
@@ -288,8 +423,12 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Point& pair_centre) {
 }
 
 // Returns euclidean distance between two opencv points
-double Vision::dist(cv::Point p1, cv::Point p2) {
+float Vision::dist(cv::Point2f& p1, cv::Point2f& p2) {
 	return sqrt(pow(p1.x - p2.x, 2) + (pow(p1.y - p2.y, 2)));
+}
+
+float Vision::angle(cv::Point2f& p1, cv::Point2f& p2) {
+	return atan2(p2.y - p1.y, p2.x - p1.x);
 }
 
 // Return vertices of a rotated rectangle in clockwise order,
@@ -323,22 +462,43 @@ std::vector<cv::Point2f> Vision::sortVertices(cv::RotatedRect& rect) {
 }
 
 // TODO make more efficient & precise. Bisection method?
+// Point returned guaranteed to be within boundary
 cv::Point2f Vision::findBoundary(cv::Mat& img, cv::Point2f start, float dir){
-	float step_size = 4;	
+	float step_size = 1;	
 	float dy = step_size * sin(dir);
 	float dx = step_size * cos(dir);
 	float x = start.x;
 	float y = start.y;
 	uchar start_val = img.at<uchar>((int)start.y, (int)start.x);
-	uchar current_val = start_val;
+	uchar next_val = img.at<uchar>((int) (y + dy), (int) (x + dx));
 
 	// TODO make robust e.g. edge of image, too far
-
-	while (current_val == start_val) {
+	while (next_val == start_val) {
 		x += dx;
 		y += dy;
-		current_val = img.at<uchar>((int)y, (int)x);
+		next_val = img.at<uchar>((int) (y + dy), (int) (x + dx));
 	}
 
 	return cv::Point2f(x, y);
+}
+
+float Vision::findImgGradient(cv::Mat& img, cv::Point2f p) {
+	return 0;
+}
+
+int Vision::getTileType(cv::Mat& img_roi, int rot) {
+
+	float max_percent = 0;
+	float best_tile;
+
+	// Go over all the tile types
+	for (std::size_t i = 0; i < tiles.size(); i++) {
+		float percent = tiles[i].compare(img_roi, rot);
+		if (percent > max_percent) {
+			max_percent = percent;
+			best_tile = i;
+		}
+	}
+
+	return best_tile;
 }

@@ -10,7 +10,6 @@ public:
 	// PUBLIC FUNCTIONS
 	// *******************************
 
-	// Stuff needed for use in vectors apparently
 	Point();
 	Point(const Point& p);	// Copy
 	const Point &Point::operator = (const Point& p);

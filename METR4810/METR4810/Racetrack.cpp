@@ -1,7 +1,7 @@
 #include "Racetrack.h"
 
-Racetrack::Racetrack(std::vector<Point> midpoints, double width):
+Racetrack::Racetrack(std::vector<Point> midpoints, std::vector<double> widths):
 	midpoints_(midpoints),
-	width_(width)
+	widths_(widths)
 {}
 
