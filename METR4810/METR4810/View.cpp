@@ -25,7 +25,7 @@ View::View(Racetrack& racetrack, Car& my_car):
 		cv::line(background_,
 			cv::Point(scale_ * p1.x, scale_ * (map_height_ - p1.y)),
 			cv::Point(scale_ * p2.x, scale_ * (map_height_ - p2.y)),
-			cv::Scalar(20, 20, 20), scale_ * racetrack.width_);
+			cv::Scalar(20, 20, 20), scale_ * 0.2);
 	}
 
 	// Draw dots at midpoints
