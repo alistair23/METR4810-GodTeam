@@ -3,8 +3,9 @@
 
 #include <cv.h>
 #include <highgui.h>
+#include <vector>
 
-#include "Racetrack.h"
+#include "Point.h"
 #include "Tile.h"
 
 class Vision {
@@ -15,8 +16,8 @@ public:
 
 	bool transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre);
 
-	Racetrack extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
-	
+	std::vector<Point> extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
+
 private:
 
 	// Returns euclidean distance between two opencv points

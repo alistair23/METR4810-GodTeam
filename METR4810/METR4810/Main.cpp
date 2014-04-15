@@ -2,11 +2,12 @@
 #define _USE_MATH_DEFINES
 
 #include <math.h>
-
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <vector>
 #include <Windows.h>
+#include <cv.h>
 
 #include "View.h"
 #include "Car.h"
@@ -15,29 +16,29 @@
 #include "CommonFunctions.h"
 #include "Vision.h"
 #include "Globals.h"
+#include "LocalPlanner.h"
 
 std::mutex rc_mutex;
 
 
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
-void carLoop(Racetrack& r, Car& c) {
-	int current_mp = 0;
-	double dist_sq_thresh = 0.0001;
-	double max_speed = 1;
+void carLoop(std::vector<Point>& segment, Car& c, int& current) {
+	double dist_sq_thresh = 100;
+	double max_speed = 1.0 / M_PER_PIX;
 	double angle_thresh = 60 * M_PI / 180;
 	long long update_time = time_now();
 	
 	while (true) {
 		rc_mutex.lock();
 
-		if (current_mp < r.midpoints_.size()) {
-			Point& goal(r.midpoints_[current_mp]);
+		if (current < segment.size()) {
+			Point& goal(segment[current]);
 			double dist_sq = c.pos_.distSquared(goal);
-
+			
 			// Check if we have reached point
 			if (dist_sq < dist_sq_thresh)
-				current_mp++;
+				current++;
 			else {
 				
 				double angle = c.pos_.angle(goal) - c.dir_;
@@ -51,29 +52,27 @@ void carLoop(Racetrack& r, Car& c) {
 					angle += 2 * M_PI;
 
 				if (angle >= 0 && angle <= angle_thresh) {
-					c.r_wheel_speed_ = max_speed;
-					c.l_wheel_speed_ = (1 - angle/angle_thresh) * max_speed;
-				}
-				else if (angle <= 0 && angle >= -angle_thresh) {
-					c.r_wheel_speed_ = (1 + angle/angle_thresh) * max_speed;
+					c.r_wheel_speed_ = (1 - angle/angle_thresh) * max_speed;
 					c.l_wheel_speed_ = max_speed;
 				}
-				else if (angle > angle_thresh) { // && angle <= 180
+				else if (angle <= 0 && angle >= -angle_thresh) {
 					c.r_wheel_speed_ = max_speed;
-					c.l_wheel_speed_ = -max_speed;
+					c.l_wheel_speed_ = (1 + angle/angle_thresh) * max_speed;
 				}
-				else {
+				else if (angle > angle_thresh) { // && angle <= 180
 					c.r_wheel_speed_ = -max_speed;
 					c.l_wheel_speed_ = max_speed;
 				}
+				else {
+					c.r_wheel_speed_ = max_speed;
+					c.l_wheel_speed_ = -max_speed;
+				}
 			}
 		}
-		else {
-			current_mp = 0;
-		}
+		
 
 		//std::cout << c.r_wheel_speed_ << " " << c.l_wheel_speed_ << std::endl;
-
+		
 		// Figure out time since last update
 		long long old_time = update_time;
 		update_time = time_now();
@@ -88,12 +87,22 @@ void carLoop(Racetrack& r, Car& c) {
 }
 
 // Thread for running View (for visualisation)
-void viewLoop(Racetrack& r, Car& c) {
-	View v(r, c);
+void viewLoop(cv::Mat img, Car& c, std::vector<Point>& segment, bool& view_up_to_date) {
+	Car car_copy(c);
+	View v(img, car_copy);
+	bool was_zero = false;
 	while (true) {
 		rc_mutex.lock();
-		v.redraw();
+
+		// Update background image if segment has been changed
+		if (!view_up_to_date) {
+			v.drawNewDots(segment);
+			view_up_to_date = true;
+		}
+		
+		car_copy = c;
 		rc_mutex.unlock();
+		v.redraw();
 		cv::waitKey(20);
 	}
 	
@@ -128,37 +137,25 @@ void keyboardLoop(Car& c) {
 
 }
 
+void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segment, int& current, Car& car, bool& view_up_to_date) {
+	LocalPlanner planner(global_path);
+	std::vector<Point> temp;
+	while (true) {
+		rc_mutex.lock();
+		planner.update(car);
+		rc_mutex.unlock();
+		temp = planner.getSegment(10);
+		rc_mutex.lock();
+		segment = temp;
+		current = 0;
+		view_up_to_date = false;
+		rc_mutex.unlock();
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	}
+}
+
 int main(int argc, char *argv[]) {
-	
-#if 0
-	// Define a racetrack
-	std::vector<Point> path;
-	
-	path.push_back(Point(0.5, 0.5));
-	path.push_back(Point(0.5, 1));
-	path.push_back(Point(0.75, 1.4));
-	path.push_back(Point(1, 1.5));
-	path.push_back(Point(3.5, 1.5));
-	path.push_back(Point(3.5, 0.5));
-	
-	Racetrack r(path);
 
-	// Define a car
-	Car c(Point(1, 1), 0, 0.15, 0.075);
-	
-	// Start threads
-	std::thread thread1 (viewLoop, std::ref(r), std::ref(c));
-	std::thread thread2 (carLoop, std::ref(r), std::ref(c));
-	//std::thread thread3 (keyboardLoop, std::ref(c));
-
-	// Wait for threads to finish
-	thread1.join();
-	thread2.join();
-	//thread3.join();
-	
-#endif
-	
-#if 1
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
@@ -166,9 +163,29 @@ int main(int argc, char *argv[]) {
 	cv::Point2f centre;
 	v.transformTrackImage(img_bgr, img_thresh, centre);
 	float finish_tile_length = 1 / M_PER_PIX;
-	v.extractRacetrack(img_thresh, cv::Point2f(centre.x - 10, centre.y),
+	std::vector<Point> track = v.extractRacetrack(img_thresh, cv::Point2f(centre.x - 10, centre.y),
 		cv::Point2f(centre.x - 10, centre.y), M_PI, 
 		cv::Point2f(centre.x + finish_tile_length, centre.y));
-#endif
+
+	// Define a car
+	Car c(Point(200, 400), 0, 0.15/M_PER_PIX, 0.075/M_PER_PIX);
+
+	std::vector<Point> segment;
+	int current = 0;
+	bool view_up_to_date = false;
+
+	// Start threads
+	std::thread thread1 (viewLoop, img_bgr, std::ref(c), std::ref(segment), std::ref(view_up_to_date));
+	std::thread thread2 (carLoop, std::ref(segment), std::ref(c), std::ref(current));
+	//std::thread thread3 (keyboardLoop, std::ref(c));
+	std::thread thread4 (localPlannerLoop, std::ref(track), std::ref(segment), std::ref(current), std::ref(c), std::ref(view_up_to_date));
+
+	// Wait for threads to finish
+	thread1.join();
+	thread2.join();
+	//thread3.join();
+	thread4.join();
+	
+
 	return 0;
 }

@@ -5,6 +5,16 @@
 #include <math.h>
 #include "CommonFunctions.h"
 
+Car::Car():
+	pos_(Point(0,0)),
+	dir_(0),
+	length_(0),
+	width_(0),
+	axle_length_(0),
+	l_wheel_speed_(0),
+	r_wheel_speed_(0)
+{
+}
 
 Car::Car(Point start_pos, double start_dir, double length, double width):
 	pos_(start_pos),
@@ -15,8 +25,33 @@ Car::Car(Point start_pos, double start_dir, double length, double width):
 	l_wheel_speed_(0),
 	r_wheel_speed_(0)
 {
-
 }
+
+// Copy
+Car::Car(const Car& c) {
+
+	// Allocate variables
+	Car();
+
+	// Copy values
+	operator = (c);
+}
+
+// Overload equals operator
+const Car &Car::operator = (const Car& c) {
+
+	// Copy stuff
+	pos_ = c.pos_;
+	dir_ = c.dir_;
+	length_ = c.length_;
+	width_ = c.width_;
+	axle_length_ = c.axle_length_;
+	l_wheel_speed_ = c.l_wheel_speed_;
+	r_wheel_speed_ = c.r_wheel_speed_;
+
+	return *this;
+}
+
 
 double Car::getX() {
 	return pos_.x;
@@ -30,8 +65,8 @@ double Car::getY() {
 // after moving a certain length of time.
 // http://rossum.sourceforge.net/papers/DiffSteer/
 void Car::step(double seconds) {
-	double speed_diff = r_wheel_speed_ - l_wheel_speed_;
-
+	double speed_diff = l_wheel_speed_ - r_wheel_speed_;
+	
 	// Special case for when left wheel speed == right wheel speed
 	// Needed to avoid division by zero
 	if (speed_diff == 0) {

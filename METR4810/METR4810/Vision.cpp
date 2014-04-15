@@ -37,7 +37,7 @@ cv::Point findCentre(std::vector<cv::Point> corners)
 
 }
 
-Racetrack Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position) {
+std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position) {
 	
 	cv::Mat img_temp, grad_x, grad_y;
 	cv::blur(img_thresh, img_temp, cv::Size(10, 10));
@@ -53,22 +53,23 @@ Racetrack Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::
 	cv::Mat cdst;
 	cv::cvtColor(img_thresh, cdst, CV_GRAY2BGR);
 
-	std::vector<cv::Point2f> midpoints;
+	std::vector<Point> midpoints;
 	std::vector<float> angles;		// Radians, clockwise
 	std::vector<float> widths;
-	midpoints.push_back(start_position);
+	midpoints.push_back(Point(start_position.x, start_position.y));
 	angles.push_back(start_orientation);
 	float expected_width = ROAD_WIDTH / M_PER_PIX;
 	widths.push_back(expected_width);
 	
 	float width_thresh = 0.1;	// 10 % for accepting result
+	float step_size_sq = GLOBAL_PATH_STEP_SIZE * GLOBAL_PATH_STEP_SIZE;
 
-	float step_size = 10;
-	while (dist(midpoints.back(), end_position) > step_size) {
+	Point end_pos(end_position.x, end_position.y);
+	while (midpoints.back().distSquared(end_pos) > step_size_sq) {
 
 		// Extrapolate forward using last point
-		float temp_x = midpoints.back().x + step_size * cos(angles.back());
-		float temp_y = midpoints.back().y + step_size * sin(angles.back());
+		float temp_x = midpoints.back().x + GLOBAL_PATH_STEP_SIZE * cos(angles.back());
+		float temp_y = midpoints.back().y + GLOBAL_PATH_STEP_SIZE * sin(angles.back());
 		cv::Point2f temp_p(temp_x, temp_y);
 
 		// Find the road edge on the right
@@ -98,7 +99,7 @@ Racetrack Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::
 		
 		cv::Point2f new_p = b1 + ((b2 - b1) * 0.5);
 		angles.push_back(gradient + M_PI_2);
-		midpoints.push_back(new_p);
+		midpoints.push_back(Point(new_p.x, new_p.y));
 		widths.push_back(width);
 
 		cv::circle(cdst, origin, 2, cv::Scalar(255, 0, 0), 2);
@@ -122,8 +123,7 @@ Racetrack Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::
 	cv::waitKey();
 	*/
 	
-	Racetrack r;
-	return r;
+	return midpoints;
 }
 
 // Given a image of the racetrack, perspective transforms it to get
@@ -502,3 +502,5 @@ int Vision::getTileType(cv::Mat& img_roi, int rot) {
 
 	return best_tile;
 }
+
+bool isCarValid(cv::Point2f pos, double angle, long long time);

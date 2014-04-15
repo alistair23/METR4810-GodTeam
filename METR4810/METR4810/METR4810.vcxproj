@@ -34,7 +34,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <CLRSupport>true</CLRSupport>
+    <CLRSupport>false</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -123,27 +123,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GlobalPlanner.h" />
     <ClInclude Include="Globals.h" />
+    <ClInclude Include="LocalPlanner.h" />
+    <ClInclude Include="OtherCar.h" />
     <ClInclude Include="Point.h" />
-    <ClInclude Include="Racetrack.h" />
     <ClInclude Include="Car.h" />
     <ClInclude Include="CarController.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="CommonFunctions.h" />
+    <ClInclude Include="State.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="View.h" />
     <ClInclude Include="Vision.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Car.cpp" />
+    <ClCompile Include="LocalPlanner.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="OtherCar.cpp" />
     <ClCompile Include="Point.cpp" />
-    <ClCompile Include="Racetrack.cpp" />
     <ClCompile Include="Rubbish.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
+    <ClCompile Include="State.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="View.cpp" />
     <ClCompile Include="Vision.cpp" />
