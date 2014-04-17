@@ -22,7 +22,206 @@ Vision::Vision():
 	tiles.push_back(Tile(cv::imread("Resources/left_hairpin.jpg"), 1));
 }
 
-cv::Point findCentre(std::vector<cv::Point> corners) 
+void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
+	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
+
+	cv::imshow("Display", img_in);
+	cv::waitKey();
+
+	// Make hsv copy
+	cv::Mat img_hsv;
+	cv::cvtColor(img_in, img_hsv, CV_BGR2HSV);
+
+	// Make grayscale copy, Reduce noise with a kernel 3x3
+	cv::Mat img_gray;
+	cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
+	cv::blur(img_gray, img_gray, cv::Size(3,3) );
+
+	// Threshold to only keep white
+	/*
+	cv::Mat img_thresh;
+	inRange(img_hsv, cv::Scalar(0, 0, 200),
+		cv::Scalar(179, 255, 255), img_thresh);
+
+	cv::imshow("Display", img_thresh);
+	cv::waitKey();
+	*/
+	// Canny edge detection
+	cv::Mat dst;
+	int threshold = 50;
+	cv::Canny(img_gray, dst, threshold, threshold * 3, 3);
+
+	cv::imshow("Display", dst);
+	cv::waitKey();
+
+	// Make color format for showing stuff
+	cv::Mat cdst;
+	cv::cvtColor(dst, cdst, CV_GRAY2BGR);
+	
+	// Find contours from Canny image
+	// Warning, findContours affects input image (dst)
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( dst, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+	// Fit ellipses to contours and keep circular ones
+	std::vector<cv::RotatedRect> ellipses;
+	for (std::size_t i = 0; i < contours.size(); i++) {
+		if (contours[i].size() < 5)
+			continue;
+		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
+		
+
+		// Check circularity and that it isn't too small
+		if (r.size.height/r.size.width < 1.5 && r.size.area() > 100)
+			ellipses.push_back(r);
+
+	}
+
+	// Look for concentric circles: this indicates our marker
+	int concentric1 = -1;
+	int concentric2 = -1;
+	float pair_error = 99999;
+	float scale;
+
+	// Go through each ellipse pair
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
+		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
+
+			// Check size similiarity. Shouldn't be too similar
+			if (ellipses[i].size.height / ellipses[j].size.height < 2 && 
+				ellipses[i].size.height / ellipses[j].size.height > 0.5) 
+				continue;
+
+			// Check if concentric. Distance between centres is used as 
+			// error rating
+			float dist_in_pix = dist(ellipses[i].center, ellipses[j].center);
+			float this_pair_error = abs(dist_in_pix);
+
+			if (this_pair_error < pair_error) {
+				concentric1 = i;
+				concentric2 = j;
+				pair_error = this_pair_error;
+			}
+		}
+	}
+	
+	if (concentric1 == -1)	// TODO handle this
+		std::cout << "Failed to find marker pair!!" << std::endl;
+
+	// Show concentric circles found
+	cv::ellipse(cdst, ellipses[concentric1], cv::Scalar(100,200,100), 2);
+	cv::ellipse(cdst, ellipses[concentric2], cv::Scalar(100,200,100), 2);
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+
+	// Get an approximate scale, using larger circle
+	// This is for finding the four other circles
+	float large_circle_pix;
+	if (ellipses[concentric1].size.height > ellipses[concentric2].size.height)
+		large_circle_pix = ellipses[concentric1].size.height;
+	else
+		large_circle_pix = ellipses[concentric2].size.height;
+	float approx_m_per_pix = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
+	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_m_per_pix) * 1.5, 2); 
+
+	// Identify red, green, blue, black circles
+	int black_circle, blue_circle, green_circle, red_circle;
+	int best_blue_value = 0, best_green_value = 0, best_red_value = 0;
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
+		if (dist_sq(ellipses[i].center, ellipses[concentric1].center) < thresh_dist_sq) {
+			cv::Scalar values = getColour(img_in, ellipses[i].center);	// Blue, green, red
+
+			cv::ellipse(cdst, ellipses[i], values, 2);
+
+			// Ignore white
+			if (values[0] > 210 && values[1] > 210 && values[2] > 210)
+				continue;
+
+			if (values[0] < 70 && values[1] < 70 && values[2] < 70)
+				black_circle = i;
+			if (values[0] > values[1] && values[0] > values[2]) {
+				if (values[0] > best_blue_value) {
+					blue_circle = i;
+					best_blue_value = values[0];
+				}
+			}
+			if (values[1] > values[0] && values[1] > values[2]) {
+				if (values[1] > best_blue_value) {
+					green_circle = i;
+					best_green_value = values[1];
+				}
+			}
+			if (values[2] > values[0] && values[2] > values[1]) {
+				if (values[2] > best_red_value) {
+					red_circle = i;
+					best_red_value = values[2];
+				}
+			}
+
+			
+		}
+	}
+
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+
+	// Show ellipses found
+	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
+		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
+	cv::putText(cdst, "Red", ellipses[red_circle].center,
+		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
+	cv::putText(cdst, "Green", ellipses[green_circle].center,
+		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
+	cv::putText(cdst, "Black", ellipses[black_circle].center,
+		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
+
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+
+	// Get perspective transform
+	// Input Quadilateral or Image plane coordinates
+    cv::Point2f input_quad[4]; 
+	// Output Quadilateral or World plane coordinates
+    cv::Point2f output_quad[4];
+	float side_in_pix = OUR_SQUARE_SIDE / M_PER_PIX;
+
+	// Order is blue, red, green, black (clockwise)
+	output_quad[0] = ellipses[blue_circle].center;
+	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
+	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
+	output_quad[3] = cv::Point2f(output_quad[0].x, output_quad[0].y + side_in_pix);
+
+	input_quad[0] = ellipses[blue_circle].center;
+	input_quad[1] = ellipses[red_circle].center;
+	input_quad[2] = ellipses[green_circle].center;
+	input_quad[3] = ellipses[black_circle].center;
+
+    //Input and Output Image;
+    cv::Mat transform, output;
+      
+    // Get the Perspective Transform Matrix i.e. lambda 
+    transform = getPerspectiveTransform( input_quad, output_quad );
+    // Apply the Perspective Transform just found to the src image
+    warpPerspective(img_in, output, transform, output.size() );
+
+	cv::imshow("Display", output);
+	cv::waitKey();
+}
+
+cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
+
+	// Define region of interest
+	cv::Rect roi(p.x - pix_length, p.y - pix_length, 2 * pix_length, 2 * pix_length);
+
+	// Get image roi
+	cv::Mat img_roi = img(roi);
+
+	// Take mean over roi
+	return mean(img_roi);
+}
+
+cv::Point getCentre(std::vector<cv::Point> corners) 
 {
 	cv::Point sum_point(0,0);
 	double n = 0;
@@ -49,6 +248,11 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 	cv::Sobel(img_temp, grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
 	cv::Sobel(img_temp, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
 
+	cv::imshow("Display", grad_x);
+	cv::waitKey();
+	cv::imshow("Display", grad_y);
+	cv::waitKey();
+
 	// Make color format for showing stuff
 	cv::Mat cdst;
 	cv::cvtColor(img_thresh, cdst, CV_GRAY2BGR);
@@ -73,7 +277,7 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 		cv::Point2f temp_p(temp_x, temp_y);
 
 		// Find the road edge on the right
-		cv::Point2f b1 = findBoundary(img_thresh, temp_p, angles.back() + M_PI_2);
+		cv::Point2f b1 = getBoundary(img_thresh, temp_p, angles.back() + M_PI_2);
 
 		// Determine the gradient at the boundary point found
 		// (e.g. for a straight road east to west, dx = 0, dy > 0)
@@ -82,7 +286,7 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 		float gradient = atan2(dy, dx);
 
 		// Find left road edge by following the gradient from b1
-		cv::Point2f b2 = findBoundary(img_thresh, b1, gradient);
+		cv::Point2f b2 = getBoundary(img_thresh, b1, gradient);
 
 		float width = dist(b1, b2);
 
@@ -103,8 +307,9 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 		widths.push_back(width);
 
 		cv::circle(cdst, origin, 2, cv::Scalar(255, 0, 0), 2);
+		//cv::circle(cdst, temp_p, 2, cv::Scalar(100, 100, 100), 2);
 		cv::circle(cdst, b1, 2, cv::Scalar(0,0,255), 2);
-		cv::circle(cdst, b2, 2, cv::Scalar(0,255,255), 2);
+		cv::circle(cdst, b2, 2, cv::Scalar(0,0,255), 2);
 		cv::circle(cdst, new_p, 2, cv::Scalar(0,255,0), 2);
 	}
 
@@ -427,6 +632,12 @@ float Vision::dist(cv::Point2f& p1, cv::Point2f& p2) {
 	return sqrt(pow(p1.x - p2.x, 2) + (pow(p1.y - p2.y, 2)));
 }
 
+// Returns euclidean distance squared between two opencv points
+float Vision::dist_sq(cv::Point2f& p1, cv::Point2f& p2) {
+	return pow(p1.x - p2.x, 2) + (pow(p1.y - p2.y, 2));
+}
+
+
 float Vision::angle(cv::Point2f& p1, cv::Point2f& p2) {
 	return atan2(p2.y - p1.y, p2.x - p1.x);
 }
@@ -463,7 +674,7 @@ std::vector<cv::Point2f> Vision::sortVertices(cv::RotatedRect& rect) {
 
 // TODO make more efficient & precise. Bisection method?
 // Point returned guaranteed to be within boundary
-cv::Point2f Vision::findBoundary(cv::Mat& img, cv::Point2f start, float dir){
+cv::Point2f Vision::getBoundary(cv::Mat& img, cv::Point2f start, float dir){
 	float step_size = 1;	
 	float dy = step_size * sin(dir);
 	float dx = step_size * cos(dir);
@@ -480,10 +691,6 @@ cv::Point2f Vision::findBoundary(cv::Mat& img, cv::Point2f start, float dir){
 	}
 
 	return cv::Point2f(x, y);
-}
-
-float Vision::findImgGradient(cv::Mat& img, cv::Point2f p) {
-	return 0;
 }
 
 int Vision::getTileType(cv::Mat& img_roi, int rot) {
