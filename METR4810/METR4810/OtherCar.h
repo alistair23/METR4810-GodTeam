@@ -7,12 +7,14 @@ class OtherCar {
 
 public:
 
-	bool pointInCollision(Point p, long long time);
+	OtherCar(Point pos, double dir, double vel);
+	void update(Point pos, double dir, double vel);
 
 	Point pos_;
-	double angle_;
-	double radius_;
-	long long update_time_;
+	double dir_;
+	double vel_;
+	double radius_;		// TODO get rid of this
+	long long update_time_;	// Time at last update
 
 };
 

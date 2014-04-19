@@ -19,12 +19,12 @@ public:
 	void redraw();
 	void drawNewDots(std::vector<Point>& segment);
 
+	Point getMousePos();
+
 private:
-
+	
 	Car& my_car_;
-
 	const int frame_time_;	// milliseconds / frame
-
 	cv::Mat background_;
 	cv::Mat background_no_dots_;
 

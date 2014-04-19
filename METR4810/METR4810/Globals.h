@@ -13,3 +13,9 @@
 #define FRONT_CLEARANCE 0.05
 
 #define GLOBAL_PATH_STEP_SIZE 10	// APPROXIMATE distance between points in the global path in pixels
+
+// Stuff for our marker
+#define OUR_CENTRE_DIAMETER_BIG 0.065
+#define OUR_CENTRE_DIAMETER_SMALL 0.035
+#define OUR_DIAMTER 0.035
+#define OUR_SQUARE_SIDE 0.13

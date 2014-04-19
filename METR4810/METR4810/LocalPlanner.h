@@ -1,6 +1,7 @@
 #ifndef _INCLUDED_LOCALPLANNER_H
 #define _INCLUDED_LOCALPLANNER_H
 
+#include <cv.h>			// For RotatedRect
 #include <vector>
 
 #include "Point.h"
@@ -13,19 +14,23 @@ public:
 
 	LocalPlanner(std::vector<Point> global_path);
 	std::vector<Point> getSegment(int num_points);
-	void update(Car my_car);
+	void update(Car my_car, std::vector<OtherCar> other_cars);
 
 private:
 	
 	
 	int getClosestGlobal(Point pos);
 	bool isValid(Point pos, long long time);
-	bool carInCollision(Point pos, double angle, long long time);
 
-	std::vector<OtherCar> other_cars_;
+	// Returns id of car in collision given position of my car
+	// Returns -1 if no collision detected
+	int carInCollision(Point pos, double angle, long long time);
+	bool lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1, cv::Point2f b2);
+
 	std::vector<Point> global_path_;
 
 	Car my_car_;
+	std::vector<OtherCar> other_cars_;
 
 };
 

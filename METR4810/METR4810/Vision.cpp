@@ -25,8 +25,8 @@ Vision::Vision():
 void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
-	cv::imshow("Display", img_in);
-	cv::waitKey();
+	//cv::imshow("Display", img_in);
+	//cv::waitKey();
 
 	// Make hsv copy
 	cv::Mat img_hsv;
@@ -51,8 +51,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	int threshold = 50;
 	cv::Canny(img_gray, dst, threshold, threshold * 3, 3);
 
-	cv::imshow("Display", dst);
-	cv::waitKey();
+	//cv::imshow("Display", dst);
+	//cv::waitKey();
 
 	// Make color format for showing stuff
 	cv::Mat cdst;
@@ -112,8 +112,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	// Show concentric circles found
 	cv::ellipse(cdst, ellipses[concentric1], cv::Scalar(100,200,100), 2);
 	cv::ellipse(cdst, ellipses[concentric2], cv::Scalar(100,200,100), 2);
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Get an approximate scale, using larger circle
 	// This is for finding the four other circles
@@ -163,8 +163,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 		}
 	}
 
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Show ellipses found
 	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
@@ -176,8 +176,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::putText(cdst, "Black", ellipses[black_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
 
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Get perspective transform
 	// Input Quadilateral or Image plane coordinates
@@ -205,8 +205,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
     // Apply the Perspective Transform just found to the src image
     warpPerspective(img_in, output, transform, output.size() );
 
-	cv::imshow("Display", output);
-	cv::waitKey();
+	//cv::imshow("Display", output);
+	//cv::waitKey();
 }
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
@@ -241,25 +241,20 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 	cv::Mat img_temp, grad_x, grad_y;
 	cv::blur(img_thresh, img_temp, cv::Size(10, 10));
 
-	cv::imshow("Display", img_temp);
-	cv::waitKey();
+	//cv::imshow("Display", img_temp);
+	//cv::waitKey();
 
 	// Use Sobel operator to get image derivatives
 	cv::Sobel(img_temp, grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
 	cv::Sobel(img_temp, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
-
-	cv::imshow("Display", grad_x);
-	cv::waitKey();
-	cv::imshow("Display", grad_y);
-	cv::waitKey();
 
 	// Make color format for showing stuff
 	cv::Mat cdst;
 	cv::cvtColor(img_thresh, cdst, CV_GRAY2BGR);
 
 	std::vector<Point> midpoints;
-	std::vector<float> angles;		// Radians, clockwise
-	std::vector<float> widths;
+	std::vector<float> angles;		// TODO remove this
+	std::vector<float> widths;		// TODO remove this
 	midpoints.push_back(Point(start_position.x, start_position.y));
 	angles.push_back(start_orientation);
 	float expected_width = ROAD_WIDTH / M_PER_PIX;
@@ -301,22 +296,23 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 			widths.push_back(expected_width);
 		}*/
 		
-		cv::Point2f new_p = b1 + ((b2 - b1) * 0.5);
+		cv::Point2f new_p_cv = b1 + ((b2 - b1) * 0.5);
+		Point new_p(new_p_cv.x, new_p_cv.y, gradient + M_PI_2, dist(new_p_cv, b1), dist(new_p_cv, b2));
 		angles.push_back(gradient + M_PI_2);
-		midpoints.push_back(Point(new_p.x, new_p.y));
+		midpoints.push_back(new_p);
 		widths.push_back(width);
 
 		cv::circle(cdst, origin, 2, cv::Scalar(255, 0, 0), 2);
 		//cv::circle(cdst, temp_p, 2, cv::Scalar(100, 100, 100), 2);
 		cv::circle(cdst, b1, 2, cv::Scalar(0,0,255), 2);
 		cv::circle(cdst, b2, 2, cv::Scalar(0,0,255), 2);
-		cv::circle(cdst, new_p, 2, cv::Scalar(0,255,0), 2);
+		cv::circle(cdst, new_p_cv, 2, cv::Scalar(0,255,0), 2);
 	}
 
 
 	
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 		/*
 	cv::Mat abs_grad_x, abs_grad_y, grad;

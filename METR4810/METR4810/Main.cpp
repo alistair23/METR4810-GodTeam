@@ -20,12 +20,13 @@
 
 std::mutex rc_mutex;
 
+Point mouse_click_pos;
 
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
 void carLoop(std::vector<Point>& segment, Car& c, int& current) {
 	double dist_sq_thresh = 100;
-	double max_speed = 1.0 / M_PER_PIX;
+	double max_speed = 1 / M_PER_PIX;
 	double angle_thresh = 60 * M_PI / 180;
 	long long update_time = time_now();
 	
@@ -99,6 +100,9 @@ void viewLoop(cv::Mat img, Car& c, std::vector<Point>& segment, bool& view_up_to
 			v.drawNewDots(segment);
 			view_up_to_date = true;
 		}
+
+		// Update last clicked mouse position
+		mouse_click_pos = v.getMousePos();
 		
 		car_copy = c;
 		rc_mutex.unlock();
@@ -140,11 +144,18 @@ void keyboardLoop(Car& c) {
 void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segment, int& current, Car& car, bool& view_up_to_date) {
 	LocalPlanner planner(global_path);
 	std::vector<Point> temp;
+
+	// DEBUGGING
+	// Make other car at mouse click
+	OtherCar oc(mouse_click_pos, 0, 0);
+	std::vector<OtherCar> other_cars;
+	other_cars.push_back(oc);
 	while (true) {
+		other_cars[0].pos_ = mouse_click_pos;
 		rc_mutex.lock();
-		planner.update(car);
+		planner.update(car, other_cars);
 		rc_mutex.unlock();
-		temp = planner.getSegment(10);
+		temp = planner.getSegment(15);
 		rc_mutex.lock();
 		segment = temp;
 		current = 0;
@@ -155,6 +166,13 @@ void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segme
 }
 
 int main(int argc, char *argv[]) {
+
+	/*
+	cv::Mat img_bgr = cv::imread("Resources/our_marker_test.jpg");
+	Vision vision;
+	cv::Mat transform;
+	vision.getTransform(img_bgr, transform);
+	*/
 
 	Vision v;
 
@@ -186,6 +204,6 @@ int main(int argc, char *argv[]) {
 	//thread3.join();
 	thread4.join();
 	
-
+	
 	return 0;
 }

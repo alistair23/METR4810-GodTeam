@@ -6,6 +6,10 @@
 #include "View.h"
 #include "Globals.h"
 
+// For some reason putting this in header causes an error...
+void onMouse( int event, int x, int y, int, void* );	
+Point mouse_pos(0, 0);
+
 View::View(cv::Mat background, Car& my_car):
 	my_car_(my_car),
 	frame_time_(20)		// milliseconds / frame
@@ -13,6 +17,7 @@ View::View(cv::Mat background, Car& my_car):
 
 	// Create display window
 	cv::namedWindow("View", cv::WINDOW_AUTOSIZE);
+	cv::setMouseCallback("View", onMouse, 0 );
 	background_ = background.clone();
 	background_no_dots_ = background.clone();
 
@@ -49,13 +54,24 @@ void View::redraw() {
 	cv::Mat image = background_.clone();
 
 	// Draw my_car_
-	cv::RotatedRect rRect(
+	cv::RotatedRect rect(
 		cv::Point2f(my_car_.getX(), my_car_.getY()),
 		cv::Size2f(my_car_.length_, my_car_.width_), my_car_.dir_ * 180 / M_PI);
 	cv::Point2f vertices[4];
-	rRect.points(vertices);
+	rect.points(vertices);
 	for (int i = 0; i < 4; i++)
 		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
+
+	// DEBUGGING
+	// Draw other car at mouse click point
+	float other_length = DEFAULT_CAR_LENGTH / M_PER_PIX;
+	float other_width = DEFAULT_CAR_WIDTH / M_PER_PIX;
+	rect.size = cv::Size(other_length, other_width);
+	rect.center = cv::Point2f(mouse_pos.x, mouse_pos.y);
+	rect.angle = 0;
+	rect.points(vertices);
+	for (int i = 0; i < 4; i++)
+		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255));
 
 	cv::imshow("View", image);
 }
@@ -67,3 +83,14 @@ void View::drawNewDots(std::vector<Point>& segment) {
 	}
 }
 
+void onMouse(int event, int x, int y, int, void*) {
+	if( event != CV_EVENT_LBUTTONDOWN )
+		return;
+	
+	mouse_pos.x = x;
+	mouse_pos.y = y;
+}
+
+Point View::getMousePos() {
+	return mouse_pos;
+}

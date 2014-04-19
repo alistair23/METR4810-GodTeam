@@ -15,10 +15,10 @@ public:
 	const Point &Point::operator = (const Point& p);
 
 	// Constructor
-	Point(double x, double y);
+	Point(double x, double y, double track_angle = 0, double r_edge_dist = 0, double l_edge_dist = 0);
 
 	// Returns distance to other point
-	double distance(const Point& p);
+	double dist(const Point& p);
 
 	// Returns distance squared, faster calculation
 	double distSquared(const Point& n);
@@ -36,6 +36,19 @@ public:
 
 	double x;
 	double y;
+
+	// Stuff for path planning
+	bool locked;		// For trajectory deformation; do not move
+
+	// Defined for global path points:
+	double track_angle;	// Radians, parallel to track edge
+	double r_edge_dist;	// Distance to right boundary
+	double l_edge_dist;	// Distance to left boundary
+	
+
+	// TODO
+	// double curvature;
+	// double speed;
 
 };
 

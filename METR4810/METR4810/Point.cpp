@@ -9,7 +9,10 @@ using namespace std;
 // Default constructor
 Point::Point():
 	x(0),
-	y(0)
+	y(0),
+	track_angle(0),
+	r_edge_dist(0),
+	l_edge_dist(0)
 {}
 
 // Copy
@@ -28,18 +31,24 @@ const Point &Point::operator = (const Point& p) {
 	// Copy stuff
 	x = p.x;
 	y = p.y;
+	track_angle = p.track_angle;
+	r_edge_dist = p.r_edge_dist;
+	l_edge_dist = p.l_edge_dist;
 
 	return *this;
 }
 
 // Constructor
-Point::Point(double arg_x, double arg_y):
+Point::Point(double arg_x, double arg_y, double arg_track_angle, double arg_r_edge_dist, double arg_l_edge_dist):
 	x(arg_x),
-	y(arg_y)
+	y(arg_y),
+	track_angle(arg_track_angle),
+	r_edge_dist(arg_r_edge_dist),
+	l_edge_dist(arg_l_edge_dist)
 {}
 
 // Returns distance to other point
-double Point::distance(const Point& p) {
+double Point::dist(const Point& p) {
 	double dx = p.x - x;
 	double dy = p.y - y;
 	return sqrt((dx * dx) + (dy * dy));
@@ -57,7 +66,6 @@ double Point::distSquared(const Point& p) {
 double Point::angle(const Point& p) {
 	double dx = p.x - x;
 	double dy = p.y - y;
-
 	return atan2(dy, dx);
 }
 
