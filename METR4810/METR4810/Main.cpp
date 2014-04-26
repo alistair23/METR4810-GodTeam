@@ -17,6 +17,9 @@
 #include "Vision.h"
 #include "Globals.h"
 #include "LocalPlanner.h"
+#include "RR_API.h"
+#include "CamCalib.h"
+#include "Intrinsics.h"
 
 std::mutex rc_mutex;
 
@@ -167,13 +170,43 @@ void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segme
 
 int main(int argc, char *argv[]) {
 
+	// Camera calibration
+	//Intrinsics i = camCalib("CalibSettings.xml", true);
+
 	/*
-	cv::Mat img_bgr = cv::imread("Resources/our_marker_test.jpg");
+	RR_API roborealm;
+	bool result = roborealm.connect("127.0.0.1", 6060);
+	if (result == 1)
+		std::cout << "Successfully connected to RoboRealm server" << std::endl;
+	else {
+		std::cout << "Failed to connect to RoboRealm server" << std::endl;
+		return 0;
+	}
+
+	int width, height;
+	roborealm.getDimension(&width, &height);
+	std::cout << width << " " << height << std::endl;
+	uchar *data = new uchar[width * height * 3];
+	roborealm.getImage(data, &width, &height, width * height * 3);
+	cv::Mat img(height, width, CV_8UC3, data);
+	cv::cvtColor(img, img, CV_RGB2BGR);
+	cv::namedWindow("BOB", cv::WINDOW_AUTOSIZE);
+	cv::imshow("BOB", img);
+	cv::waitKey();
+
+	delete [] data;
+	*/
+
+
+	
+	cv::Mat img_bgr = cv::imread("Resources/circle_marker.jpg");
 	Vision vision;
 	cv::Mat transform;
 	vision.getTransform(img_bgr, transform);
-	*/
+	
 
+
+	/*
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
@@ -204,6 +237,6 @@ int main(int argc, char *argv[]) {
 	//thread3.join();
 	thread4.join();
 	
-	
+	*/
 	return 0;
 }

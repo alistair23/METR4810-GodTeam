@@ -14,10 +14,25 @@ public:
 
 	Vision();
 
+	// For finding the perspective transform for a camera, which when
+	// applied to image will give unwarped top-down view.
+	// Input image must contain our special marker used during setup time
+	// perspective transform matrix is output through transform_out
 	void getTransform(cv::Mat& img_in, cv::Mat& transform_output);
-	bool transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre);
 
-	std::vector<Point> extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
+	// Given an input image (BGR), looks for the car markers 
+	// (concentric circles). My car's centre is output in my_car_p1,
+	// and off-centre circle location in my_car_p2. Other car markers
+	// output in other_cars
+	void findCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
+		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
+
+	// WORK IN PROGRESS
+	std::vector<Point> extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin,
+		cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
+
+	bool transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre);	// PROBABLY WILL DELETE
+
 
 private:
 

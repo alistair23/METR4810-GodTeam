@@ -123,13 +123,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CamCalib.h" />
     <ClInclude Include="GlobalPlanner.h" />
     <ClInclude Include="Globals.h" />
+    <ClInclude Include="Intrinsics.h" />
     <ClInclude Include="LocalPlanner.h" />
     <ClInclude Include="OtherCar.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Car.h" />
     <ClInclude Include="CarController.h" />
+    <ClInclude Include="RR_API.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="CommonFunctions.h" />
@@ -139,11 +142,14 @@
     <ClInclude Include="Vision.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CamCalib.cpp" />
     <ClCompile Include="Car.cpp" />
+    <ClCompile Include="Intrinsics.cpp" />
     <ClCompile Include="LocalPlanner.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="OtherCar.cpp" />
     <ClCompile Include="Point.cpp" />
+    <ClCompile Include="RR_API.cpp" />
     <ClCompile Include="Rubbish.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="Simulator.cpp" />

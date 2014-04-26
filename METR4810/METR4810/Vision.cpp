@@ -22,11 +22,12 @@ Vision::Vision():
 	tiles.push_back(Tile(cv::imread("Resources/left_hairpin.jpg"), 1));
 }
 
+// For finding the perspective transform for a camera, which when
+// applied to image will give unwarped top-down view.
+// Input image must contain our special marker used during setup time
+// perspective transform matrix is output through transform_out
 void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
-
-	//cv::imshow("Display", img_in);
-	//cv::waitKey();
 
 	// Make hsv copy
 	cv::Mat img_hsv;
@@ -37,32 +38,20 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
 	cv::blur(img_gray, img_gray, cv::Size(3,3) );
 
-	// Threshold to only keep white
-	/*
-	cv::Mat img_thresh;
-	inRange(img_hsv, cv::Scalar(0, 0, 200),
-		cv::Scalar(179, 255, 255), img_thresh);
-
-	cv::imshow("Display", img_thresh);
-	cv::waitKey();
-	*/
 	// Canny edge detection
-	cv::Mat dst;
+	cv::Mat img_canny;
 	int threshold = 50;
-	cv::Canny(img_gray, dst, threshold, threshold * 3, 3);
-
-	//cv::imshow("Display", dst);
-	//cv::waitKey();
+	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
 	cv::Mat cdst;
-	cv::cvtColor(dst, cdst, CV_GRAY2BGR);
+	cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
 	
 	// Find contours from Canny image
-	// Warning, findContours affects input image (dst)
+	// Warning, findContours affects input image (img_canny)
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours( dst, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+	cv::findContours(img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
@@ -71,12 +60,16 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 			continue;
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
 		
-
 		// Check circularity and that it isn't too small
-		if (r.size.height/r.size.width < 1.5 && r.size.area() > 100)
+		if (r.size.height/r.size.width < 1.5 && r.size.area() > 20) {
 			ellipses.push_back(r);
-
+			cv::ellipse(cdst, r, cv::Scalar(100,200,100), 1);
+		}
 	}
+
+	// Show circles found
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Look for concentric circles: this indicates our marker
 	int concentric1 = -1;
@@ -87,11 +80,6 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	// Go through each ellipse pair
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
-
-			// Check size similiarity. Shouldn't be too similar
-			if (ellipses[i].size.height / ellipses[j].size.height < 2 && 
-				ellipses[i].size.height / ellipses[j].size.height > 0.5) 
-				continue;
 
 			// Check if concentric. Distance between centres is used as 
 			// error rating
@@ -163,10 +151,6 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 		}
 	}
 
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
-
-	// Show ellipses found
 	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
 	cv::putText(cdst, "Red", ellipses[red_circle].center,
@@ -176,8 +160,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::putText(cdst, "Black", ellipses[black_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
 
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	// Get perspective transform
 	// Input Quadilateral or Image plane coordinates
@@ -196,17 +180,117 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	input_quad[1] = ellipses[red_circle].center;
 	input_quad[2] = ellipses[green_circle].center;
 	input_quad[3] = ellipses[black_circle].center;
-
-    //Input and Output Image;
-    cv::Mat transform, output;
       
-    // Get the Perspective Transform Matrix i.e. lambda 
-    transform = getPerspectiveTransform( input_quad, output_quad );
-    // Apply the Perspective Transform just found to the src image
-    warpPerspective(img_in, output, transform, output.size() );
+    // Get the Perspective Transform Matrix
+    transform_out = getPerspectiveTransform( input_quad, output_quad );
 
-	//cv::imshow("Display", output);
+	// Show the effect of applying perspective transform to input image
+	cv::Mat img_output;
+    warpPerspective(img_in, img_output, transform_out, img_output.size() );
+	cv::imshow("Display", img_output);
+	cv::waitKey();
+}
+
+// Given an input image (BGR), looks for the car markers 
+// (concentric circles). My car's centre is output in my_car_p1,
+// and off-centre circle location in my_car_p2. Other car markers
+// output in other_cars
+void Vision::findCarMarkers(
+	cv::Mat& img_in, cv::Point2f& my_car_p1, cv::Point2f& my_car_p2,
+	std::vector<cv::Point2f>& other_cars) {
+
+	// Make grayscale copy, Reduce noise with a kernel 3x3
+	cv::Mat img_gray;
+	cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
+	cv::blur(img_gray, img_gray, cv::Size(3,3) );
+
+	// Canny edge detection
+	cv::Mat img_canny;
+	int threshold = 50;
+	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
+
+	// Make color format for showing stuff
+	//cv::Mat cdst;
+	//cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
+	
+	// Find contours from Canny image
+	// Warning, findContours affects input image (img_canny)
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+	// Fit ellipses to contours and keep circular ones
+	std::vector<cv::RotatedRect> ellipses;
+	for (std::size_t i = 0; i < contours.size(); i++) {
+		if (contours[i].size() < 5)
+			continue;
+		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
+		
+		// Check circularity and that it isn't too small
+		if (r.size.height/r.size.width < 1.5 && r.size.area() > 20) {
+			ellipses.push_back(r);
+			//cv::ellipse(cdst, r, cv::Scalar(100,200,100), 1);
+		}
+	}
+
+	// Show circles found
+	//cv::imshow("Display", cdst);
 	//cv::waitKey();
+
+	other_cars.clear();
+
+	// Max pixels between detected circle centres to consider circles concentric
+	float dist_thresh = 5;	
+	bool my_car_found = false;
+
+	// Look for concentric circles: this indicates car markers
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
+		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
+			float centre_dist = dist(ellipses[i].center, ellipses[j].center);
+			if (centre_dist < dist_thresh) {
+				bool this_is_my_car = false;
+				if (my_car_found)
+					continue;
+				
+				// Found two concentric circles. Now check if my car
+				// (three concentric circles)
+				for (std::size_t k = 0; k < ellipses.size(); k++) {
+					centre_dist = dist(ellipses[i].center, ellipses[k].center);
+					if (centre_dist < dist_thresh) {
+
+						// This is my car
+						my_car_p1 = ellipses[k].center;
+						this_is_my_car = true;
+						my_car_found = true;
+						
+						// Now look for off-centre circle (used for finding orientation)
+						// The diameter of the off-centre circle should be less than the
+						// smallest of the concentric circles
+						float smallest = std::min(ellipses[i].size.height, ellipses[j].size.height);
+						smallest = std::min(smallest, ellipses[k].size.height);
+						float max_diameter = smallest * 0.7;
+						for (std::size_t a = 0; a < ellipses.size(); a++) {
+							if (a == i || a == j || a == k)
+								continue;
+							
+							if (ellipses[a].size.height > max_diameter)
+								continue;
+
+							if (dist(ellipses[a].center, ellipses[k].center) < smallest) {
+								my_car_p2 = ellipses[a].center;
+								break;
+							}
+						}
+
+						break;							
+					}
+				}
+				
+				if (!this_is_my_car)
+					other_cars.push_back(ellipses[j].center);
+			}
+		}
+	}
 }
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
@@ -236,7 +320,9 @@ cv::Point getCentre(std::vector<cv::Point> corners)
 
 }
 
-std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin, cv::Point2f start_position, float start_orientation, cv::Point2f end_position) {
+std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin,
+											cv::Point2f start_position, float start_orientation,
+											cv::Point2f end_position) {
 	
 	cv::Mat img_temp, grad_x, grad_y;
 	cv::blur(img_thresh, img_temp, cv::Size(10, 10));
