@@ -8,15 +8,17 @@
  DO CALCULATIONS FOR EACH AND FINALLY CHOOSE A PROPER PRESCALER
  */ 
 
-#include "MotorControl.h"
-#include "SerialComm.h"
+
+
 #include <avr/io.h>
+#define F_CPU 1000000UL
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "MotorControl.h"
+#include "SerialComm.h"
 
-#define F_CPU 1000000UL
 
 static volatile uint32_t period_l = 0;
 static volatile int8_t direction_l = 0;
@@ -85,6 +87,16 @@ extern void MotorControl_initMotorControl()
 	TIMSK1 = (1<<TOIE0); //timer overflow enable
 	//TCCR1C = ;
 	
+	
+	kp = 1;
+	kd = 0;
+	ki = 0;
+	
+	//enable motors
+	PORTB |= 1<<(PORTB2)| 1<<(PORTB1);
+	sei();
+	
+	
 }
 //function to set motor speed on each side
 //choose scale between 0-100 and direction
@@ -139,7 +151,7 @@ ISR(PCINT1_vect)
 	pinc_4 = (PINC & (1<<PINC4))>> PINC4 == 1;
 	pinc_3 = (PINC & (1<<PINC3))>>PINC3 == 1;
 	pinc_5 = (PINC & (1<<PINC5))>>PINC5 == 1;
-	PORTB^=0b00010000;
+	//PORTB^=0b00010000;
 	//SerialComm_sendByte(pinc_2);
 	//SerialComm_sendByte(97);
 	if (pinc_2 == 1 && PINC2_Previous == 0) //check if it's rising edge
@@ -157,7 +169,7 @@ ISR(PCINT1_vect)
 			//time between two rising edge is one period
 			curr_tcntR = TCNT1;
 			period_r = (overflow1R * 65535) + curr_tcntR - prev_tcntR;// ticks
-			speed_r_measured = (int8_t)(100*60*direction_r/(period_r*MAX_SPEED/F_CPU));
+			speed_r_measured = (int8_t)(100*60*direction_r/(GEAR_RATIO*period_r*MAX_SPEED/F_CPU));//speed -100 to 100
 			overflow1R = 0;
 			prev_tcntR = curr_tcntR;
 			
@@ -169,7 +181,7 @@ ISR(PCINT1_vect)
 			
 		}
 
-		SerialComm_sendTextf("speed: %d", speed_r_measured);
+		//SerialComm_sendTextf("speed: %d", speed_r_measured);
 		
 	}
 	
@@ -188,7 +200,7 @@ ISR(PCINT1_vect)
 		{
 			//time between two rising edge is one period
 			period_l = (overflow1L * 65535) + (curr_tcntL - prev_tcntL); //ticks
-			speed_l_measured = (int)(100*60*direction_l/(period_l*MAX_SPEED/F_CPU)); //speed -100 to 100
+			speed_l_measured = (int)(100*60*direction_l/(GEAR_RATIO*period_l*MAX_SPEED/F_CPU)); //speed -100 to 100
 			overflow1L = 0;
 			prev_tcntL = curr_tcntL;
 			
@@ -225,6 +237,12 @@ ISR(TIMER1_OVF_vect)
 	
 	error_l_previous = error_l;
 	error_r_previous = error_r;
+	
+	SerialComm_sendByte(speed_l_measured);
+	SerialComm_sendByte(97);
+	SerialComm_sendByte(speed_r_measured);
+	SerialComm_sendByte(98);
+	//PORTB^=0xff;
 	
 	
 	

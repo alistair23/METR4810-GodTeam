@@ -8,14 +8,15 @@
  * Always make sure the rate with which the data is sent back to PC is always less than the transmission rate 
  */ 
 
-#include "SerialComm.h"
-#include "MotorControl.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <util/atomic.h>
+#include "SerialComm.h"
+#include "MotorControl.h"
 
 int speed_l_desired;
 int speed_r_desired;

@@ -11,7 +11,8 @@
 #include <stdint.h>
 #define MOTOR_L (0)
 #define MOTOR_R (1)
-#define MAX_SPEED (2000)
+#define MAX_SPEED (1000)
+#define GEAR_RATIO (30)
 // initialize PWM
 extern void MotorControl_initMotorControl();
 

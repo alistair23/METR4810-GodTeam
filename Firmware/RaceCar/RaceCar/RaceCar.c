@@ -5,8 +5,8 @@
  *  Author: Kianoosh
  */ 
 
-#define F_CPU 1000000UL
 #include <avr/io.h>
+#define F_CPU 1000000UL
 #include <util/delay.h>
 #include "MotorControl.h"
 #include "SerialComm.h"
@@ -20,6 +20,10 @@ int main(void)
 	//OCR0A = (uint8_t) (100*255/100);
 	SerialComm_initUSART(F_CPU/16/BAUD - 1);
 	MotorControl_initMotorControl();
+	speed_l_desired = 90;
+	speed_r_desired = 90;
+	//MotorControl_setMotorSpeed(MOTOR_L,75);
+	//MotorControl_setMotorSpeed(MOTOR_R, 25);
 	//uint16_t ubrr = F_CPU/16UL/BAUD-1;
 	//UBRR0H = (uint8_t)(ubrr >> 8);
 	//UBRR0L = (uint8_t) ubrr;
@@ -29,18 +33,18 @@ int main(void)
 	//UCSR0C = (1<<UCSZ00)|(1<<UCSZ01);
 
 	DDRB = 0xff;
-	PORTB = 0xff;
+	//PORTB = 0xff;
 		
     while(1)
     {
        
 	   //PORTD= 0xff;
-	   //_delay_ms(100);
+	  // _delay_ms(100);
 	   //PORTD = 0;
 	   //PORTB = 0;  
 		//uint8_t s = MotorControl_GetSpeed(MOTOR_L);
 		//SerialComm_sendByte(97);   
-	   //PORTB^=0xff;
+	   //PORTB=(1<<PORTB2);
 	   //uint8_t byte = 97;
 	   //SerialComm_sendByte(byte);
 	   //while(!( UCSR0A & (1<<UDRE0))) {}
