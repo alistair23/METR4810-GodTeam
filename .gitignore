@@ -16,3 +16,26 @@
 *.exe
 *.out
 *.app
+
+#Debug Folder
+Debug
+
+#General Others
+*.log
+*.tlog
+
+#Atmel Files
+*.mk
+*.d
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.srec
+
+#Visual Studio Files
+*.ilk
+*.pdb
+*.exe*
+*.ipch
