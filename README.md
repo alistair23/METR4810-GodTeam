@@ -6,6 +6,7 @@ The Git repo for Team one
 -----------------
 
 Currently code is divided in three folders:
+
 1. Firmware: Code for the microcontroller
 
 2. RaceControl: Off-board code for communication and car control
