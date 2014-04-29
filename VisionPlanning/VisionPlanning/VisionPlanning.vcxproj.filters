@@ -68,9 +68,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Simulator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Point.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,12 +90,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Tile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SerialPort.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="State.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LocalPlanner.cpp">

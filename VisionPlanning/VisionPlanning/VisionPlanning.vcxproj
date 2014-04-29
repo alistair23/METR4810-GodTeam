@@ -151,10 +151,7 @@
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="RR_API.cpp" />
     <ClCompile Include="Rubbish.cpp" />
-    <ClCompile Include="SerialPort.cpp" />
-    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
-    <ClCompile Include="State.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="View.cpp" />
     <ClCompile Include="Vision.cpp" />
