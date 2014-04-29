@@ -24,7 +24,7 @@ public:
 	// (concentric circles). My car's centre is output in my_car_p1,
 	// and off-centre circle location in my_car_p2. Other car markers
 	// output in other_cars
-	void findCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
+	void getCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
 		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
 
 	// WORK IN PROGRESS

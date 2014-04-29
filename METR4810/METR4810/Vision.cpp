@@ -195,7 +195,7 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 // (concentric circles). My car's centre is output in my_car_p1,
 // and off-centre circle location in my_car_p2. Other car markers
 // output in other_cars
-void Vision::findCarMarkers(
+void Vision::getCarMarkers(
 	cv::Mat& img_in, cv::Point2f& my_car_p1, cv::Point2f& my_car_p2,
 	std::vector<cv::Point2f>& other_cars) {
 

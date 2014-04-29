@@ -197,14 +197,25 @@ int main(int argc, char *argv[]) {
 	delete [] data;
 	*/
 
-
 	
+	// Load image
 	cv::Mat img_bgr = cv::imread("Resources/circle_marker.jpg");
+	cv::imshow("Display", img_bgr);
+	cv::waitKey();
+
+	// Car detection test
 	Vision vision;
 	cv::Mat transform;
-	vision.getTransform(img_bgr, transform);
+	//vision.getTransform(img_bgr, transform);
+	cv::Point2f my_car_p1;
+	cv::Point2f my_car_p2;
+	std::vector<cv::Point2f> other_cars;
+	vision.getCarMarkers(img_bgr, my_car_p1, my_car_p2, other_cars);
 	
-
+	cv::circle(img_bgr, my_car_p1, 2, cv::Scalar(255,0,0), 2);
+	cv::circle(img_bgr, my_car_p2, 2, cv::Scalar(0,0,255), 2);
+	cv::imshow("Display", img_bgr);
+	cv::waitKey();
 
 	/*
 	Vision v;
