@@ -4,6 +4,7 @@
 
 #include "LocalPlanner.h"
 #include "Globals.h"
+#include "Vector2D.h"
 
 LocalPlanner::LocalPlanner(std::vector<Point> global_path):
 	global_path_(global_path)
@@ -68,8 +69,10 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 	// Make a copy of the segment
 	std::vector<Point> right_segment = segment;
 	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
-		Point& global_point = global_path_[(invalidPoints[i] + closest_global) % global_path_.size()];
+
+		// Get references to invalid segment point and corresponding global path point
 		Point& seg_point = right_segment[invalidPoints[i]];
+		Point& global_point = global_path_[(invalidPoints[i] + closest_global) % global_path_.size()];
 
 		// Get gradient from point towards right track edge
 		double step_size = 1;	// In pixels
@@ -91,8 +94,86 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		//	right_cost = -1;
 		//	break;
 		//}
-	}
 
+		seg_point.locked = true;
+	}
+	
+	// Check overtaking left option
+	// Make a copy of the segment
+	std::vector<Point> left_segment = segment;
+	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
+
+		// Get references to invalid segment point and corresponding global path point
+		Point& seg_point = left_segment[invalidPoints[i]];
+		Point& global_point = global_path_[(invalidPoints[i] + closest_global) % global_path_.size()];
+
+		// Get gradient from point towards left track edge
+		double step_size = 1;	// In pixels
+		double dy = step_size * sin(seg_point.track_angle - M_PI_2);
+		double dx = step_size * cos(seg_point.track_angle - M_PI_2);
+
+		// Go along gradient until valid point is found
+		double deformation = seg_point.dist(global_point);
+		bool pointValid = false;
+		while (!pointValid && deformation < global_point.l_edge_dist) {
+			deformation += step_size;
+			seg_point.x += dx;
+			seg_point.y += dy;
+			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1);
+		}
+
+		// If a point can't be corrected, then cannot overtake left
+		//if (!pointValid) {
+		//	left_cost = -1;
+		//	break;
+		//}
+
+		seg_point.locked = true;
+	}
+	
+	// Check following other car option, i.e. match velocity
+
+	// Smooth out path through iterative process
+	int iterations = 25;
+	double change_factor = 0.25;
+	for (int i = 0; i < iterations; i++) {
+		for (std::size_t j = 1; j < right_segment.size(); j++) {
+			if (right_segment[j].locked)
+				continue;
+
+			double force = 0;	// Acts left/right, perpendicular to track edge
+
+			// Get references to corresponding global path point
+			Point& global_point = global_path_[(j + closest_global) % global_path_.size()];
+
+			// Get unit vector perpendicular to track edge
+			double angle = global_point.track_angle + (M_PI * 0.5);
+			Vector2D v(cos(angle), sin(angle));
+
+			// Get vector from this point to the one before
+			double dx = right_segment[j - 1].x - right_segment[j].x;
+			double dy = right_segment[j - 1].y - right_segment[j].y;
+			Vector2D u(dx, dy);
+
+			// Get length of projection of u on v (dot product)
+			double d = v.dot(u);
+
+			force += d;
+
+			// Repeat for force due to point after this one
+			if (j != right_segment.size() - 1) {
+				u.y = right_segment[j + 1].y - right_segment[j].y;
+				u.x = right_segment[j + 1].x - right_segment[j].x;
+				force += v.dot(u);
+			}
+
+			right_segment[j].x += force * change_factor * cos(angle);
+			right_segment[j].y += force * change_factor * sin(angle);
+
+			// TODO attractive force due to global path point
+		}
+	}
+	
 	if (right_cost != -1)
 		return right_segment;
 

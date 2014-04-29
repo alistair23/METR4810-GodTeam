@@ -12,7 +12,8 @@ Point::Point():
 	y(0),
 	track_angle(0),
 	r_edge_dist(0),
-	l_edge_dist(0)
+	l_edge_dist(0),
+	locked(false)
 {}
 
 // Copy
@@ -34,6 +35,7 @@ const Point &Point::operator = (const Point& p) {
 	track_angle = p.track_angle;
 	r_edge_dist = p.r_edge_dist;
 	l_edge_dist = p.l_edge_dist;
+	locked = p.locked;
 
 	return *this;
 }
@@ -44,7 +46,8 @@ Point::Point(double arg_x, double arg_y, double arg_track_angle, double arg_r_ed
 	y(arg_y),
 	track_angle(arg_track_angle),
 	r_edge_dist(arg_r_edge_dist),
-	l_edge_dist(arg_l_edge_dist)
+	l_edge_dist(arg_l_edge_dist),
+	locked(false)
 {}
 
 // Returns distance to other point

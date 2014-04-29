@@ -29,7 +29,7 @@ Point mouse_click_pos;
 // Sets motor speeds, then updates car.
 void carLoop(std::vector<Point>& segment, Car& c, int& current) {
 	double dist_sq_thresh = 100;
-	double max_speed = 1 / M_PER_PIX;
+	double max_speed = 0.5 / M_PER_PIX;
 	double angle_thresh = 60 * M_PI / 180;
 	long long update_time = time_now();
 	
@@ -158,7 +158,7 @@ void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segme
 		rc_mutex.lock();
 		planner.update(car, other_cars);
 		rc_mutex.unlock();
-		temp = planner.getSegment(15);
+		temp = planner.getSegment(20);
 		rc_mutex.lock();
 		segment = temp;
 		current = 0;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 	delete [] data;
 	*/
 
-	
+	/*
 	// Load image
 	cv::Mat img_bgr = cv::imread("Resources/circle_marker.jpg");
 	cv::imshow("Display", img_bgr);
@@ -216,8 +216,9 @@ int main(int argc, char *argv[]) {
 	cv::circle(img_bgr, my_car_p2, 2, cv::Scalar(0,0,255), 2);
 	cv::imshow("Display", img_bgr);
 	cv::waitKey();
+	*/
 
-	/*
+	
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
@@ -248,6 +249,6 @@ int main(int argc, char *argv[]) {
 	//thread3.join();
 	thread4.join();
 	
-	*/
+	
 	return 0;
 }

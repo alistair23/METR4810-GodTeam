@@ -77,7 +77,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\OpenCV2.4.6\build\x64\vc11\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\OpenCV2.4.6\build\x86\vc11\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_calib3d246d.lib;opencv_contrib246d.lib;opencv_core246d.lib;opencv_features2d246d.lib;opencv_flann246d.lib;opencv_gpu246d.lib;opencv_highgui246d.lib;opencv_imgproc246d.lib;opencv_legacy246d.lib;opencv_ml246d.lib;opencv_nonfree246d.lib;opencv_objdetect246d.lib;opencv_ocl246d.lib;opencv_photo246d.lib;opencv_stitching246d.lib;opencv_superres246d.lib;opencv_ts246d.lib;opencv_video246d.lib;opencv_videostab246d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -133,11 +133,9 @@
     <ClInclude Include="Car.h" />
     <ClInclude Include="CarController.h" />
     <ClInclude Include="RR_API.h" />
-    <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="CommonFunctions.h" />
-    <ClInclude Include="State.h" />
-    <ClInclude Include="Tile.h" />
+    <ClInclude Include="Vector2D.h" />
     <ClInclude Include="View.h" />
     <ClInclude Include="Vision.h" />
   </ItemGroup>
