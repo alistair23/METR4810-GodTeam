@@ -8,18 +8,23 @@
 
 #ifndef MOTORCONTROL_H_
 #define MOTORCONTROL_H_
+#define F_CPU 1000000UL
 #include <stdint.h>
 #define MOTOR_L (0)
 #define MOTOR_R (1)
-#define MAX_SPEED (1000)
+#define MAX_SPEED (825) //measured from oscilloscope with voltage 6.5V
 #define GEAR_RATIO (30)
+#define ENCODER_FINS (3)
+#define MEASURE_PERIOD (65535.0/F_CPU)
+
 // initialize PWM
-extern void MotorControl_initMotorControl();
+extern void MotorControl_InitMotorControl();
 
 //function to set motor speed on each side
 //choose scale between 0-100 and direction so -100to100
-extern void MotorControl_setMotorSpeed(uint8_t motor, int speed);
+extern void MotorControl_SetMotorSpeed(uint8_t motor, int speed);
 
 extern int MotorControl_GetSpeed(uint8_t motor);
+extern void MotorControl_CountEncoder();
 
 #endif /* MOTORCONTROL_H_ */

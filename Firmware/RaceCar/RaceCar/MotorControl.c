@@ -9,21 +9,20 @@
  */ 
 
 
-
-#include <avr/io.h>
 #define F_CPU 1000000UL
+#include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <util/atomic.h>
 #include "MotorControl.h"
 #include "SerialComm.h"
 
 
-static volatile uint32_t period_l = 0;
-static volatile int8_t direction_l = 0;
-static volatile uint32_t period_r = 0;
-static volatile int8_t direction_r = 0;
+
+static volatile int32_t encoder_count_L = 0;
+static volatile int32_t encoder_count_R = 0;
 static volatile int8_t speed_l_measured = 0;
 static volatile int8_t speed_r_measured = 0;
 uint8_t pinc_2;
@@ -41,17 +40,17 @@ static volatile uint16_t prev_tcntR = 0;
 static volatile uint16_t curr_tcntR = 0;
 
 static volatile int error_l = 0; //speed error in current cycle
-static volatile int error_l_sum = 0; //integral error
+static volatile float error_l_sum = 0; //integral error
 static volatile int error_l_der = 0; //derivative error
 static volatile int error_l_previous = 0;
 
 static volatile int error_r = 0; //speed error in current cycle
-static volatile int error_r_sum = 0; //integral error
+static volatile float error_r_sum = 0; //integral error
 static volatile int error_r_der = 0; // derivative error
 static volatile int error_r_previous = 0;
 
 
-extern void MotorControl_initMotorControl()
+extern void MotorControl_InitMotorControl()
 {
 	// initialize PWM
 	//phase correct pwm
@@ -77,9 +76,9 @@ extern void MotorControl_initMotorControl()
 	//Alistair wants them on  PC2 == PCINT10,PC3 == PCINT11, PC4 == PCINT12, PC5 == PCINT13
 	//put PC2(right motor) and PC4(left motor) for forwrd
 	//put PC3 and PC5 for reverse
-	PCIFR = (1<<PCIF1);
-	PCICR = (1<<PCIE1);
-	PCMSK1 = (1<<PCINT12)|(1<<PCINT10);
+	//PCIFR = (1<<PCIF1);
+	//PCICR = (1<<PCIE1);
+	//PCMSK1 = (1<<PCINT12)|(1<<PCINT10);
 	
 	//init timer1 for speed calculation
 	//TCCR1A = ;
@@ -88,9 +87,9 @@ extern void MotorControl_initMotorControl()
 	//TCCR1C = ;
 	
 	
-	kp = 1;
+	kp = 0.8;
 	kd = 0;
-	ki = 0;
+	ki = 2;
 	
 	//enable motors
 	PORTB |= 1<<(PORTB2)| 1<<(PORTB1);
@@ -101,7 +100,7 @@ extern void MotorControl_initMotorControl()
 //function to set motor speed on each side
 //choose scale between 0-100 and direction
 //make sure you define MAX_SPEED later and use that for finding the scale
-extern void MotorControl_setMotorSpeed(uint8_t motor, int speed)
+extern void MotorControl_SetMotorSpeed(uint8_t motor, int speed)
 {
 	
 	if (speed > 100) speed = 100;
@@ -141,19 +140,74 @@ extern int MotorControl_GetSpeed(uint8_t motor)
 	}
 }
 
+extern void MotorControl_CountEncoder()
+{
+	//right motor
+	pinc_2 = (PINC & (1<<PINC2))>>PINC2 == 1;
+	pinc_3 = (PINC & (1<<PINC3))>>PINC3 == 1;
+	//left motor
+	pinc_4 = (PINC & (1<<PINC4))>> PINC4 == 1;
+	pinc_5 = (PINC & (1<<PINC5))>>PINC5 == 1;
+	
+	if (pinc_2 == 1 && PINC2_Previous == 0) //check if it's rising edge
+	{
+		
+		if(pinc_3 == 0) //if other pin is low, PC2 is ahead
+		{
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+			{
+				encoder_count_R++;  // forward
+			}
+		}
+		else //if other pin is high already, PC2 is behind
+		{
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+			{
+				encoder_count_R--; //reverse	
+			}
+			
+		}	
+	}
+
+	PINC2_Previous = pinc_2;	
+		
+		
+		
+	//left motor
+	if (pinc_4 == 1 && PINC4_Previous == 0)
+	{
+		if(pinc_5 == 0)
+		{
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+			{
+				encoder_count_L++;
+			}
+		}
+		else
+		{
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+			{
+				encoder_count_L--;	
+			}
+			
+		}
+	}
+	
+	PINC4_Previous = pinc_4;
+}
+
 //use external interrupts to measure encoder ticks
 //Alistair wants them on  PC2 == PCINT10,PC3 == PCINT11, PC4 == PCINT12, PC5 == PCINT13
 //put PC2(right motor) and PC4(left motor) for forward
 //put PC3 and PC5 for reverse
-ISR(PCINT1_vect)
+/*********** CRAP! **************/
+/*ISR(PCINT1_vect)
 {
-	pinc_2 = (PINC & (1<<PINC2))>>PINC2 == 1;
+	//pinc_2 = (PINC & (1<<PINC2))>>PINC2 == 1;
 	pinc_4 = (PINC & (1<<PINC4))>> PINC4 == 1;
-	pinc_3 = (PINC & (1<<PINC3))>>PINC3 == 1;
+	//pinc_3 = (PINC & (1<<PINC3))>>PINC3 == 1;
 	pinc_5 = (PINC & (1<<PINC5))>>PINC5 == 1;
-	//PORTB^=0b00010000;
-	//SerialComm_sendByte(pinc_2);
-	//SerialComm_sendByte(97);
+
 	if (pinc_2 == 1 && PINC2_Previous == 0) //check if it's rising edge
 	{
 		if(pinc_3 == 0) //if other pin is low, PC2 is ahead
@@ -169,7 +223,7 @@ ISR(PCINT1_vect)
 			//time between two rising edge is one period
 			curr_tcntR = TCNT1;
 			period_r = (overflow1R * 65535) + curr_tcntR - prev_tcntR;// ticks
-			speed_r_measured = (int8_t)(100*60*direction_r/(GEAR_RATIO*period_r*MAX_SPEED/F_CPU));//speed -100 to 100
+			speed_r_measured = (int8_t)(100*60*direction_r/(ENCODER_FINS*GEAR_RATIO*period_r*MAX_SPEED/F_CPU));//speed -100 to 100
 			overflow1R = 0;
 			prev_tcntR = curr_tcntR;
 			
@@ -185,6 +239,7 @@ ISR(PCINT1_vect)
 		
 	}
 	
+	
 	if (pinc_4 == 1 && PINC4_Previous == 0)
 	{
 		if(pinc_5 == 0)
@@ -199,8 +254,9 @@ ISR(PCINT1_vect)
 		if(overflow1L < 20* F_CPU/65535)
 		{
 			//time between two rising edge is one period
+			curr_tcntL = TCNT1;
 			period_l = (overflow1L * 65535) + (curr_tcntL - prev_tcntL); //ticks
-			speed_l_measured = (int)(100*60*direction_l/(GEAR_RATIO*period_l*MAX_SPEED/F_CPU)); //speed -100 to 100
+			speed_l_measured = (int8_t)(100*60*direction_l/(ENCODER_FINS*GEAR_RATIO*period_l*MAX_SPEED/F_CPU)); //speed -100 to 100
 			overflow1L = 0;
 			prev_tcntL = curr_tcntL;
 			
@@ -212,38 +268,43 @@ ISR(PCINT1_vect)
 	
 	PINC2_Previous = pinc_2;
 	PINC4_Previous = pinc_4;
-	PCIFR = (1<<PCIF1);
+	//PCIFR = (1<<PCIF1);
 	
 }
-
+*/
 
 
 ISR(TIMER1_OVF_vect)
 {
-	overflow1R++;
-	overflow1L++;
+	
+	
+	speed_l_measured = (int8_t) (60*100*encoder_count_L/(MAX_SPEED*ENCODER_FINS*MEASURE_PERIOD*GEAR_RATIO));
+	speed_r_measured = (int8_t)(60*100*encoder_count_R/(MAX_SPEED*ENCODER_FINS*MEASURE_PERIOD*GEAR_RATIO));
+	encoder_count_L = 0;
+	encoder_count_R = 0;
+	
 	//write the motor control in interrupt 
 	//so the control loop is executed in regular intervals
 	error_l = speed_l_desired - speed_l_measured;
 	error_r = speed_r_desired - speed_r_measured;
 	
 	//TODO: error_sums may need to be reset to zero
-	error_l_sum += error_l;
-	error_r_sum += error_r;
+	error_l_sum += (error_l*MEASURE_PERIOD);
+	error_r_sum += (error_r *MEASURE_PERIOD);
 	error_l_der = error_l - error_l_previous;
 	error_r_der = error_r - error_r_previous;
-	MotorControl_setMotorSpeed(MOTOR_L, kp*error_l+ki * error_l_sum + kd * error_l_der );
-	MotorControl_setMotorSpeed(MOTOR_R, kp*error_r+ki * error_r_sum + kd * error_r_der );
+	MotorControl_SetMotorSpeed(MOTOR_L, speed_l_measured + kp*error_l+ki * error_l_sum + kd * error_l_der );
+	MotorControl_SetMotorSpeed(MOTOR_R, speed_r_measured + kp*error_r+ki * error_r_sum + kd * error_r_der );
 	
 	error_l_previous = error_l;
 	error_r_previous = error_r;
 	
-	SerialComm_sendByte(speed_l_measured);
-	SerialComm_sendByte(97);
-	SerialComm_sendByte(speed_r_measured);
-	SerialComm_sendByte(98);
+	SerialComm_sendTextf("L: %d",speed_l_measured);
+	SerialComm_sendTextf("R: %d",speed_r_measured);
+	
 	//PORTB^=0xff;
 	
 	
 	
 }
+
