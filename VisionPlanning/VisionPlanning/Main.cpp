@@ -11,6 +11,7 @@
 
 #include "View.h"
 #include "Car.h"
+#include "MyCar.h"
 #include "Racetrack.h"
 #include "Point.h"
 #include "CommonFunctions.h"
@@ -27,7 +28,7 @@ Point mouse_click_pos;
 
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
-void carLoop(std::vector<Point>& segment, Car& c, int& current) {
+void carLoop(std::vector<Point>& segment, MyCar& c, int& current) {
 	double dist_sq_thresh = 100;
 	double max_speed = 0.5 / M_PER_PIX;
 	double angle_thresh = 60 * M_PI / 180;
@@ -38,14 +39,14 @@ void carLoop(std::vector<Point>& segment, Car& c, int& current) {
 
 		if (current < segment.size()) {
 			Point& goal(segment[current]);
-			double dist_sq = c.pos_.distSquared(goal);
+			double dist_sq = c.getPos().distSquared(goal);
 			
 			// Check if we have reached point
 			if (dist_sq < dist_sq_thresh)
 				current++;
 			else {
 				
-				double angle = c.pos_.angle(goal) - c.dir_;
+				double angle = c.getPos().angle(goal) - c.getDir();
 
 				// A simple control algorithm: just head 
 				// straight to waypoints. Will be
@@ -56,26 +57,23 @@ void carLoop(std::vector<Point>& segment, Car& c, int& current) {
 					angle += 2 * M_PI;
 
 				if (angle >= 0 && angle <= angle_thresh) {
-					c.r_wheel_speed_ = (1 - angle/angle_thresh) * max_speed;
-					c.l_wheel_speed_ = max_speed;
+					c.setRSpeed((1 - angle/angle_thresh) * max_speed);
+					c.setLSpeed(max_speed);
 				}
 				else if (angle <= 0 && angle >= -angle_thresh) {
-					c.r_wheel_speed_ = max_speed;
-					c.l_wheel_speed_ = (1 + angle/angle_thresh) * max_speed;
+					c.setRSpeed(max_speed);
+					c.setLSpeed((1 + angle/angle_thresh) * max_speed);
 				}
 				else if (angle > angle_thresh) { // && angle <= 180
-					c.r_wheel_speed_ = -max_speed;
-					c.l_wheel_speed_ = max_speed;
+					c.setRSpeed(-max_speed);
+					c.setLSpeed(max_speed);
 				}
 				else {
-					c.r_wheel_speed_ = max_speed;
-					c.l_wheel_speed_ = -max_speed;
+					c.setRSpeed(max_speed);
+					c.setLSpeed(-max_speed);
 				}
 			}
 		}
-		
-
-		//std::cout << c.r_wheel_speed_ << " " << c.l_wheel_speed_ << std::endl;
 		
 		// Figure out time since last update
 		long long old_time = update_time;
@@ -91,8 +89,8 @@ void carLoop(std::vector<Point>& segment, Car& c, int& current) {
 }
 
 // Thread for running View (for visualisation)
-void viewLoop(cv::Mat img, Car& c, std::vector<Point>& segment, bool& view_up_to_date) {
-	Car car_copy(c);
+void viewLoop(cv::Mat img, MyCar& c, std::vector<Point>& segment, bool& view_up_to_date) {
+	MyCar car_copy(c);
 	View v(img, car_copy);
 	bool was_zero = false;
 	while (true) {
@@ -117,7 +115,7 @@ void viewLoop(cv::Mat img, Car& c, std::vector<Point>& segment, bool& view_up_to
 
 // For testing motor stuff using keyboard arrow keys.
 // To use comment out thread2 and enable thread3 below.
-void keyboardLoop(Car& c) {
+void keyboardLoop(MyCar& c) {
 	while (true) {
 		rc_mutex.lock();
 
@@ -125,36 +123,34 @@ void keyboardLoop(Car& c) {
 		// Shift and right slows down left motor
 		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
 			if (GetAsyncKeyState(VK_LEFT) & 0x8000) 
-				c.r_wheel_speed_ -= 0.05;
+				c.setRSpeed(c.getRSpeed() - 0.05);
 			if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-				c.l_wheel_speed_ -= 0.05;
+				c.setLSpeed(c.getLSpeed() - 0.05);
 		}
 
 		// If shift isn't held down, speed up 
 		else {
 			if (GetAsyncKeyState(VK_LEFT) & 0x8000) 
-				c.r_wheel_speed_ += 0.05;
+				c.setRSpeed(c.getRSpeed() + 0.05);
 			if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-				c.l_wheel_speed_ += 0.05;
+				c.setLSpeed(c.getLSpeed() + 0.05);
 		}
 		rc_mutex.unlock();
-		std::cout << c.l_wheel_speed_ << " " << c.r_wheel_speed_ << std::endl;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
-
 }
 
-void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segment, int& current, Car& car, bool& view_up_to_date) {
+void localPlannerLoop(std::vector<Point>& global_path, std::vector<Point>& segment, int& current, MyCar& car, bool& view_up_to_date) {
 	LocalPlanner planner(global_path);
 	std::vector<Point> temp;
 
 	// DEBUGGING
 	// Make other car at mouse click
-	OtherCar oc(mouse_click_pos, 0, 0);
-	std::vector<OtherCar> other_cars;
+	Car oc(mouse_click_pos, 0, 0);
+	std::vector<Car> other_cars;
 	other_cars.push_back(oc);
 	while (true) {
-		other_cars[0].pos_ = mouse_click_pos;
+		other_cars[0].setPos(mouse_click_pos);
 		rc_mutex.lock();
 		planner.update(car, other_cars);
 		rc_mutex.unlock();
@@ -203,14 +199,14 @@ int main(int argc, char *argv[]) {
 	cv::imshow("Display", img_bgr);
 	cv::waitKey();
 
-	// Car detection test
+	// MyCar detection test
 	Vision vision;
 	cv::Mat transform;
 	//vision.getTransform(img_bgr, transform);
 	cv::Point2f my_car_p1;
 	cv::Point2f my_car_p2;
 	std::vector<cv::Point2f> other_cars;
-	vision.getCarMarkers(img_bgr, my_car_p1, my_car_p2, other_cars);
+	vision.getMyCarMarkers(img_bgr, my_car_p1, my_car_p2, other_cars);
 	
 	cv::circle(img_bgr, my_car_p1, 2, cv::Scalar(255,0,0), 2);
 	cv::circle(img_bgr, my_car_p2, 2, cv::Scalar(0,0,255), 2);
@@ -231,7 +227,7 @@ int main(int argc, char *argv[]) {
 		cv::Point2f(centre.x + finish_tile_length, centre.y));
 
 	// Define a car
-	Car c(Point(200, 400), 0, 0.15/M_PER_PIX, 0.075/M_PER_PIX);
+	MyCar c(Point(200, 400), 0, 0);
 
 	std::vector<Point> segment;
 	int current = 0;

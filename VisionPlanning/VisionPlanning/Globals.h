@@ -7,14 +7,14 @@
 #define FINISH_SOURCE_MARKER_Y 250	// Y coordinate of marker pair centre in pixels (measured from source image)
 #define TILE_M_LENGTH	0.5			// Side length of (square) tile in metres
 
-#define DEFAULT_CAR_LENGTH 0.15
-#define DEFAULT_CAR_WIDTH 0.075
-#define SIDE_CLEARANCE 0.01
-#define FRONT_CLEARANCE 0.05
+#define DEFAULT_CAR_LENGTH_PIX 0.15 / M_PER_PIX		// Default car dimensions in pixels
+#define DEFAULT_CAR_WIDTH_PIX 0.075 / M_PER_PIX
+#define SIDE_CLEARANCE_PIX 0.01 / M_PER_PIX			// For collision testing between cars, in pixels
+#define FRONT_CLEARANCE_PIX 0.05 / M_PER_PIX
 
 #define GLOBAL_PATH_STEP_SIZE 10	// APPROXIMATE distance between points in the global path in pixels
 
-// Stuff for our marker
+// Stuff for our setup-time marker in metres
 #define OUR_CENTRE_DIAMETER_BIG 0.065
 #define OUR_CENTRE_DIAMETER_SMALL 0.035
 #define OUR_DIAMTER 0.035

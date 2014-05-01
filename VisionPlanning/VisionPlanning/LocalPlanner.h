@@ -6,7 +6,7 @@
 
 #include "Point.h"
 #include "Car.h"
-#include "OtherCar.h"
+#include "MyCar.h"
 
 class LocalPlanner {
 
@@ -14,7 +14,7 @@ public:
 
 	LocalPlanner(std::vector<Point> global_path);
 	std::vector<Point> getSegment(int num_points);
-	void update(Car my_car, std::vector<OtherCar> other_cars);
+	void update(MyCar my_car, std::vector<Car> other_cars);
 
 private:
 	
@@ -29,8 +29,8 @@ private:
 
 	std::vector<Point> global_path_;
 
-	Car my_car_;
-	std::vector<OtherCar> other_cars_;
+	MyCar my_car_;
+	std::vector<Car> other_cars_;
 
 };
 

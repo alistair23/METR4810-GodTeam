@@ -6,13 +6,13 @@
 #include <vector>
 
 #include "Point.h"
-#include "Car.h"
+#include "MyCar.h"
 
 class View 
 {
 public:
 
-	View(cv::Mat background, Car& my_car);
+	View(cv::Mat background, MyCar& my_car);
 	
 	void spin();	// Starts loop to continuously redraw
 
@@ -23,7 +23,7 @@ public:
 
 private:
 	
-	Car& my_car_;
+	MyCar& my_car_;
 	const int frame_time_;	// milliseconds / frame
 	cv::Mat background_;
 	cv::Mat background_no_dots_;

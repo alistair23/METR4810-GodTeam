@@ -12,14 +12,14 @@ LocalPlanner::LocalPlanner(std::vector<Point> global_path):
 
 }
 
-void LocalPlanner::update(Car my_car, std::vector<OtherCar> other_cars) {
+void LocalPlanner::update(MyCar my_car, std::vector<Car> other_cars) {
 	my_car_ = my_car;
 	other_cars_ = other_cars;
 }
 
 std::vector<Point> LocalPlanner::getSegment(int num_points) {
 	
-	int closest_global = getClosestGlobal(my_car_.pos_);
+	int closest_global = getClosestGlobal(my_car_.getPos());
 
 	// If we are just behind the finish line, just start segment
 	// after finish line (prevent index out of range errors)
@@ -41,7 +41,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 
 	// First point needs to be checked specially, as 
 	// there is no previous point to get angle from
-	if (carInCollision(segment[0], my_car_.dir_, timetodo) != -1)
+	if (carInCollision(segment[0], my_car_.getDir(), timetodo) != -1)
 		invalidPoints.push_back(0);
 	for (int i = 1; i < num_points; i++) {
  		if (carInCollision(segment[i], segment[i-1].angle(segment[i]), timetodo) != -1) {
@@ -209,23 +209,23 @@ int LocalPlanner::getClosestGlobal(Point pos) {
 int LocalPlanner::carInCollision(Point pos, double dir, long long time) {
 	dir = 0;
 	cv::RotatedRect my_rect(cv::Point2f(pos.x, pos.y),
-		cv::Size(my_car_.length_, my_car_.width_), dir);
+		cv::Size(my_car_.getLength(), my_car_.getWidth()), dir);
 	cv::Point2f my_vertices[4];
 	my_rect.points(my_vertices);
 
-	double check_dist_sq = pow((DEFAULT_CAR_LENGTH + FRONT_CLEARANCE) / M_PER_PIX, 2);
+	double check_dist_sq = pow(DEFAULT_CAR_LENGTH_PIX + FRONT_CLEARANCE_PIX, 2);
 
 	for (std::size_t i = 0; i < other_cars_.size(); i++) {
 		
 		// If other car is very far, no need to do further collision checks
-		if (other_cars_[i].pos_.distSquared(pos) > check_dist_sq)
+		if (other_cars_[i].getPos().distSquared(pos) > check_dist_sq)
 			continue;
 
-		cv::Point2f other_cv_point(other_cars_[i].pos_.x, other_cars_[i].pos_.y);
-		float other_length = (DEFAULT_CAR_LENGTH + 2 * FRONT_CLEARANCE) / M_PER_PIX;
-		float other_width = (DEFAULT_CAR_WIDTH + 2 * SIDE_CLEARANCE) / M_PER_PIX;
+		cv::Point2f other_cv_point(other_cars_[i].getPos().x, other_cars_[i].getPos().y);
+		float other_length = other_cars_[i].getLength() + 2 * FRONT_CLEARANCE_PIX;
+		float other_width = other_cars_[i].getWidth() + 2 * SIDE_CLEARANCE_PIX;
 		cv::RotatedRect other_rect(other_cv_point,
-			cv::Size(other_length, other_width), other_cars_[i].dir_);
+			cv::Size(other_length, other_width), other_cars_[i].getDir());
 		cv::Point2f other_vertices[4];
 		other_rect.points(other_vertices);
 

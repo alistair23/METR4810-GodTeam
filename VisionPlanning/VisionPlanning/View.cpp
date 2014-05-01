@@ -10,7 +10,7 @@
 void onMouse( int event, int x, int y, int, void* );	
 Point mouse_pos(0, 0);
 
-View::View(cv::Mat background, Car& my_car):
+View::View(cv::Mat background, MyCar& my_car):
 	my_car_(my_car),
 	frame_time_(20)		// milliseconds / frame
 {
@@ -55,8 +55,8 @@ void View::redraw() {
 
 	// Draw my_car_
 	cv::RotatedRect rect(
-		cv::Point2f(my_car_.getX(), my_car_.getY()),
-		cv::Size2f(my_car_.length_, my_car_.width_), my_car_.dir_ * 180 / M_PI);
+		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
+		cv::Size2f(my_car_.getLength(), my_car_.getWidth()), my_car_.getDir() * 180 / M_PI);
 	cv::Point2f vertices[4];
 	rect.points(vertices);
 	for (int i = 0; i < 4; i++)
@@ -64,8 +64,8 @@ void View::redraw() {
 
 	// DEBUGGING
 	// Draw other car at mouse click point
-	float other_length = DEFAULT_CAR_LENGTH / M_PER_PIX;
-	float other_width = DEFAULT_CAR_WIDTH / M_PER_PIX;
+	float other_length = DEFAULT_CAR_LENGTH_PIX;
+	float other_width = DEFAULT_CAR_WIDTH_PIX;
 	rect.size = cv::Size(other_length, other_width);
 	rect.center = cv::Point2f(mouse_pos.x, mouse_pos.y);
 	rect.angle = 0;

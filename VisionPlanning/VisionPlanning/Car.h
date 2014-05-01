@@ -2,28 +2,35 @@
 #define _INCLUDED_CAR_H
 
 #include "Point.h"
+#include "Globals.h"
 
 class Car {
 
 public:
+
 	Car();
-	Car(Point start_pos, double start_dir, double length = 0.15, double width = 0.075);
-	Car(const Car& c);	// Copy
-	const Car &Car::operator = (const Car& c);
+	Car(Point pos, double dir, double vel, double length = DEFAULT_CAR_LENGTH_PIX, double width = DEFAULT_CAR_WIDTH_PIX);
+	void update(Point pos, double dir, double vel);
+	void setPos(Point pos);
 
-	double getX();
-	double getY();
-	void step(double seconds);
+	// Getters
+	Point getPos();
+	double getDir();
+	double getVel();
+	double getLength();
+	double getWidth();
+	long long getUpdateTime();
 
-	Point pos_;	// Position of car centre
-	double dir_;	// Heading in radians, clockwise
-	double length_;
-	double width_;
-	double axle_length_;	// Distance between wheels
-	double l_wheel_speed_;
-	double r_wheel_speed_;
+protected:
 
+	Point pos_;				// Position in pixels
+	double dir_;			// Bearing clockwise from east, in radians
+	double vel_;			// Velocity in pixels/s
+	double length_;			// Car length in pixels
+	double width_;			// Car width in pixels
+	long long update_time_;	// Time at last update
 
 };
+
 
 #endif
