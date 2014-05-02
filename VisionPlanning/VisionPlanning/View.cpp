@@ -50,9 +50,8 @@ void View::spin() {
 }
 
 void View::redraw() {
-
+	
 	cv::Mat image = background_.clone();
-
 	// Draw my_car_
 	cv::RotatedRect rect(
 		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
@@ -74,6 +73,7 @@ void View::redraw() {
 		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255));
 
 	cv::imshow("View", image);
+	cv::waitKey(10);
 }
 
 void View::drawNewDots(std::vector<Point>& segment) {

@@ -10,16 +10,18 @@ class MyCar: public Car {
 public:
 
 	MyCar();
-	MyCar(Point pos, double dir, double vel, double length = DEFAULT_CAR_LENGTH_PIX,
+	MyCar(Point pos, double dir, double spd, double length = DEFAULT_CAR_LENGTH_PIX,
 		double width = DEFAULT_CAR_WIDTH_PIX, double axle_length_ = 0.075 / M_PER_PIX);
+	MyCar(const MyCar& c);	// Copy
+	const MyCar &MyCar::operator = (const MyCar& c);
 	
 	void setRSpeed(double speed);
 	void setLSpeed(double speed);
 	void step(double seconds);
 
-	double getAxleLength();
-	double getRSpeed();
-	double getLSpeed();
+	double getAxleLength() const;
+	double getRSpeed() const;
+	double getLSpeed() const;
 
 private:
 

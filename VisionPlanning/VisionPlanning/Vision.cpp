@@ -7,8 +7,12 @@
 
 #include "Vision.h"
 #include "Globals.h"
+#include "CommonFunctions.h"
 
-Vision::Vision():
+Vision::Vision(int num_cam, std::string ip_address, int port_num):
+	num_cam_(num_cam),
+	ip_address_(ip_address),
+	port_num_(port_num),
 
 	// Load tile images
 	finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
@@ -20,13 +24,53 @@ Vision::Vision():
 	tiles.push_back(Tile(cv::imread("Resources/chicane.jpg"), 0));
 	tiles.push_back(Tile(cv::imread("Resources/right_hairpin.jpg"), -1));
 	tiles.push_back(Tile(cv::imread("Resources/left_hairpin.jpg"), 1));
+
+	// Initialise vector containing perspective transform matrices
+	for (int i = 0; i < num_cam; i++) {
+		transform_mats_.push_back(cv::Mat());
+	}
 }
 
-// For finding the perspective transform for a camera, which when
-// applied to image will give unwarped top-down view.
-// Input image must contain our special marker used during setup time
-// perspective transform matrix is output through transform_out
-void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
+// Connect to RoboRealm server. Returns true if success
+bool Vision::connectRoboRealm() {
+
+	// For ip address, need to convert from std::string to char *
+	char * writable = new char[ip_address_.size() + 1];
+	std::strcpy(writable, ip_address_.c_str());
+	writable[ip_address_.size()] = '\0'; 
+
+	bool result = roborealm_.connect(writable, port_num_);
+	delete[] writable;
+
+	if (result == 1) {
+		std::cout << "Successfully connected to RoboRealm server" << std::endl;
+		return true;
+	}
+	else {
+		std::cout << "Failed to connect to RoboRealm server" << std::endl;
+		return false;
+	}
+}
+
+// Gets the perspective transform for a camera
+void Vision::setupCamTransform(int cam_index) {
+	bool gotTrans = false;
+	while (!gotTrans) {
+		cv::Mat img;
+		getCamImg(cam_index, img);
+		gotTrans = getTransform(img, transform_mats_[cam_index]);
+		if (!gotTrans)
+			std::cout << "Failed to get transform for camera " << cam_index << std::endl;
+		cv::imshow("Display", img);
+		cv::waitKey();
+	}
+	std::cout << "Successfully got transform for camera " << cam_index << std::endl;
+}
+
+// Find perspective transform which when applied to image will
+// give unwarped top-down view. Input image must contain our 
+// special marker used during setup time. Returns true if success
+bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
 	// Make hsv copy
@@ -40,7 +84,7 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 
 	// Canny edge detection
 	cv::Mat img_canny;
-	int threshold = 50;
+	int threshold = 35;
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -68,8 +112,8 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	}
 
 	// Show circles found
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	// Look for concentric circles: this indicates our marker
 	int concentric1 = -1;
@@ -80,6 +124,10 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	// Go through each ellipse pair
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
+
+			// Check size isn't too similar
+			if (abs(ellipses[i].size.height - ellipses[j].size.height) < 10)
+				continue;
 
 			// Check if concentric. Distance between centres is used as 
 			// error rating
@@ -94,14 +142,16 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 		}
 	}
 	
-	if (concentric1 == -1)	// TODO handle this
-		std::cout << "Failed to find marker pair!!" << std::endl;
+	if (concentric1 == -1)	{
+		std::cout << "Failed to find transform marker!" << std::endl;
+		return false;
+	}
 
 	// Show concentric circles found
 	cv::ellipse(cdst, ellipses[concentric1], cv::Scalar(100,200,100), 2);
 	cv::ellipse(cdst, ellipses[concentric2], cv::Scalar(100,200,100), 2);
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	// Get an approximate scale, using larger circle
 	// This is for finding the four other circles
@@ -111,44 +161,53 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	else
 		large_circle_pix = ellipses[concentric2].size.height;
 	float approx_m_per_pix = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
-	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_m_per_pix) * 1.5, 2); 
+	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_m_per_pix) * 1.1, 2); 
 
 	// Identify red, green, blue, black circles
-	int black_circle, blue_circle, green_circle, red_circle;
-	int best_blue_value = 0, best_green_value = 0, best_red_value = 0;
+	int black_circle = -1, blue_circle = -1, green_circle = -1, red_circle = -1;
+	int max_blackness = 0, max_blueness = 0, max_greenness = 0, max_redness = 0;
+
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		if (dist_sq(ellipses[i].center, ellipses[concentric1].center) < thresh_dist_sq) {
-			cv::Scalar values = getColour(img_in, ellipses[i].center);	// Blue, green, red
+			cv::Scalar values = getColour(img_hsv, ellipses[i].center);
 
-			cv::ellipse(cdst, ellipses[i], values, 2);
+			// Note, in opencv hsv hue range is 0 - 179
+			// while saturation & luminosity range is 0 - 255
 
 			// Ignore white
-			if (values[0] > 210 && values[1] > 210 && values[2] > 210)
-				continue;
+			//if (values[2] > 240)
+			//	continue;
 
-			if (values[0] < 70 && values[1] < 70 && values[2] < 70)
+			cv::ellipse(cdst, ellipses[i], cv::Scalar(123,45,67), 2);
+
+			int blackness = 999 - values[1] - values[2];
+			int blueness = 999 - abs(117 - values[0]);
+			int redness = 999 - std::min(values[0], 179 - values[0]);
+			int greenness = 999 - abs(57 - values[0]);
+
+			if (blackness > max_blackness) {
+				max_blackness = blackness;
 				black_circle = i;
-			if (values[0] > values[1] && values[0] > values[2]) {
-				if (values[0] > best_blue_value) {
-					blue_circle = i;
-					best_blue_value = values[0];
-				}
 			}
-			if (values[1] > values[0] && values[1] > values[2]) {
-				if (values[1] > best_blue_value) {
-					green_circle = i;
-					best_green_value = values[1];
-				}
+			if (values[1] > 20 && values[2] > 20 && blueness > max_blueness) {
+				max_blueness = blueness;
+				blue_circle = i;
 			}
-			if (values[2] > values[0] && values[2] > values[1]) {
-				if (values[2] > best_red_value) {
-					red_circle = i;
-					best_red_value = values[2];
-				}
+			if (values[1] > 20 && values[2] > 20 && redness > max_redness) {
+				max_redness = redness;
+				red_circle = i;
 			}
-
-			
+			if (values[1] > 20 && values[2] > 20 && greenness > max_greenness) {
+				max_greenness = greenness;
+				green_circle = i;
+			}
 		}
+	}
+
+	if (blue_circle == -1 || red_circle == -1 ||
+		green_circle == -1 || black_circle == -1) {
+		std::cout << "Failed to find transform marker!!" << std::endl;
+		return false;
 	}
 
 	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
@@ -189,13 +248,115 @@ void Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
     warpPerspective(img_in, img_output, transform_out, img_output.size() );
 	cv::imshow("Display", img_output);
 	cv::waitKey();
+
+	return true;
+}
+
+// Grab camera frame and update car and obstacle info
+void Vision::update() {
+
+	// TODO Check if car is visible from next camera, handle camera switching
+
+	cv::Mat img_in;
+	getCamImg(curr_cam_, img_in);
+	cv::Point2f my_car_p1;
+	cv::Point2f my_car_p2;
+	std::vector<cv::Point2f> other_cars_points;
+
+	// TODO handle not finding car properly
+
+	bool found_my_car = false;
+
+	// Define region of interest around last known position
+	// This cuts down on computation
+	int search_size = 0.05 / M_PER_PIX;
+	if (last_my_car_pos.x != 0 && last_my_car_pos.y != 0) {
+
+		// TODO memorise my_car pos before perspective warp
+		cv::Rect roi(last_my_car_pos.x - search_size, 
+			last_my_car_pos.y - search_size, 2 * search_size, 2 * search_size);
+		
+		while (roi.x + roi.width > img_in.cols)
+			roi.x -= 1;
+		while (roi.x < -1)
+			roi.x += 1;
+		while (roi.y + roi.height > img_in.rows)
+			roi.y -= 1;
+		while (roi.y < 0)
+			roi.y += 1;
+
+		cv::Mat img_roi = img_in(roi);
+
+		// TODO make a separate getMyCarMarker function
+		found_my_car = getCarMarkers(img_roi, my_car_p1, my_car_p2, other_cars_points);
+		if (found_my_car)  {
+
+			// Need to adjust coordinates to account for roi origin
+			my_car_p1.x -= roi.x;
+			my_car_p1.y -= roi.y;
+			my_car_p2.x -= roi.x;
+			my_car_p2.y -= roi.y;
+		}
+	}
+
+	if (!found_my_car) {
+		std::cout << "Failed to find my car, trying full image" << std::endl;
+		bool found_my_car = getCarMarkers(img_in, my_car_p1, my_car_p2, other_cars_points);
+		if (!found_my_car) {
+			std::cout << "Failed to find my car" << std::endl;
+			return;
+		}
+	}
+
+	std::cout << "Found my car" << std::endl;
+	last_my_car_pos.x = my_car_p1.x;
+	last_my_car_pos.y = my_car_p1.y;
+
+	// Apply perspective transform to points found
+	std::vector<cv::Point2f> orig_points, trans_points;
+	orig_points.push_back(my_car_p1);
+	orig_points.push_back(my_car_p2);
+	for (std::size_t i = 0; i < other_cars_points.size(); i++) {
+		orig_points.push_back(other_cars_points[i]);
+	}
+	cv::perspectiveTransform(orig_points, trans_points, transform_mats_[0]);
+
+	float new_dir = angle(trans_points[0], trans_points[1]);
+	Point new_pos(trans_points[0].x, trans_points[0].y);
+	float seconds = (time_now() - my_car_.getUpdateTime()) * 0.001;
+	float new_spd = my_car_.getPos().dist(new_pos) / seconds;
+	my_car_.update(new_pos, new_dir, new_spd);
+
+	// TODO other cars
+
+}
+
+// TODO handle camera index thing
+void Vision::getCamImg(int cam, cv::Mat& img_out) {
+
+	// Check if connected to roborealm server
+	if (!roborealm_.connected)
+		if (!connectRoboRealm())	// Attempt connection
+			return;					// Failed to connect
+
+	int width, height;
+	roborealm_.getDimension(&width, &height);
+	uchar *data = new uchar[width * height * 3];
+	roborealm_.getImage(data, &width, &height, width * height * 3);
+	cv::Mat img(height, width, CV_8UC3, data);
+	cv::cvtColor(img, img_out, CV_RGB2BGR);
+	delete [] data;
+}
+
+Car Vision::getMyCarInfo() {
+	return my_car_;
 }
 
 // Given an input image (BGR), looks for the car markers 
 // (concentric circles). My car's centre is output in my_car_p1,
 // and off-centre circle location in my_car_p2. Other car markers
-// output in other_cars
-void Vision::getCarMarkers(
+// output in other_cars. Returns true if my car is found
+bool Vision::getCarMarkers(
 	cv::Mat& img_in, cv::Point2f& my_car_p1, cv::Point2f& my_car_p2,
 	std::vector<cv::Point2f>& other_cars) {
 
@@ -206,7 +367,7 @@ void Vision::getCarMarkers(
 
 	// Canny edge detection
 	cv::Mat img_canny;
-	int threshold = 50;
+	int threshold = 40;
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -240,23 +401,25 @@ void Vision::getCarMarkers(
 	other_cars.clear();
 
 	// Max pixels between detected circle centres to consider circles concentric
-	float dist_thresh = 5;	
+	float dist_thresh = 7;	
 	bool my_car_found = false;
 
 	// Look for concentric circles: this indicates car markers
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
 			float centre_dist = dist(ellipses[i].center, ellipses[j].center);
-			if (centre_dist < dist_thresh) {
+			if (centre_dist < dist_thresh && abs(ellipses[i].size.height - ellipses[j].size.height) > 7)  {
 				bool this_is_my_car = false;
 				if (my_car_found)
 					continue;
 				
 				// Found two concentric circles. Now check if my car
 				// (three concentric circles)
-				for (std::size_t k = 0; k < ellipses.size(); k++) {
+				for (std::size_t k = j + 1; k < ellipses.size(); k++) {
 					centre_dist = dist(ellipses[i].center, ellipses[k].center);
-					if (centre_dist < dist_thresh) {
+					if (centre_dist < dist_thresh && 
+						abs(ellipses[i].size.height - ellipses[k].size.height) > 7 &&
+						abs(ellipses[j].size.height - ellipses[k].size.height) > 7) {
 
 						// This is my car
 						my_car_p1 = ellipses[k].center;
@@ -291,12 +454,24 @@ void Vision::getCarMarkers(
 			}
 		}
 	}
+
+	return my_car_found;
 }
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
 
 	// Define region of interest
 	cv::Rect roi(p.x - pix_length, p.y - pix_length, 2 * pix_length, 2 * pix_length);
+
+	// Make sure roi is within image bounds
+	while (roi.x + roi.width > img.cols)
+		roi.x -= 1;
+	while (roi.x < -1)
+		roi.x += 1;
+	while (roi.y + roi.height > img.rows)
+		roi.y -= 1;
+	while (roi.y < 0)
+		roi.y += 1;
 
 	// Get image roi
 	cv::Mat img_roi = img(roi);
@@ -411,6 +586,25 @@ std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f ori
 	*/
 	
 	return midpoints;
+}
+
+// Color threshold on img to get binary image with
+// road black and everything else white
+void Vision::colorThresh(cv::Mat& img) {
+
+	// Make hsv copy
+	cv::Mat img_hsv;
+	cv::cvtColor(img, img_hsv, CV_BGR2HSV);
+
+	// Use green threshold
+	// Green is used due to high contrast between road and "grass"
+	inRange(img_hsv, cv::Scalar(25, 0, 50),
+		cv::Scalar(40, 255, 255), img);
+}
+
+// Applies perspective transform to an image
+void Vision::applyTrans(cv::Mat& img, cv::Mat& transform) {
+	cv::warpPerspective(img, img, transform, img.size());
 }
 
 // Given a image of the racetrack, perspective transforms it to get

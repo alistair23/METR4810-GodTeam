@@ -13,12 +13,36 @@ MyCar::MyCar():
 {
 }
 
-MyCar::MyCar(Point pos, double dir, double vel, double length, double width, double axle_length) :
-	Car(pos, dir, vel, length, width),
+MyCar::MyCar(Point pos, double dir, double spd, double length, double width, double axle_length) :
+	Car(pos, dir, spd, length, width),
 	axle_length_(axle_length),
 	l_speed_(0),
 	r_speed_(0)
 {
+}
+
+// Copy
+MyCar::MyCar(const MyCar& c) {
+
+	// allocate variables
+	MyCar();
+
+	// copy values
+	operator = (c);
+}
+
+// Overload equals operator
+const MyCar &MyCar::operator = (const MyCar& c) {
+
+	// Copy stuff
+	pos_ = c.getPos();
+	dir_ = c.getDir();
+	spd_ = c.getSpd();
+	update_time_ = c.getUpdateTime();
+	axle_length_ = c.getAxleLength();
+	r_speed_ = c.getRSpeed();
+	l_speed_ = c.getLSpeed();
+	return *this;
 }
 
 void MyCar::setRSpeed(double speed) {
@@ -57,14 +81,14 @@ void MyCar::step(double seconds) {
 	}
 }
 
-double MyCar::getAxleLength() {
+double MyCar::getAxleLength() const {
 	return axle_length_;
 }
 
-double MyCar::getRSpeed() {
+double MyCar::getRSpeed() const {
 	return r_speed_;
 }
 
-double MyCar::getLSpeed() {
+double MyCar::getLSpeed() const {
 	return l_speed_;
 }

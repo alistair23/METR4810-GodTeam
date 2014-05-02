@@ -21,11 +21,13 @@ public:
 
 	Point getMousePos();
 
+	cv::Mat background_;
+
 private:
 	
 	MyCar& my_car_;
 	const int frame_time_;	// milliseconds / frame
-	cv::Mat background_;
+	
 	cv::Mat background_no_dots_;
 
 };

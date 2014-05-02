@@ -92,7 +92,6 @@ void carLoop(std::vector<Point>& segment, MyCar& c, int& current) {
 void viewLoop(cv::Mat img, MyCar& c, std::vector<Point>& segment, bool& view_up_to_date) {
 	MyCar car_copy(c);
 	View v(img, car_copy);
-	bool was_zero = false;
 	while (true) {
 		rc_mutex.lock();
 
@@ -214,7 +213,7 @@ int main(int argc, char *argv[]) {
 	cv::waitKey();
 	*/
 
-	
+	/*
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
@@ -244,7 +243,43 @@ int main(int argc, char *argv[]) {
 	thread2.join();
 	//thread3.join();
 	thread4.join();
-	
-	
+	*/
+
+	Vision vision;
+	while (!vision.connectRoboRealm());
+	vision.setupCamTransform(0);
+
+	MyCar my_car;
+	cv::Mat background;
+	vision.getCamImg(0, background);
+	vision.applyTrans(background, vision.transform_mats_[0]);
+
+	View view(background, my_car);
+	view.redraw();
+
+	long long time_before = time_now();
+	int count = 0;
+
+	while (true) {
+		//vision.getCamImg(0, background);
+		//vision.applyTrans(background, vision.transform_mats_[0]);
+		//view.background_ = background;
+		vision.update();
+		Car temp = vision.getMyCarInfo();
+		my_car.update(temp.getPos(), temp.getDir(), temp.getSpd());
+		view.redraw();
+
+		if (count < 10) {
+			count ++;
+		}
+		else {
+			count ++;
+			float freq = (time_now() - time_before) * 0.001/count; 
+			std::cout << "Update rate: " << freq << " Hz" << std::endl;
+			time_before = time_now();
+			count = 0;
+		}
+	}
+
 	return 0;
 }

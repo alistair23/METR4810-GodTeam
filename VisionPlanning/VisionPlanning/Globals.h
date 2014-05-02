@@ -1,3 +1,6 @@
+#ifndef _INCLUDED_GLOBALS_H
+#define _INCLUDED_GLOBALS_H
+
 #define CIRCLE_MARK_DIAMETER 0.05	// Diameter of finish line/checkpoint circles in metres
 #define CIRCLE_MARK_DIST 0.28		// Distance between circles
 #define ROAD_WIDTH 0.2				// Road width in metres
@@ -19,3 +22,5 @@
 #define OUR_CENTRE_DIAMETER_SMALL 0.035
 #define OUR_DIAMTER 0.035
 #define OUR_SQUARE_SIDE 0.13
+
+#endif
