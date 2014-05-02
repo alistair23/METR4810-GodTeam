@@ -21,8 +21,8 @@ int main(void)
 	//OCR0A = (uint8_t) (100*255/100);
 	SerialComm_initUSART(F_CPU/16/BAUD - 1);
 	MotorControl_InitMotorControl();
-	speed_l_desired = 80;
-	speed_r_desired = 80;
+	speed_l_desired = 25;
+	speed_r_desired = 25;
 	//MotorControl_SetMotorSpeed(MOTOR_L, 70);
 	//MotorControl_SetMotorSpeed(MOTOR_R, 70);
 	//uint16_t ubrr = F_CPU/16UL/BAUD-1;
@@ -40,6 +40,7 @@ int main(void)
     {
        
 	   MotorControl_CountEncoder();
+	   SerialComm_ProcessPackets();
 	   //PORTD= 0xff;
 	  // _delay_ms(100);
 	   //PORTD = 0;

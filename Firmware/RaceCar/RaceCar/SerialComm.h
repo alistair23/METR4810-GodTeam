@@ -13,8 +13,8 @@
 #define BUFFER_SIZE 512
 #define PCKT_QUEUE_SIZE 8
 
-extern int speed_l_desired;
-extern int speed_r_desired;
+extern int8_t speed_l_desired;
+extern int8_t speed_r_desired;
 extern uint8_t motor_enable;
 extern uint8_t kp;
 extern uint8_t kd;
