@@ -18,8 +18,8 @@
 #include "SerialComm.h"
 #include "MotorControl.h"
 
-int speed_l_desired;
-int speed_r_desired;
+int8_t speed_l_desired;
+int8_t speed_r_desired;
 uint8_t motor_enable;
 uint8_t car_enable;
 uint8_t kp;
@@ -226,14 +226,16 @@ void ProcessPacket(Packet pckt)
 {
 	
 	uint8_t len = pckt.Length;
+	SerialComm_sendData(current_pckt.Data, current_pckt.Length);
+	SerialComm_sendText("\n");
 	switch(pckt.Type)
 	{
 		case PCKTCODE_CONTROL_IN:
-		if (len >= 3)
+		
+		if (len >= 2)
 		{
-			car_enable = *pckt.Data;
-			speed_l_desired = *(pckt.Data+1);
-			speed_r_desired = *(pckt.Data+2);
+			speed_l_desired = (int8_t) (*(pckt.Data));
+			speed_r_desired = (int8_t) (*(pckt.Data+1));
 		}
 		break;
 
@@ -266,9 +268,11 @@ extern void SerialComm_ProcessPackets()
 	if(pckt_queue_count == 0) return;
 	else
 	{
+		
 		while(pckt_queue_count>0)
 		{
-			ProcessPacket(pckt_queue[pckt_queue_count]);
+			SerialComm_sendText("Setting Speed...");
+			ProcessPacket(pckt_queue[pckt_queue_count-1]);
 			pckt_queue_count--;
 		}			
 	}
@@ -314,12 +318,14 @@ ISR(USART_RX_vect)
 	//uint8_t d[2] = {6,7};
 	//SerialComm_sendData(d, 2);	 
 	//SerialComm_sendByte(MotorControl_GetSpeed(MOTOR_R));
+	//speed_l_desired = (int8_t) byte;
+	SerialComm_sendTextf("L : %d\n", speed_l_desired);
 	
-	/*
 	switch (rx_stage)
 	{
 		case 0 :
 			current_pckt.Type = byte;
+			SerialComm_sendTextf("Type: %d", current_pckt.Type);
 			rx_stage++;
 			
 		break;
@@ -332,6 +338,8 @@ ISR(USART_RX_vect)
 		
 		case 2:
 			current_pckt.Data[data_cursor] = byte;
+			//if (rx_stage == 2)
+				//speed_l_desired = byte;
 			data_cursor++;
 			if (data_cursor == current_pckt.Length && pckt_queue_count < PCKT_QUEUE_SIZE)
 			{
@@ -339,16 +347,18 @@ ISR(USART_RX_vect)
 				pckt_queue_count++;
 				data_cursor = 0;
 				rx_stage = 0;
-				SerialComm_sendData(current_pckt.Data, current_pckt.Length);
+				//SerialComm_sendData(current_pckt.Data, current_pckt.Length);
+				//SerialComm_sendText("\n");
 			}
 			break;
 	}		
-	SerialComm_sendText("rx_stage");
+	SerialComm_sendText("rx_stage:");
 	SerialComm_sendByte(rx_stage);
-	*/
+	
 	//based on Packet type set the variables and propagate them in
 	//main loop. Variables should be extern so they can be accessed in the 
 	//main loop
+	
 }
 
 

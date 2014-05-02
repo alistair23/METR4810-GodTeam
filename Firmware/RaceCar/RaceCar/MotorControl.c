@@ -87,9 +87,9 @@ extern void MotorControl_InitMotorControl()
 	//TCCR1C = ;
 	
 	
-	kp = 0.8;
+	kp = 1;
 	kd = 0;
-	ki = 2;
+	ki = 0.5;
 	
 	//enable motors
 	PORTB |= 1<<(PORTB2)| 1<<(PORTB1);
@@ -120,8 +120,8 @@ extern void MotorControl_SetMotorSpeed(uint8_t motor, int speed)
 	}
 	else // if right motor
 	{
-		OCR2A = forward ? u8speed : 0;
-		OCR2B = forward ? 0 : u8speed;
+		OCR2A = forward ? 0 : u8speed;
+		OCR2B = forward ? u8speed : 0;
 		
 	}	
 }
@@ -138,6 +138,8 @@ extern int MotorControl_GetSpeed(uint8_t motor)
 	{
 		return speed_r_measured;
 	}
+
+	return 0;
 }
 
 extern void MotorControl_CountEncoder()
@@ -156,14 +158,14 @@ extern void MotorControl_CountEncoder()
 		{
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
-				encoder_count_R++;  // forward
+				encoder_count_R--;  // forward
 			}
 		}
 		else //if other pin is high already, PC2 is behind
 		{
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
-				encoder_count_R--; //reverse	
+				encoder_count_R++; //reverse	
 			}
 			
 		}	
