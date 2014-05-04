@@ -73,7 +73,7 @@ void View::redraw() {
 		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255));
 
 	cv::imshow("View", image);
-	cv::waitKey(10);
+	cv::waitKey(5);
 }
 
 void View::drawNewDots(std::vector<Point>& segment) {

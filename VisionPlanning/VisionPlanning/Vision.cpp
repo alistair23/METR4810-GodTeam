@@ -88,7 +88,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 
 	// Canny edge detection
 	cv::Mat img_canny;
-	int threshold = 35;
+	int threshold = 30;
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -290,26 +290,27 @@ void Vision::update() {
 	//int search_size = 0.1 / approx_cam_m_per_pix_[0];
 	if (last_my_car_pos_.x != 0 && last_my_car_pos_.y != 0) {
 
-		//dt = (time_now() - my_car_.getUpdateTime())/1000.0;
-		//predicted_pos.x = my_car_.getPos().x + my_car_.getSpd() * dt * cos(my_car_.getDir());
-		//predicted_pos.y = my_car_.getPos().y + my_car_.getSpd() * dt * sin(my_car_.getDir());
+		dt = (time_now() - my_car_.getUpdateTime())/1000.0;
+		predicted_pos.x = my_car_.getPos().x + 1.1 * my_car_.getSpd() * dt * cos(my_car_.getDir());
+		predicted_pos.y = my_car_.getPos().y + 1.1* my_car_.getSpd() * dt * sin(my_car_.getDir());
 		
 		//predicted_pos.x = my_car_.getPos().x;
 	
-		//std::vector<cv::Point2f> perspective_point;
-		//warped_point.push_back(cv::Point2f(predicted_pos.x, predicted_pos.y));
-		//cv::perspectiveTransform(warped_point, perspective_point, inv_transform_mats[0]);
-		//predicted_pos_pers = perspective_point[0];
+		std::vector<cv::Point2f> perspective_point;
+		std::vector<cv::Point2f> warped_point;
+		warped_point.push_back(cv::Point2f(predicted_pos.x, predicted_pos.y));
+		cv::perspectiveTransform(warped_point, perspective_point, inv_transform_mats[0]);
+		predicted_pos_pers = perspective_point[0];
 
-		int search_size = std::max(last_car_size_, 50);
+		int search_size = 1.5 * std::max(last_car_size_, 50);
 		//int search_size = 100;
 		// TODO memorise my_car pos before perspective warp
-///		cv::Rect roi(predicted_pos_pers.x - search_size, 
-	///		predicted_pos_pers.y - search_size, 2 * search_size, 2 * search_size);
+	    cv::Rect roi(predicted_pos_pers.x - search_size, 
+		predicted_pos_pers.y - search_size, 2 * search_size, 2 * search_size);
 	
 		std::cout << "car size: "<<last_car_size_ << std::endl;
-		cv::Rect roi(last_my_car_pos_.x - search_size, 
-			last_my_car_pos_.y - search_size, 2 * search_size, 2 * search_size);
+		//cv::Rect roi(last_my_car_pos_.x - search_size, 
+			//last_my_car_pos_.y - search_size, 2 * search_size, 2 * search_size);
 		
 		while (roi.x + roi.width > img_in.cols -1)
 			roi.x -= 1;
@@ -367,7 +368,6 @@ void Vision::update() {
 
 
 	new_dir = angle(trans_points[0], trans_points[1]);
-	std::cout << "Angle: " << new_dir << std::endl;
 	Point new_pos(trans_points[0].x, trans_points[0].y);
 	float seconds = (time_now() - my_car_.getUpdateTime()) * 0.001;
 	new_spd = my_car_.getPos().dist(new_pos) / seconds;
@@ -417,15 +417,15 @@ bool Vision::getCarMarkers(
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
-	cv::Mat cdst;
-	cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
+	//cv::Mat cdst;
+	//cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
 	
 	// Find contours from Canny image
 	// Warning, findContours affects input image (img_canny)
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours( img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-
+	/*
 	for (std::size_t i=0; i<contours.size();i++){
 		std::vector<std::vector<cv::Point>> contour;
 		contour.push_back(contours[i]);
@@ -433,7 +433,7 @@ bool Vision::getCarMarkers(
 		cv::imshow("Display", cdst);
 		cv::waitKey();
 	}
-
+	*/
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
@@ -441,7 +441,7 @@ bool Vision::getCarMarkers(
 		if (contours[i].size() < 5)
 			continue;
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
-		
+
 		// Check circularity and that it isn't too small
 		if (r.size.height/r.size.width < 1.5 && r.size.area() > 20) {
 			ellipses.push_back(r);
@@ -450,8 +450,8 @@ bool Vision::getCarMarkers(
 	}
 
 	// Show circles found
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 	
 	other_cars.clear();
 
@@ -514,8 +514,8 @@ bool Vision::getCarMarkers(
 						// The diameter of the off-centre circle should be less than the
 						// smallest of the concentric circles
 
-						float max_diameter = ellipses[smallest].size.height * 0.6;
-						float min_diameter = ellipses[smallest].size.height * 0.4;
+						float max_diameter = ellipses[smallest].size.height * 0.4;
+						float min_diameter = ellipses[smallest].size.height * 0.2;
 						for (std::size_t a = 0; a < ellipses.size(); a++) {
 							if (a == i || a == j || a == k)
 								continue;
@@ -526,7 +526,7 @@ bool Vision::getCarMarkers(
 							
 							float this_dist = dist(ellipses[a].center, ellipses[k].center);
 							if (this_dist <= ellipses[smallest].size.height * 0.5 &&
-								this_dist >= ellipses[smallest].size.height * 0.2) {
+								this_dist >= ellipses[smallest].size.height * 0.1) {
 								my_car_p2 = ellipses[a].center;
 								break;
 							}
