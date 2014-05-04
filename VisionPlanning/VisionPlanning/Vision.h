@@ -93,8 +93,11 @@ private:
 	RR_API roborealm_;
 	std::string ip_address_;
 	int port_num_;
+	
+	// Approximate metres per pixel for camera before any transform
+	std::vector<float> approx_cam_m_per_pix_;
 
-	Point last_my_car_pos; // Last known position in pixels before perspective warp
+	Point last_my_car_pos_; // Last known position in pixels before perspective warp
 	Car my_car_;
 	std::vector<Car> other_cars_;
 

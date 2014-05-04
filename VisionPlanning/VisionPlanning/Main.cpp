@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
 		}
 		else {
 			count ++;
-			float freq = (time_now() - time_before) * 0.001/count; 
+			float freq =  count* 1000.0 / (time_now() - time_before); 
 			std::cout << "Update rate: " << freq << " Hz" << std::endl;
 			time_before = time_now();
 			count = 0;

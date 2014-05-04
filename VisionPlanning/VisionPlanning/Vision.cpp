@@ -28,6 +28,7 @@ Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	// Initialise vector containing perspective transform matrices
 	for (int i = 0; i < num_cam; i++) {
 		transform_mats_.push_back(cv::Mat());
+		approx_cam_m_per_pix_.push_back(0);
 	}
 }
 
@@ -160,8 +161,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 		large_circle_pix = ellipses[concentric1].size.height;
 	else
 		large_circle_pix = ellipses[concentric2].size.height;
-	float approx_m_per_pix = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
-	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_m_per_pix) * 1.1, 2); 
+	approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
+	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.1, 2); 
 
 	// Identify red, green, blue, black circles
 	int black_circle = -1, blue_circle = -1, green_circle = -1, red_circle = -1;
@@ -269,16 +270,16 @@ void Vision::update() {
 
 	// Define region of interest around last known position
 	// This cuts down on computation
-	int search_size = 0.05 / M_PER_PIX;
-	if (last_my_car_pos.x != 0 && last_my_car_pos.y != 0) {
+	int search_size = 0.1 / approx_cam_m_per_pix_[0];
+	if (last_my_car_pos_.x != 0 && last_my_car_pos_.y != 0) {
 
 		// TODO memorise my_car pos before perspective warp
-		cv::Rect roi(last_my_car_pos.x - search_size, 
-			last_my_car_pos.y - search_size, 2 * search_size, 2 * search_size);
+		cv::Rect roi(last_my_car_pos_.x - search_size, 
+			last_my_car_pos_.y - search_size, 2 * search_size, 2 * search_size);
 		
 		while (roi.x + roi.width > img_in.cols)
 			roi.x -= 1;
-		while (roi.x < -1)
+		while (roi.x < 0)
 			roi.x += 1;
 		while (roi.y + roi.height > img_in.rows)
 			roi.y -= 1;
@@ -292,10 +293,10 @@ void Vision::update() {
 		if (found_my_car)  {
 
 			// Need to adjust coordinates to account for roi origin
-			my_car_p1.x -= roi.x;
-			my_car_p1.y -= roi.y;
-			my_car_p2.x -= roi.x;
-			my_car_p2.y -= roi.y;
+			my_car_p1.x += roi.x;
+			my_car_p1.y += roi.y;
+			my_car_p2.x += roi.x;
+			my_car_p2.y += roi.y;
 		}
 	}
 
@@ -309,8 +310,8 @@ void Vision::update() {
 	}
 
 	std::cout << "Found my car" << std::endl;
-	last_my_car_pos.x = my_car_p1.x;
-	last_my_car_pos.y = my_car_p1.y;
+	last_my_car_pos_.x = my_car_p1.x;
+	last_my_car_pos_.y = my_car_p1.y;
 
 	// Apply perspective transform to points found
 	std::vector<cv::Point2f> orig_points, trans_points;
@@ -466,7 +467,7 @@ cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
 	// Make sure roi is within image bounds
 	while (roi.x + roi.width > img.cols)
 		roi.x -= 1;
-	while (roi.x < -1)
+	while (roi.x < 0)
 		roi.x += 1;
 	while (roi.y + roi.height > img.rows)
 		roi.y -= 1;
