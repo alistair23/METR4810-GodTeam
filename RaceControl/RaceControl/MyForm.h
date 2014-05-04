@@ -26,7 +26,10 @@ namespace RaceControl {
 			this->textBox5->Text = "0";
 			this->textBox6->Text = "0";
 			motor_control = false;
+			manual_nav = true;
 			continuous_control = false;
+			this->textBox2->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::textBox2_KeyDown);
+			this->textBox2->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::textBox2_KeyUp);
 			this->textBox3->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::textBox3_KeyDown);
 			this->textBox4->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::textBox4_KeyDown);
 			this->comboBox1->Items->AddRange(this->serialPort1->GetPortNames());
@@ -56,6 +59,14 @@ namespace RaceControl {
 			//
 			//TODO: Add the constructor code here
 			//
+			/*Bitmap^ bitmap = gcnew Bitmap(pictureBox1->Width, pictureBox1->Height);
+			Graphics^ g = Graphics::FromImage(bitmap);
+			SolidBrush^ mybrush = gcnew SolidBrush(System::Drawing::Color::Black);
+			System::Drawing::Pen^ pen = gcnew System::Drawing::Pen(mybrush);
+			g->DrawRectangle(pen,(pictureBox1->Width)/4, (pictureBox1->Height)/4, (pictureBox1->Width)/2, (pictureBox1->Height)/2);
+			g->FillEllipse(mybrush,(pictureBox1->Width)*0.45, (pictureBox1->Height)*0.45, (pictureBox1->Width)/10, (pictureBox1->Height)/10);
+			pictureBox1->Image = bitmap;*/
+			
 		}
 		MyForm(PIDTuningForm^ form1)
 		{
@@ -63,7 +74,16 @@ namespace RaceControl {
 			this->form = form1;
 
 		}
-	
+	private: System::Windows::Forms::RadioButton^  radioButton3;
+	private: System::Windows::Forms::Label^  label9;
+	private: System::Windows::Forms::CheckBox^  checkBox3;
+	private: System::Windows::Forms::CheckBox^  checkBox2;
+
+
+
+
+	public: 
+
 	public: PIDTuningForm^ form;
 	protected:
 		/// <summary>
@@ -107,12 +127,17 @@ namespace RaceControl {
 	private: System::Windows::Forms::TextBox^  textBox6;
 	private: System::Windows::Forms::TextBox^  textBox5;
 	private: System::Windows::Forms::CheckBox^  checkBox1;
-	private: System::Windows::Forms::CheckBox^  checkBox2;
+
 	private: System::ComponentModel::IContainer^  components;
 
 	delegate void SetTextDelegate(String^ text);
 	private: bool continuous_control;
 			 bool motor_control;
+			 bool manual_nav;
+			 bool moving_right;
+			 bool moving_left;
+			 bool moving_forward;
+			 bool moving_reverse;
 	private: System::Windows::Forms::Button^  button3;
 	private: System::Windows::Forms::RadioButton^  radioButton2;
 	private: System::Windows::Forms::RadioButton^  radioButton1;
@@ -152,11 +177,13 @@ namespace RaceControl {
 			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->label9 = (gcnew System::Windows::Forms::Label());
+			this->radioButton3 = (gcnew System::Windows::Forms::RadioButton());
+			this->button4 = (gcnew System::Windows::Forms::Button());
+			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
 			this->radioButton2 = (gcnew System::Windows::Forms::RadioButton());
 			this->radioButton1 = (gcnew System::Windows::Forms::RadioButton());
 			this->button3 = (gcnew System::Windows::Forms::Button());
-			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
-			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
 			this->label8 = (gcnew System::Windows::Forms::Label());
 			this->label7 = (gcnew System::Windows::Forms::Label());
 			this->textBox6 = (gcnew System::Windows::Forms::TextBox());
@@ -167,7 +194,8 @@ namespace RaceControl {
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->trackBar2 = (gcnew System::Windows::Forms::TrackBar());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->button4 = (gcnew System::Windows::Forms::Button());
+			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
+			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
 			this->groupBox1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->BeginInit();
@@ -265,12 +293,15 @@ namespace RaceControl {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->checkBox3);
+			this->groupBox1->Controls->Add(this->checkBox2);
+			this->groupBox1->Controls->Add(this->label9);
+			this->groupBox1->Controls->Add(this->radioButton3);
 			this->groupBox1->Controls->Add(this->button4);
+			this->groupBox1->Controls->Add(this->checkBox1);
 			this->groupBox1->Controls->Add(this->radioButton2);
 			this->groupBox1->Controls->Add(this->radioButton1);
 			this->groupBox1->Controls->Add(this->button3);
-			this->groupBox1->Controls->Add(this->checkBox2);
-			this->groupBox1->Controls->Add(this->checkBox1);
 			this->groupBox1->Controls->Add(this->label8);
 			this->groupBox1->Controls->Add(this->label7);
 			this->groupBox1->Controls->Add(this->textBox6);
@@ -298,6 +329,48 @@ namespace RaceControl {
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"Serial Command";
 			this->groupBox1->Enter += gcnew System::EventHandler(this, &MyForm::groupBox1_Enter);
+			// 
+			// label9
+			// 
+			this->label9->AutoSize = true;
+			this->label9->Location = System::Drawing::Point(171, 343);
+			this->label9->Name = L"label9";
+			this->label9->Size = System::Drawing::Size(80, 13);
+			this->label9->TabIndex = 30;
+			this->label9->Text = L"Receive Mode:";
+			// 
+			// radioButton3
+			// 
+			this->radioButton3->AutoSize = true;
+			this->radioButton3->Location = System::Drawing::Point(275, 342);
+			this->radioButton3->Name = L"radioButton3";
+			this->radioButton3->Size = System::Drawing::Size(86, 17);
+			this->radioButton3->TabIndex = 29;
+			this->radioButton3->TabStop = true;
+			this->radioButton3->Text = L"Motor Speed";
+			this->radioButton3->UseVisualStyleBackColor = true;
+			this->radioButton3->CheckedChanged += gcnew System::EventHandler(this, &MyForm::radioButton3_CheckedChanged);
+			// 
+			// button4
+			// 
+			this->button4->Location = System::Drawing::Point(16, 343);
+			this->button4->Name = L"button4";
+			this->button4->Size = System::Drawing::Size(114, 25);
+			this->button4->TabIndex = 28;
+			this->button4->Text = L"Tune PID";
+			this->button4->UseVisualStyleBackColor = true;
+			this->button4->Click += gcnew System::EventHandler(this, &MyForm::button4_Click);
+			// 
+			// checkBox1
+			// 
+			this->checkBox1->AutoSize = true;
+			this->checkBox1->Location = System::Drawing::Point(20, 374);
+			this->checkBox1->Name = L"checkBox1";
+			this->checkBox1->Size = System::Drawing::Size(125, 17);
+			this->checkBox1->TabIndex = 23;
+			this->checkBox1->Text = L"Enable Motor Control";
+			this->checkBox1->UseVisualStyleBackColor = true;
+			this->checkBox1->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkBox1_CheckedChanged);
 			// 
 			// radioButton2
 			// 
@@ -332,45 +405,23 @@ namespace RaceControl {
 			this->button3->UseVisualStyleBackColor = true;
 			this->button3->Click += gcnew System::EventHandler(this, &MyForm::button3_Click);
 			// 
-			// checkBox2
-			// 
-			this->checkBox2->AutoSize = true;
-			this->checkBox2->Location = System::Drawing::Point(6, 403);
-			this->checkBox2->Name = L"checkBox2";
-			this->checkBox2->Size = System::Drawing::Size(115, 17);
-			this->checkBox2->TabIndex = 24;
-			this->checkBox2->Text = L"Continuous Control";
-			this->checkBox2->UseVisualStyleBackColor = true;
-			this->checkBox2->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkBox2_CheckedChanged);
-			// 
-			// checkBox1
-			// 
-			this->checkBox1->AutoSize = true;
-			this->checkBox1->Location = System::Drawing::Point(6, 379);
-			this->checkBox1->Name = L"checkBox1";
-			this->checkBox1->Size = System::Drawing::Size(125, 17);
-			this->checkBox1->TabIndex = 23;
-			this->checkBox1->Text = L"Enable Motor Control";
-			this->checkBox1->UseVisualStyleBackColor = true;
-			this->checkBox1->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkBox1_CheckedChanged);
-			// 
 			// label8
 			// 
 			this->label8->AutoSize = true;
 			this->label8->Location = System::Drawing::Point(166, 64);
 			this->label8->Name = L"label8";
-			this->label8->Size = System::Drawing::Size(111, 13);
+			this->label8->Size = System::Drawing::Size(88, 13);
 			this->label8->TabIndex = 20;
-			this->label8->Text = L"right motor speed(rpm)";
+			this->label8->Text = L"right motor speed";
 			// 
 			// label7
 			// 
 			this->label7->AutoSize = true;
 			this->label7->Location = System::Drawing::Point(168, 14);
 			this->label7->Name = L"label7";
-			this->label7->Size = System::Drawing::Size(105, 13);
+			this->label7->Size = System::Drawing::Size(82, 13);
 			this->label7->TabIndex = 19;
-			this->label7->Text = L"left motor speed(rpm)";
+			this->label7->Text = L"left motor speed";
 			// 
 			// textBox6
 			// 
@@ -437,15 +488,25 @@ namespace RaceControl {
 			this->trackBar1->Size = System::Drawing::Size(45, 268);
 			this->trackBar1->TabIndex = 11;
 			// 
-			// button4
+			// checkBox2
 			// 
-			this->button4->Location = System::Drawing::Point(16, 343);
-			this->button4->Name = L"button4";
-			this->button4->Size = System::Drawing::Size(114, 25);
-			this->button4->TabIndex = 28;
-			this->button4->Text = L"Tune PID";
-			this->button4->UseVisualStyleBackColor = true;
-			this->button4->Click += gcnew System::EventHandler(this, &MyForm::button4_Click);
+			this->checkBox2->AutoSize = true;
+			this->checkBox2->Location = System::Drawing::Point(20, 392);
+			this->checkBox2->Name = L"checkBox2";
+			this->checkBox2->Size = System::Drawing::Size(115, 17);
+			this->checkBox2->TabIndex = 31;
+			this->checkBox2->Text = L"Manual Navigation";
+			this->checkBox2->UseVisualStyleBackColor = true;
+			// 
+			// checkBox3
+			// 
+			this->checkBox3->AutoSize = true;
+			this->checkBox3->Location = System::Drawing::Point(20, 415);
+			this->checkBox3->Name = L"checkBox3";
+			this->checkBox3->Size = System::Drawing::Size(115, 17);
+			this->checkBox3->TabIndex = 32;
+			this->checkBox3->Text = L"Continuous Control";
+			this->checkBox3->UseVisualStyleBackColor = true;
 			// 
 			// MyForm
 			// 
@@ -532,9 +593,22 @@ private: void setMotorSpeeds()
 			 //packet[2] = System::Convert::ToByte(2);
 			 this->sendSerialData(packet);
 		 }
+private: void setMotorSpeeds(int speed_L, int speed_R)
+		 {
+			array<System::Byte>^ packet = gcnew array<System::Byte>(4);
+			 //set packet code
+			 packet[0] = (Byte)PCKTCODE::PCKTCODE_CONTROL_IN;
+			 //set data length
+			 packet[1] = 2;
+			 //add speed
+			 packet[2] = System::Convert::ToSByte(speed_L);
+			 packet[3] = System::Convert::ToSByte(speed_R);
+			 //packet[2] = System::Convert::ToByte(2);
+			 this->sendSerialData(packet);
+		 }
 public: void setMotorGains()
 		{
-			array<System::Byte>^ packet = gcnew array<System::Byte>(8);
+			array<System::Byte>^ packet = gcnew array<System::Byte>(5);
 			//set packet code
 			packet[0] = (Byte)PCKTCODE::PCKTCODE_SETGAIN_IN;
 			//set packet length
@@ -543,9 +617,9 @@ public: void setMotorGains()
 			packet[2] = System::Convert::ToSByte(kp_l);
 			packet[3] = System::Convert::ToSByte(ki_l);
 			packet[4] = System::Convert::ToSByte(kd_l);
-			packet[5] = System::Convert::ToSByte(kp_r);
-			packet[6] = System::Convert::ToSByte(ki_r);
-			packet[7] = System::Convert::ToSByte(kd_r);
+			//packet[5] = System::Convert::ToSByte(kp_r);
+			//packet[6] = System::Convert::ToSByte(ki_r);
+			//packet[7] = System::Convert::ToSByte(kd_r);
 			this->sendSerialData(packet);
 
 		}
@@ -567,6 +641,7 @@ public: void SetText(String^ text)
 				this->textBox2->AppendText (text);
 			}
 		}
+
 //**************************Event Handlers*****************************************
 private : void LeftTrackBarChanged(System::Object^  sender, System::EventArgs^  e)
 		  {
@@ -578,6 +653,94 @@ private : void RightTrackBarChanged(System::Object^ sender, System::EventArgs^ e
 		  }
 private: System::Void groupBox1_Enter(System::Object^  sender, System::EventArgs^  e) {
 			 }
+
+
+private: System::Void textBox2_KeyDown(System::Object^  sender, System::Windows::Forms::KeyEventArgs^ e){
+
+
+			 if (e->KeyCode == Keys::Up)
+				 moving_forward = true;
+			 if (e->KeyCode == Keys::Down)
+				 moving_reverse = true;
+			 if (e->KeyCode == Keys::Left)
+				 moving_left = true;
+			 if (e->KeyCode == Keys::Right)
+				 moving_right = true;
+
+			 if (this->manual_nav && this->motor_control)
+			 {
+				 if (moving_forward && !moving_left && !moving_right && !moving_reverse)
+				 {
+					 setMotorSpeeds(50, 50);
+					 //this->SetText("Forward\n");
+				 }
+
+				 if(moving_reverse && !moving_left && !moving_right && !moving_forward)
+				 {
+					 setMotorSpeeds(-50, -50);
+					 //this->SetText("Reverse\n");
+				 }
+
+				 if(moving_right && !moving_left && !moving_reverse  && !moving_forward)
+				 {
+					 setMotorSpeeds(50, -50);
+					 //this->SetText("Right\n");
+				 }
+				  if(moving_left && !moving_right && !moving_reverse  && !moving_forward)
+				 {
+					 setMotorSpeeds(-50, 50);
+					 //this->SetText("Left\n");
+				 }
+
+				  if (moving_forward && moving_right && !moving_reverse  && !moving_left)
+				  {
+					  setMotorSpeeds(50, 25);
+					  //this->SetText("Align forward Right\n");
+				  }
+
+				  if (moving_forward && moving_left && !moving_reverse  && !moving_right)
+				  {
+					  setMotorSpeeds(25, 50);
+					  //this->SetText("Align forward Left\n");
+				  }
+				    if (moving_reverse && moving_right && !moving_forward  && !moving_left)
+				  {
+					  setMotorSpeeds(-50, -25);
+					  //this->SetText("Align reverse right\n");
+				  }
+
+					  if (moving_reverse && moving_left && !moving_forward  && !moving_right)
+				  {
+					  setMotorSpeeds(-25, -50);
+					  //this->SetText("Align reverse left\n");
+				  }
+
+	
+
+			 }
+			 else
+				 return;
+		 }
+
+private: System::Void textBox2_KeyUp(System::Object^  sender, System::Windows::Forms::KeyEventArgs^ e){
+			 
+			 if(this->manual_nav && this->motor_control)
+			 {
+				 if (e->KeyCode == Keys::Up)
+					 moving_forward = false;
+				 if (e->KeyCode == Keys::Down)
+					 moving_reverse = false;
+				 if (e->KeyCode == Keys::Left)
+					 moving_left = false;
+				 if (e->KeyCode == Keys::Right)
+					 moving_right = false;
+				 if(!moving_reverse && !moving_left && !moving_forward  && !moving_right)
+				{
+					setMotorSpeeds(0, 0);
+					//this->SetText("Stopped\n");
+				}
+			 }
+		 }
 
 private: System::Void textBox3_KeyDown(System::Object^  sender, System::Windows::Forms::KeyEventArgs^ e) {
 			 
@@ -659,7 +822,7 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 
 private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
 			 
-			 if(this->checkBox2->Checked)
+			 if(this->checkBox3->Checked)
 			{	 
 				continuous_control = true;
 				this->aTimer->Enabled = true;
@@ -668,6 +831,15 @@ private: System::Void button2_Click(System::Object^  sender, System::EventArgs^ 
 			 {
 				 continuous_control = false;
 				 this->aTimer->Enabled = false;
+			 }
+
+			 if (this->checkBox2->Checked)
+			 {
+				 this->manual_nav = true;
+			 }
+			 else
+			 {
+				 this->manual_nav = false;
 			 }
 
 			 if(this->checkBox1->Checked)
@@ -709,6 +881,15 @@ private: System::Void dataReceivedHandler(System::Object^ sender,\
 				 this->SetText("\n");
 				 
 			 }
+			 else if (this->radioButton3->Checked)
+			 {
+				 /*
+				 int motor_speed_left = ;
+				 int motor_speed_right = ;
+				 this->textBox5->Text = System::Convert::ToString(motor_speed_left);
+				 this->textBox6->Text = System::Convert::ToString(motor_speed_right);
+				 */
+			 }
 		 }
 		 private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) {
 					  if(this->aTimer->Enabled)
@@ -721,5 +902,7 @@ private: System::Void button4_Click(System::Object^  sender, System::EventArgs^ 
 			// form2->Show();
 			 
 		// }
+private: System::Void radioButton3_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
+		 }
 };
 }
