@@ -28,6 +28,7 @@ Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	// Initialise vector containing perspective transform matrices
 	for (int i = 0; i < num_cam; i++) {
 		transform_mats_.push_back(cv::Mat());
+		
 		approx_cam_m_per_pix_.push_back(0);
 	}
 }
@@ -60,6 +61,8 @@ void Vision::setupCamTransform(int cam_index) {
 		cv::Mat img;
 		getCamImg(cam_index, img);
 		gotTrans = getTransform(img, transform_mats_[cam_index]);
+		inv_transform_mats.push_back(transform_mats_[cam_index].inv());
+
 		if (!gotTrans)
 			std::cout << "Failed to get transform for camera " << cam_index << std::endl;
 		cv::imshow("Display", img);
@@ -175,6 +178,10 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 			// Note, in opencv hsv hue range is 0 - 179
 			// while saturation & luminosity range is 0 - 255
 
+			// Ignore circles which are too large
+			if (ellipses[i].size.height > large_circle_pix)
+				continue;
+
 			// Ignore white
 			//if (values[2] > 240)
 			//	continue;
@@ -268,28 +275,64 @@ void Vision::update() {
 
 	bool found_my_car = false;
 
+	float new_dir;
+	Point predicted_pos;
+	cv::Point2f predicted_pos_pers; 
+	float new_spd; 
+	float dt;
+
 	// Define region of interest around last known position
 	// This cuts down on computation
-	int search_size = 0.1 / approx_cam_m_per_pix_[0];
+	//the size of roi needs to be proportionl to the size of the car marker
+	// the position of the roi in the image has to be set used previous_car_position and its velocity 
+	//vector so:
+	// proi_new = car_pos_prev + V * dt  ---> (V is in pixels per second) 
+	//int search_size = 0.1 / approx_cam_m_per_pix_[0];
 	if (last_my_car_pos_.x != 0 && last_my_car_pos_.y != 0) {
 
+		//dt = (time_now() - my_car_.getUpdateTime())/1000.0;
+		//predicted_pos.x = my_car_.getPos().x + my_car_.getSpd() * dt * cos(my_car_.getDir());
+		//predicted_pos.y = my_car_.getPos().y + my_car_.getSpd() * dt * sin(my_car_.getDir());
+		
+		//predicted_pos.x = my_car_.getPos().x;
+	
+		//std::vector<cv::Point2f> perspective_point;
+		//warped_point.push_back(cv::Point2f(predicted_pos.x, predicted_pos.y));
+		//cv::perspectiveTransform(warped_point, perspective_point, inv_transform_mats[0]);
+		//predicted_pos_pers = perspective_point[0];
+
+		int search_size = std::max(last_car_size_, 50);
+		//int search_size = 100;
 		// TODO memorise my_car pos before perspective warp
+///		cv::Rect roi(predicted_pos_pers.x - search_size, 
+	///		predicted_pos_pers.y - search_size, 2 * search_size, 2 * search_size);
+	
+		std::cout << "car size: "<<last_car_size_ << std::endl;
 		cv::Rect roi(last_my_car_pos_.x - search_size, 
 			last_my_car_pos_.y - search_size, 2 * search_size, 2 * search_size);
 		
-		while (roi.x + roi.width > img_in.cols)
+		while (roi.x + roi.width > img_in.cols -1)
 			roi.x -= 1;
 		while (roi.x < 0)
 			roi.x += 1;
-		while (roi.y + roi.height > img_in.rows)
+		while (roi.y + roi.height > img_in.rows -1)
 			roi.y -= 1;
 		while (roi.y < 0)
 			roi.y += 1;
 
 		cv::Mat img_roi = img_in(roi);
+		cv::rectangle(img_in, roi, cv::Scalar(100, 50, 100));
+
+		cv::imshow("Test tracking",img_in);
+
+
 
 		// TODO make a separate getMyCarMarker function
+		//found_my_car = getMyCar(img_roi, my_car_p1, my_car_p2);
 		found_my_car = getCarMarkers(img_roi, my_car_p1, my_car_p2, other_cars_points);
+	
+
+
 		if (found_my_car)  {
 
 			// Need to adjust coordinates to account for roi origin
@@ -322,10 +365,12 @@ void Vision::update() {
 	}
 	cv::perspectiveTransform(orig_points, trans_points, transform_mats_[0]);
 
-	float new_dir = angle(trans_points[0], trans_points[1]);
+
+	new_dir = angle(trans_points[0], trans_points[1]);
+	std::cout << "Angle: " << new_dir << std::endl;
 	Point new_pos(trans_points[0].x, trans_points[0].y);
 	float seconds = (time_now() - my_car_.getUpdateTime()) * 0.001;
-	float new_spd = my_car_.getPos().dist(new_pos) / seconds;
+	new_spd = my_car_.getPos().dist(new_pos) / seconds;
 	my_car_.update(new_pos, new_dir, new_spd);
 
 	// TODO other cars
@@ -368,12 +413,12 @@ bool Vision::getCarMarkers(
 
 	// Canny edge detection
 	cv::Mat img_canny;
-	int threshold = 40;
+	int threshold = 35;
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
-	//cv::Mat cdst;
-	//cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
+	cv::Mat cdst;
+	cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
 	
 	// Find contours from Canny image
 	// Warning, findContours affects input image (img_canny)
@@ -381,9 +426,18 @@ bool Vision::getCarMarkers(
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours( img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 
+	for (std::size_t i=0; i<contours.size();i++){
+		std::vector<std::vector<cv::Point>> contour;
+		contour.push_back(contours[i]);
+		cv::drawContours(cdst,contour, -1, cv::Scalar(20 * i,25 *i,30), 2);
+		cv::imshow("Display", cdst);
+		cv::waitKey();
+	}
+
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
+
 		if (contours[i].size() < 5)
 			continue;
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
@@ -396,9 +450,9 @@ bool Vision::getCarMarkers(
 	}
 
 	// Show circles found
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
-
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+	
 	other_cars.clear();
 
 	// Max pixels between detected circle centres to consider circles concentric
@@ -410,6 +464,8 @@ bool Vision::getCarMarkers(
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
 			float centre_dist = dist(ellipses[i].center, ellipses[j].center);
 			if (centre_dist < dist_thresh && abs(ellipses[i].size.height - ellipses[j].size.height) > 7)  {
+
+
 				bool this_is_my_car = false;
 				if (my_car_found)
 					continue;
@@ -421,26 +477,56 @@ bool Vision::getCarMarkers(
 					if (centre_dist < dist_thresh && 
 						abs(ellipses[i].size.height - ellipses[k].size.height) > 7 &&
 						abs(ellipses[j].size.height - ellipses[k].size.height) > 7) {
+						
+						int biggest, smallest;
+						if (ellipses[i].size.height >= ellipses[j].size.height)
+						{
+							biggest = i;
+							smallest = j;
+						}
+						else
+						{
+							biggest = j;
+							smallest = i;
+						}
+						if (ellipses[biggest].size.height <= ellipses[k].size.height)
+						{
+							biggest = k;
+						}
+						if (ellipses[smallest].size.height >= ellipses[k].size.height)
+						{
+							smallest = k;
+						}
+
+						float up_thresh = MY_CAR_MARKER_BIGGEST/MY_CAR_MARKER_SMALLEST+ 0.05;
+						float bottom_thresh =  MY_CAR_MARKER_BIGGEST/MY_CAR_MARKER_SMALLEST- 0.05;
+						float aspect_ratio = ellipses[biggest].size.height/ellipses[smallest].size.height;
+						if ( aspect_ratio> up_thresh || aspect_ratio < bottom_thresh )
+							continue;
 
 						// This is my car
 						my_car_p1 = ellipses[k].center;
+						last_car_size_ = ellipses[biggest].size.height;
 						this_is_my_car = true;
 						my_car_found = true;
 						
 						// Now look for off-centre circle (used for finding orientation)
 						// The diameter of the off-centre circle should be less than the
 						// smallest of the concentric circles
-						float smallest = std::min(ellipses[i].size.height, ellipses[j].size.height);
-						smallest = std::min(smallest, ellipses[k].size.height);
-						float max_diameter = smallest * 0.7;
+
+						float max_diameter = ellipses[smallest].size.height * 0.6;
+						float min_diameter = ellipses[smallest].size.height * 0.4;
 						for (std::size_t a = 0; a < ellipses.size(); a++) {
 							if (a == i || a == j || a == k)
 								continue;
 							
-							if (ellipses[a].size.height > max_diameter)
+							if (ellipses[a].size.height > max_diameter || 
+								ellipses[a].size.height < min_diameter)
 								continue;
-
-							if (dist(ellipses[a].center, ellipses[k].center) < smallest) {
+							
+							float this_dist = dist(ellipses[a].center, ellipses[k].center);
+							if (this_dist <= ellipses[smallest].size.height * 0.5 &&
+								this_dist >= ellipses[smallest].size.height * 0.2) {
 								my_car_p2 = ellipses[a].center;
 								break;
 							}
@@ -458,6 +544,9 @@ bool Vision::getCarMarkers(
 
 	return my_car_found;
 }
+
+
+
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
 

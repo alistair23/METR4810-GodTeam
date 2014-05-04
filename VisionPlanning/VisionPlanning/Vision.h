@@ -45,6 +45,8 @@ public:
 	bool getCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
 		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
 
+
+
 	// WORK IN PROGRESS
 	std::vector<Point> extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin,
 		cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
@@ -60,6 +62,7 @@ public:
 
 	// Stores perspective transforms for each camera
 	std::vector<cv::Mat> transform_mats_;
+	std::vector<cv::Mat> inv_transform_mats;
 
 private:
 
@@ -98,6 +101,7 @@ private:
 	std::vector<float> approx_cam_m_per_pix_;
 
 	Point last_my_car_pos_; // Last known position in pixels before perspective warp
+	int last_car_size_; //Last known size of the car marker
 	Car my_car_;
 	std::vector<Car> other_cars_;
 

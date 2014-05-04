@@ -253,7 +253,6 @@ int main(int argc, char *argv[]) {
 	cv::Mat background;
 	vision.getCamImg(0, background);
 	vision.applyTrans(background, vision.transform_mats_[0]);
-
 	View view(background, my_car);
 	view.redraw();
 

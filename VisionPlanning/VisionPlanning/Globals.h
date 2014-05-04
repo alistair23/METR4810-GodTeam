@@ -23,4 +23,7 @@
 #define OUR_DIAMTER 0.035
 #define OUR_SQUARE_SIDE 0.13
 
+#define MY_CAR_MARKER_BIGGEST 0.075
+#define MY_CAR_MARKER_SMALLEST 0.045
+
 #endif
