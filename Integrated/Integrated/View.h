@@ -8,29 +8,32 @@
 #include "Point.h"
 #include "MyCar.h"
 
+namespace CarView {
+
 class View 
 {
 public:
 
-	View(cv::Mat background, MyCar& my_car);
+	View();
 	
-	void spin();	// Starts loop to continuously redraw
-
+	void createWindow();
+	void setBackground(cv::Mat& background);
+	void updateMyCar(MyCar my_car);
 	void redraw();
 	void drawNewDots(std::vector<Point>& segment);
 
 	Point getMousePos();
 
-	cv::Mat background_;
-
 private:
 	
-	MyCar& my_car_;
+	MyCar my_car_;
 	const int frame_time_;	// milliseconds / frame
 	
+	cv::Mat background_;
 	cv::Mat background_no_dots_;
 
 };
 
+}
 
 #endif

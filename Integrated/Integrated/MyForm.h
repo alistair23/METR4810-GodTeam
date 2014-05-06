@@ -1,5 +1,6 @@
 #pragma once
 #include "PIDTuningForm.h"
+#include "Controller.h"
 namespace RaceControl {
 
 	using namespace System;
@@ -73,11 +74,13 @@ namespace RaceControl {
 			MyForm();
 			this->form = form1;
 
-		}
+		}              
+
 	private: System::Windows::Forms::RadioButton^  radioButton3;
 	private: System::Windows::Forms::Label^  label9;
 	private: System::Windows::Forms::CheckBox^  checkBox3;
 	private: System::Windows::Forms::CheckBox^  checkBox2;
+	private: System::Windows::Forms::Button^  button5;
 
 
 
@@ -177,6 +180,8 @@ namespace RaceControl {
 			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
+			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
 			this->label9 = (gcnew System::Windows::Forms::Label());
 			this->radioButton3 = (gcnew System::Windows::Forms::RadioButton());
 			this->button4 = (gcnew System::Windows::Forms::Button());
@@ -194,8 +199,7 @@ namespace RaceControl {
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->trackBar2 = (gcnew System::Windows::Forms::TrackBar());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
-			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
+			this->button5 = (gcnew System::Windows::Forms::Button());
 			this->groupBox1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->BeginInit();
@@ -293,6 +297,7 @@ namespace RaceControl {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->button5);
 			this->groupBox1->Controls->Add(this->checkBox3);
 			this->groupBox1->Controls->Add(this->checkBox2);
 			this->groupBox1->Controls->Add(this->label9);
@@ -324,11 +329,31 @@ namespace RaceControl {
 			this->groupBox1->Controls->Add(this->textBox1);
 			this->groupBox1->Location = System::Drawing::Point(12, 12);
 			this->groupBox1->Name = L"groupBox1";
-			this->groupBox1->Size = System::Drawing::Size(560, 438);
+			this->groupBox1->Size = System::Drawing::Size(560, 463);
 			this->groupBox1->TabIndex = 12;
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"Serial Command";
 			this->groupBox1->Enter += gcnew System::EventHandler(this, &MyForm::groupBox1_Enter);
+			// 
+			// checkBox3
+			// 
+			this->checkBox3->AutoSize = true;
+			this->checkBox3->Location = System::Drawing::Point(20, 415);
+			this->checkBox3->Name = L"checkBox3";
+			this->checkBox3->Size = System::Drawing::Size(115, 17);
+			this->checkBox3->TabIndex = 32;
+			this->checkBox3->Text = L"Continuous Control";
+			this->checkBox3->UseVisualStyleBackColor = true;
+			// 
+			// checkBox2
+			// 
+			this->checkBox2->AutoSize = true;
+			this->checkBox2->Location = System::Drawing::Point(20, 392);
+			this->checkBox2->Name = L"checkBox2";
+			this->checkBox2->Size = System::Drawing::Size(115, 17);
+			this->checkBox2->TabIndex = 31;
+			this->checkBox2->Text = L"Manual Navigation";
+			this->checkBox2->UseVisualStyleBackColor = true;
 			// 
 			// label9
 			// 
@@ -488,31 +513,21 @@ namespace RaceControl {
 			this->trackBar1->Size = System::Drawing::Size(45, 268);
 			this->trackBar1->TabIndex = 11;
 			// 
-			// checkBox2
+			// button5
 			// 
-			this->checkBox2->AutoSize = true;
-			this->checkBox2->Location = System::Drawing::Point(20, 392);
-			this->checkBox2->Name = L"checkBox2";
-			this->checkBox2->Size = System::Drawing::Size(115, 17);
-			this->checkBox2->TabIndex = 31;
-			this->checkBox2->Text = L"Manual Navigation";
-			this->checkBox2->UseVisualStyleBackColor = true;
-			// 
-			// checkBox3
-			// 
-			this->checkBox3->AutoSize = true;
-			this->checkBox3->Location = System::Drawing::Point(20, 415);
-			this->checkBox3->Name = L"checkBox3";
-			this->checkBox3->Size = System::Drawing::Size(115, 17);
-			this->checkBox3->TabIndex = 32;
-			this->checkBox3->Text = L"Continuous Control";
-			this->checkBox3->UseVisualStyleBackColor = true;
+			this->button5->Location = System::Drawing::Point(171, 434);
+			this->button5->Name = L"button5";
+			this->button5->Size = System::Drawing::Size(98, 23);
+			this->button5->TabIndex = 33;
+			this->button5->Text = L"Vision";
+			this->button5->UseVisualStyleBackColor = true;
+			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(584, 462);
+			this->ClientSize = System::Drawing::Size(584, 487);
 			this->Controls->Add(this->groupBox1);
 			this->Name = L"MyForm";
 			this->Text = L"Serial Command";
@@ -525,122 +540,19 @@ namespace RaceControl {
 		}
 #pragma endregion
 
-private: bool is_decimal(System::String^ s)
-{
-	System::Decimal n;
-	bool m = System::Decimal::TryParse(s, n);
-    return m;
-}
+private: ref class Controller^ controller_;
+public: void setParent(ref class Controller^ c); 
 
-private : void intializeTrackbars()
-		  {
-			  this->trackBar1->Minimum = -100;
-			  this->trackBar2->Minimum = -100;
-			  this->trackBar1->Value = 0;
-			  this->trackBar2->Value = 0;
-			  this->trackBar1->ValueChanged+=gcnew System::EventHandler(this, &MyForm::LeftTrackBarChanged);
-			  this->trackBar2->ValueChanged+=gcnew System::EventHandler(this, &MyForm::RightTrackBarChanged);
-		  }
-private: array<System::Byte>^ interpretHexadecimalCommand()
-		 {
-			 System::String^ s  = this->textBox1->Text;
-			 array<System::String^>^ hexvalues = s->Split(' ');
-			 array<unsigned char>^ byteArray = gcnew array<unsigned char>(hexvalues->Length);
-			 //int value = System::Convert::ToInt32(hexvalues[0], 16);
-			 //System::String^ charValue = System::Convert::ToString(value);
-			 //this->textBox2->AppendText(charValue);
-
-			 for (int i = 0; i<hexvalues->Length; i++)
-			{
-				// Convert the number expressed in base-16 to an integer. 
-				int value = System::Convert::ToInt32(hexvalues[i], 16); 
-				System::String^ charValue = System::Convert::ToString(value);
-				//this->textBox2->AppendText(charValue);
-				//this->textBox2->AppendText(" ");
-				byteArray[i] = System::Convert::ToByte(value);//(value);
-				
-			 }
-			//this->textBox2->AppendText("\n");
-			return byteArray;
-		 }
-
-private: void sendSerialData(array<System::Byte>^ byteArray)
-		 {
-			 //if port is open send data
-			 if (serialPort1->IsOpen)
-			 {
-				 serialPort1->Write(byteArray, 0, byteArray->Length);
-				 //this->SetText(System::Convert::ToString(byteArray->Length));
-			 }
-
-			 //if it's not display message for the user
-			 else
-				 this->SetText("\n Connect to COM port first\n");
-		 }
-private: void setMotorSpeeds()
-		 {
-			 int left_motor_value = System::Convert::ToInt32(this->textBox3->Text);
-			 int right_motor_value = System::Convert::ToInt32(this->textBox4->Text);
-
-			 array<System::Byte>^ packet = gcnew array<System::Byte>(4);
-			 //set packet code
-			 packet[0] = (Byte)PCKTCODE::PCKTCODE_CONTROL_IN;
-			 //set data length
-			 packet[1] = 2;
-			 //add speed
-			 packet[2] = System::Convert::ToSByte(left_motor_value);
-			 packet[3] = System::Convert::ToSByte(right_motor_value);
-			 //packet[2] = System::Convert::ToByte(2);
-			 this->sendSerialData(packet);
-		 }
-private: void setMotorSpeeds(int speed_L, int speed_R)
-		 {
-			array<System::Byte>^ packet = gcnew array<System::Byte>(4);
-			 //set packet code
-			 packet[0] = (Byte)PCKTCODE::PCKTCODE_CONTROL_IN;
-			 //set data length
-			 packet[1] = 2;
-			 //add speed
-			 packet[2] = System::Convert::ToSByte(speed_L);
-			 packet[3] = System::Convert::ToSByte(speed_R);
-			 //packet[2] = System::Convert::ToByte(2);
-			 this->sendSerialData(packet);
-		 }
-public: void setMotorGains()
-		{
-			array<System::Byte>^ packet = gcnew array<System::Byte>(5);
-			//set packet code
-			packet[0] = (Byte)PCKTCODE::PCKTCODE_SETGAIN_IN;
-			//set packet length
-			packet[1] = 6;
-			//insert gains
-			packet[2] = System::Convert::ToSByte(kp_l);
-			packet[3] = System::Convert::ToSByte(ki_l);
-			packet[4] = System::Convert::ToSByte(kd_l);
-			//packet[5] = System::Convert::ToSByte(kp_r);
-			//packet[6] = System::Convert::ToSByte(ki_r);
-			//packet[7] = System::Convert::ToSByte(kd_r);
-			this->sendSerialData(packet);
-
-		}
+private: bool is_decimal(System::String^ s);
+private: void intializeTrackbars();
+private: array<System::Byte>^ interpretHexadecimalCommand();
+private: void sendSerialData(array<System::Byte>^ byteArray);
+private: void setMotorSpeeds();
+private: void setMotorSpeeds(int speed_L, int speed_R);
+public: void setMotorGains();
 
 
-public: void SetText(String^ text)
-		{
-			// InvokeRequired required compares the thread ID of the
-			// calling thread to the thread ID of the creating thread.
-			// If these threads are different, it returns true.
-			if (this->textBox2->InvokeRequired)
-			{	
-				SetTextDelegate^ d = gcnew SetTextDelegate(this, &MyForm::SetText);
-				this->Invoke(d, gcnew array<Object^> { text });
-			}
-			else
-			{
-				this->textBox2->AppendText(" ");
-				this->textBox2->AppendText (text);
-			}
-		}
+public: void SetText(String^ text);
 
 //**************************Event Handlers*****************************************
 private : void LeftTrackBarChanged(System::Object^  sender, System::EventArgs^  e)
@@ -903,6 +815,9 @@ private: System::Void button4_Click(System::Object^  sender, System::EventArgs^ 
 			 
 		// }
 private: System::Void radioButton3_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
+		 }
+private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
+			//controller_->startVision();
 		 }
 };
 }

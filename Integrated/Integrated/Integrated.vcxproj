@@ -121,6 +121,7 @@
       <FileType>CppForm</FileType>
     </ClInclude>
     <ClInclude Include="Point.h" />
+    <ClInclude Include="Controller.h" />
     <ClInclude Include="Racetrack.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="RR_API.h" />
@@ -139,6 +140,7 @@
     <ClCompile Include="CamCalib.cpp" />
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
+    <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Intrinsics.cpp" />
     <ClCompile Include="LocalPlanner.cpp" />
     <ClCompile Include="MyCar.cpp" />

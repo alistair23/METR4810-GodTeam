@@ -12,12 +12,13 @@
 Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	num_cam_(num_cam),
 	ip_address_(ip_address),
-	port_num_(port_num),
+	port_num_(port_num)
 
 	// Load tile images
-	finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
-	finish_tile_2(cv::imread("Resources/finish_2.jpg"), 0)
+	//finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
+	//finish_tile_2(cv::imread("Resources/finish_2.jpg"), 0)
 {
+	/*
 	tiles.push_back(Tile(cv::imread("Resources/straight.jpg"), 0));
 	tiles.push_back(Tile(cv::imread("Resources/right_turn.jpg"), -1));
 	tiles.push_back(Tile(cv::imread("Resources/left_turn.jpg"), 1));
@@ -31,6 +32,7 @@ Vision::Vision(int num_cam, std::string ip_address, int port_num):
 		
 		approx_cam_m_per_pix_.push_back(0);
 	}
+	*/
 }
 
 // Connect to RoboRealm server. Returns true if success

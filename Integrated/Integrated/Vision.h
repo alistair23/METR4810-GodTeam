@@ -86,8 +86,8 @@ private:
 
 	int getTileType(cv::Mat& img_roi, int rot);
 
-	Tile finish_tile_1;
-	Tile finish_tile_2;
+	//Tile finish_tile_1;
+	//Tile finish_tile_2;
 
 	std::vector<Tile> tiles;
 
