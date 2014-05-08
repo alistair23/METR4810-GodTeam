@@ -1,6 +1,8 @@
 #pragma once
 #include "PIDTuningForm.h"
 #include "Controller.h"
+#include "CameraView.h"
+#include "Vision.h"
 namespace RaceControl {
 
 	using namespace System;
@@ -47,13 +49,20 @@ namespace RaceControl {
 			this->button2->Enabled = false;
 
 			//initialize gains to zero
-			 this->kp_l = 0;
-			 this->kp_r = 0;
-			 this->ki_l = 0;
-			 this->ki_r = 0;
-			 this->kd_l = 0;
-			 this->kd_r = 0;
-			
+			this->kp_l = 0;
+			this->kp_r = 0;
+			this->ki_l = 0;
+			this->ki_r = 0;
+			this->kd_l = 0;
+			this->kd_r = 0;
+			camera_vision = true;
+			std::cout << "camera vision is : "<< camera_vision << std::endl;
+			this->vision_form = gcnew CameraView();
+			this->vision_form->setParent(this);
+			this->vision_form->Show();
+			cv::Mat &img = cv::imread("Resources/circle_marker.jpg");
+			std::cout <<"columns:" <<img.cols << "rows:" << img.rows << std::endl;
+		    this->DrawCVImage(img);
 
 			//add serial port receiv event
 			this->serialPort1->DataReceived += gcnew System::IO::Ports::SerialDataReceivedEventHandler(this, &MyForm::dataReceivedHandler);
@@ -69,12 +78,12 @@ namespace RaceControl {
 			pictureBox1->Image = bitmap;*/
 			
 		}
-		MyForm(PIDTuningForm^ form1)
+		/*MyForm(PIDTuningForm^ form1)
 		{
 			MyForm();
 			this->form = form1;
 
-		}              
+		} */             
 
 	private: System::Windows::Forms::RadioButton^  radioButton3;
 	private: System::Windows::Forms::Label^  label9;
@@ -87,7 +96,8 @@ namespace RaceControl {
 
 	public: 
 
-	public: PIDTuningForm^ form;
+	public: 
+			 bool camera_vision;
 	protected:
 		/// <summary>
 		/// Clean up any resources being used.
@@ -141,6 +151,7 @@ namespace RaceControl {
 			 bool moving_left;
 			 bool moving_forward;
 			 bool moving_reverse;
+			
 	private: System::Windows::Forms::Button^  button3;
 	private: System::Windows::Forms::RadioButton^  radioButton2;
 	private: System::Windows::Forms::RadioButton^  radioButton1;
@@ -153,6 +164,8 @@ namespace RaceControl {
 			 UInt16 kd_l;
 			 UInt16 kd_r;
 
+	private: ref class CameraView^ vision_form;
+			 ref class PIDTuningForm^ PID_form;
 
 			 
 		/// <summary>
@@ -553,6 +566,7 @@ public: void setMotorGains();
 
 
 public: void SetText(String^ text);
+		void MyForm:: DrawCVImage(cv::Mat& colorImage);
 
 //**************************Event Handlers*****************************************
 private : void LeftTrackBarChanged(System::Object^  sender, System::EventArgs^  e)
@@ -809,14 +823,20 @@ private: System::Void dataReceivedHandler(System::Object^ sender,\
 				  }
 private: System::Void label6_Click(System::Object^  sender, System::EventArgs^  e) {
 		 }
-private: System::Void button4_Click(System::Object^  sender, System::EventArgs^  e);// {
-			 //PIDTuningForm^ form2 = gcnew PIDTuningForm(this);
-			// form2->Show();
-			 
-		// }
+private: System::Void button4_Click(System::Object^  sender, System::EventArgs^  e) {
+			 this->PID_form = gcnew PIDTuningForm();
+			 this->PID_form->setParent(this);
+			 this->PID_form->Show();
+		 }
 private: System::Void radioButton3_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
 		 }
+
 private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
+			 camera_vision = true;
+			 std::cout << "camera vision is : "<< camera_vision << std::endl;
+			 this->vision_form = gcnew CameraView();
+			 this->vision_form->setParent(this);
+			 this->vision_form->Show();
 			//controller_->startVision();
 		 }
 };
