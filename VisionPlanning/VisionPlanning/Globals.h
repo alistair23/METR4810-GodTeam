@@ -15,8 +15,6 @@
 #define SIDE_CLEARANCE_PIX 0.01 / M_PER_PIX			// For collision testing between cars, in pixels
 #define FRONT_CLEARANCE_PIX 0.05 / M_PER_PIX
 
-#define GLOBAL_PATH_STEP_SIZE 10	// APPROXIMATE distance between points in the global path in pixels
-
 // Stuff for our setup-time marker in metres
 #define OUR_CENTRE_DIAMETER_BIG 0.065
 #define OUR_CENTRE_DIAMETER_SMALL 0.035

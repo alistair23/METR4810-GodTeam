@@ -585,101 +585,69 @@ cv::Point getCentre(std::vector<cv::Point> corners)
 
 }
 
-std::vector<Point> Vision::extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin,
-											cv::Point2f start_position, float start_orientation,
-											cv::Point2f end_position) {
-	
-	cv::Mat img_temp, grad_x, grad_y;
-	cv::blur(img_thresh, img_temp, cv::Size(10, 10));
+std::vector<Point> Vision::getMidpoints(cv::Mat& img_in,
+cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir) {
+		
+	cv::Mat img_thresh, img_dist, img_blur, img_grad_x, img_grad_y;
 
-	//cv::imshow("Display", img_temp);
-	//cv::waitKey();
+	// Apply colour threshold to get road as white (255), everything 
+	// else black (0)
+	img_thresh = img_in.clone();
+	colorThresh(img_thresh);
 
-	// Use Sobel operator to get image derivatives
-	cv::Sobel(img_temp, grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
-	cv::Sobel(img_temp, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
+	// Dilate to remove noise
+	cv::Mat dilate_element = cv::getStructuringElement(
+		cv::MORPH_ELLIPSE,cv::Size(4, 4));
+	cv::dilate(img_thresh, img_thresh, dilate_element);
 
-	// Make color format for showing stuff
-	cv::Mat cdst;
-	cv::cvtColor(img_thresh, cdst, CV_GRAY2BGR);
+	// Distance transform: makes each pixel value the distance to 
+	// nearest zero (black) pixel
+	cv::distanceTransform(img_thresh, img_dist, CV_DIST_L2, 3); 
+
+	// Get image gradients of img_dist. These will be used for centering 
+	// the midpoints to the middle of the track
+	cv::blur(img_dist, img_blur, cv::Size(10, 10));
+	cv::Sobel(img_blur, img_grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT);
+	cv::Sobel(img_blur, img_grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT);
 
 	std::vector<Point> midpoints;
-	std::vector<float> angles;		// TODO remove this
-	std::vector<float> widths;		// TODO remove this
-	midpoints.push_back(Point(start_position.x, start_position.y));
-	angles.push_back(start_orientation);
-	float expected_width = ROAD_WIDTH / M_PER_PIX;
-	widths.push_back(expected_width);
-	
-	float width_thresh = 0.1;	// 10 % for accepting result
-	float step_size_sq = GLOBAL_PATH_STEP_SIZE * GLOBAL_PATH_STEP_SIZE;
+	midpoints.push_back(Point(start_pos.x, start_pos.y, start_dir));
 
-	Point end_pos(end_position.x, end_position.y);
-	while (midpoints.back().distSquared(end_pos) > step_size_sq) {
+	float step_size = 10;	// Distance between midpoints in pixels
+	float adjust_factor = 0.5;
+
+	for (int i = 0; i < 1000; i++) {
 
 		// Extrapolate forward using last point
-		float temp_x = midpoints.back().x + GLOBAL_PATH_STEP_SIZE * cos(angles.back());
-		float temp_y = midpoints.back().y + GLOBAL_PATH_STEP_SIZE * sin(angles.back());
-		cv::Point2f temp_p(temp_x, temp_y);
+		float temp_x = midpoints.back().x + step_size * cos(midpoints.back().track_angle);
+		float temp_y = midpoints.back().y + step_size * sin(midpoints.back().track_angle);
 
-		// Find the road edge on the right
-		cv::Point2f b1 = getBoundary(img_thresh, temp_p, angles.back() + M_PI_2);
+		// Stop if outside image
+		cv::Point2f temp(temp_x, temp_y);
+		if (!inImg(img_white_warped, temp_x, temp_y) || 
+			img_white_warped.at<uchar>((int)temp_y, (int)temp_x) != 255)
+			return midpoints;
 
-		// Determine the gradient at the boundary point found
-		// (e.g. for a straight road east to west, dx = 0, dy > 0)
-		short dx = -grad_x.at<short>((int)b1.y, (int)b1.x);
-		short dy = -grad_y.at<short>((int)b1.y, (int)b1.x);
-		float gradient = atan2(dy, dx);
-
-		// Find left road edge by following the gradient from b1
-		cv::Point2f b2 = getBoundary(img_thresh, b1, gradient);
-
-		float width = dist(b1, b2);
-
-		/*
+		// Stop if we have somehow looped back to the start
+		if (i > 2 + (ROAD_WIDTH / M_PER_PIX)/step_size && 
+			midpoints[0].dist(Point(temp_x, temp_y)) < ROAD_WIDTH / M_PER_PIX)
+			return midpoints;
 		
-				if (abs(1 - width/expected_width) > width_thresh) {
+		// Adjust slightly towards centre of track
+		temp_x += adjust_factor * img_grad_x.at<short>((int)temp_y, (int)temp_x);
+		temp_y += adjust_factor * img_grad_y.at<short>((int)temp_y, (int)temp_x);
 
-			// If the width found is too far from what is expected,
-			// just extrapolate the new point from the previous point.
-			midpoints.push_back(cv::Point2f(temp_x, temp_y));
-			angles.push_back(angles.back());
-			widths.push_back(expected_width);
-		}*/
-		
-		cv::Point2f new_p_cv = b1 + ((b2 - b1) * 0.5);
-		Point new_p(new_p_cv.x, new_p_cv.y, gradient + M_PI_2, dist(new_p_cv, b1), dist(new_p_cv, b2));
-		angles.push_back(gradient + M_PI_2);
-		midpoints.push_back(new_p);
-		widths.push_back(width);
-
-		cv::circle(cdst, origin, 2, cv::Scalar(255, 0, 0), 2);
-		//cv::circle(cdst, temp_p, 2, cv::Scalar(100, 100, 100), 2);
-		cv::circle(cdst, b1, 2, cv::Scalar(0,0,255), 2);
-		cv::circle(cdst, b2, 2, cv::Scalar(0,0,255), 2);
-		cv::circle(cdst, new_p_cv, 2, cv::Scalar(0,255,0), 2);
+		float angle = midpoints.back().angle(Point(temp_x, temp_y));
+		float new_x = midpoints.back().x + step_size * cos(angle);
+		float new_y = midpoints.back().y + step_size * sin(angle);
+		midpoints.push_back(Point(new_x, new_y, angle));
 	}
-
-
-	
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
-
-		/*
-	cv::Mat abs_grad_x, abs_grad_y, grad;
-	convertScaleAbs( grad_x, abs_grad_x );
-	convertScaleAbs( grad_y, abs_grad_y );
-	addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad );
-
-	imshow( "Display", grad );
-	cv::waitKey();
-	*/
-	
 	return midpoints;
 }
 
+
 // Color threshold on img to get binary image with
-// road black and everything else white
+// road white and everything else black
 void Vision::colorThresh(cv::Mat& img) {
 
 	// Make hsv copy
@@ -690,6 +658,8 @@ void Vision::colorThresh(cv::Mat& img) {
 	// Green is used due to high contrast between road and "grass"
 	inRange(img_hsv, cv::Scalar(25, 0, 50),
 		cv::Scalar(40, 255, 255), img);
+
+	img = 255 - img;	// Flip white and black
 }
 
 // Applies perspective transform to an image
@@ -1040,23 +1010,42 @@ std::vector<cv::Point2f> Vision::sortVertices(cv::RotatedRect& rect) {
 
 // TODO make more efficient & precise. Bisection method?
 // Point returned guaranteed to be within boundary
-cv::Point2f Vision::getBoundary(cv::Mat& img, cv::Point2f start, float dir){
+cv::Point2f Vision::getBoundary(cv::Mat& img_thresh, cv::Point2f start, float dir,
+								bool& at_img_edge, uchar road_colour){
 	float step_size = 1;	
 	float dy = step_size * sin(dir);
 	float dx = step_size * cos(dir);
 	float x = start.x;
 	float y = start.y;
-	uchar start_val = img.at<uchar>((int)start.y, (int)start.x);
-	uchar next_val = img.at<uchar>((int) (y + dy), (int) (x + dx));
 
-	// TODO make robust e.g. edge of image, too far
-	while (next_val == start_val) {
-		x += dx;
-		y += dy;
-		next_val = img.at<uchar>((int) (y + dy), (int) (x + dx));
+	if (!inImg(img_thresh, x, y)) {
+		at_img_edge = true;
+		return cv::Point2f(0, 0);
+	}
+	else if (!inImg(img_thresh, x + dx, y + dy)) {
+		at_img_edge = true;
+		return start;
 	}
 
+	uchar next_value = img_thresh.at<uchar>((int) (y + dy), (int) (x + dx));
+
+	while (next_value == road_colour) {
+		x += dx;
+		y += dy;
+		if (!inImg(img_thresh, x + dx, y + dy)) {
+			at_img_edge = true;
+			return cv::Point2f(x, y);
+		}
+		next_value = img_thresh.at<uchar>((int) (y + dy), (int) (x + dx));
+	}
+	at_img_edge = false;
 	return cv::Point2f(x, y);
+}
+
+bool Vision::inImg(cv::Mat& img, int x, int y) {
+	if (x < 0 || y < 0 || x >= img.cols || y >= img.rows)
+		return false;
+	return true;
 }
 
 int Vision::getTileType(cv::Mat& img_roi, int rot) {
