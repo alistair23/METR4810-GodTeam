@@ -79,7 +79,7 @@ private:
 	float dist(cv::Point2f& p1, cv::Point2f& p2);
 
 	// Returns euclidean distance squared between two opencv points
-	float dist_sq(cv::Point2f& p1, cv::Point2f& p2);
+	float distSq(cv::Point2f& p1, cv::Point2f& p2);
 	
 	// Returns atan2(p2.y - p1.y, p2.x - p1.x)
 	float angle(cv::Point2f& p1, cv::Point2f& p2);
