@@ -20,13 +20,15 @@ public:
 
 	void startVision();
 
+	cv::Mat* img;
+
 private:
 	MyCar *my_car_;
 	MyForm^ form_;
 	Vision *vision_;
 	CarView::View *view_;
 
-	void updateView();
+	void updateView(Object^ stateInfo);
 
 };
 }

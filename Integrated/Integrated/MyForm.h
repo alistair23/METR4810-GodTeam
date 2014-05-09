@@ -55,14 +55,13 @@ namespace RaceControl {
 			this->ki_r = 0;
 			this->kd_l = 0;
 			this->kd_r = 0;
-			camera_vision = true;
-			std::cout << "camera vision is : "<< camera_vision << std::endl;
+
 			this->vision_form = gcnew CameraView();
 			this->vision_form->setParent(this);
-			this->vision_form->Show();
-			cv::Mat &img = cv::imread("Resources/circle_marker.jpg");
-			std::cout <<"columns:" <<img.cols << "rows:" << img.rows << std::endl;
-		    this->DrawCVImage(img);
+			
+			this->drawTimer = gcnew System::Timers::Timer( 1000 );
+			drawTimer->Elapsed += gcnew System::Timers::ElapsedEventHandler(this, &MyForm::updateImage);
+			drawTimer->Enabled = false;
 
 			//add serial port receiv event
 			this->serialPort1->DataReceived += gcnew System::IO::Ports::SerialDataReceivedEventHandler(this, &MyForm::dataReceivedHandler);
@@ -157,6 +156,7 @@ namespace RaceControl {
 	private: System::Windows::Forms::RadioButton^  radioButton1;
 	private: System::Windows::Forms::Button^  button4;
 	private: System::Timers::Timer^ aTimer;
+			 System::Timers::Timer^ drawTimer;
 	public:  UInt16 kp_l;
 			 UInt16 kp_r;
 			 UInt16 ki_l;
@@ -553,6 +553,7 @@ namespace RaceControl {
 		}
 #pragma endregion
 
+
 private: ref class Controller^ controller_;
 public: void setParent(ref class Controller^ c); 
 
@@ -566,7 +567,9 @@ public: void setMotorGains();
 
 
 public: void SetText(String^ text);
-		void MyForm:: DrawCVImage(cv::Mat& colorImage);
+		void MyForm:: DrawCVImage(cv::Mat* colorImage);
+
+public : cv::Mat *image;
 
 //**************************Event Handlers*****************************************
 private : void LeftTrackBarChanged(System::Object^  sender, System::EventArgs^  e)
@@ -790,6 +793,34 @@ private: System::Void OnTimedEvent( System::Object^ source, System::Timers::Elap
 			 if(motor_control)
 				 this->setMotorSpeeds();
 		 }
+
+private: System::Void updateImage( System::Object^ source, System::Timers::ElapsedEventArgs^ e ){
+			 
+			 std::cout << "timer running..." << std::endl;
+			 if (camera_vision)
+			{
+		
+				if (this->vision_form->IsDisposed)
+				{
+					std::cout <<"I come here for some reason" <<std::endl;
+					this->vision_form = gcnew CameraView();
+					this->vision_form->setParent(this);
+			
+				}
+				this->vision_form->Show();
+				System::Drawing::Graphics^ graphics = this->vision_form->CreateGraphics();
+				System::IntPtr ptr(this->image);
+				std::cout <<"columns:" <<this->image->cols << "rows:" << this->image->rows << std::endl;
+				System::Drawing::Bitmap^ b  =gcnew System::Drawing::Bitmap(this->image->cols,this->image->rows,this->image->step,System::Drawing::Imaging::PixelFormat::Format24bppRgb,ptr);
+				System::Drawing::RectangleF rect(0,0,this->vision_form->Width,this->vision_form->Height);
+				std::cout << "image drawn..."<<std::endl;
+				graphics->DrawImage(b,rect);
+				std::cout << "graphic draws..."<<std::endl;
+
+			}
+			 else
+				 drawTimer->Enabled = false;
+		 }
 private: System::Void dataReceivedHandler(System::Object^ sender,\
 			 System::IO::Ports::SerialDataReceivedEventArgs^ e)
 		 {
@@ -832,12 +863,9 @@ private: System::Void radioButton3_CheckedChanged(System::Object^  sender, Syste
 		 }
 
 private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
-			 camera_vision = true;
-			 std::cout << "camera vision is : "<< camera_vision << std::endl;
-			 this->vision_form = gcnew CameraView();
-			 this->vision_form->setParent(this);
-			 this->vision_form->Show();
+
 			//controller_->startVision();
+			 camera_vision = true;
 		 }
 };
 }

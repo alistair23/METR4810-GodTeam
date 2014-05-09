@@ -132,17 +132,33 @@ void RaceControl::MyForm::SetText(String^ text)
 }
 
 
-void RaceControl::MyForm::DrawCVImage(cv::Mat& colorImage)
+void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 {
-	std::cout << "I am called and camera_visoin is: " << camera_vision << std::endl; 
-	if (camera_vision){
+	
+	this->image = colorImage;
+	this->camera_vision = true;
+	this->drawTimer->Enabled = true;
+	/*
+
+	if (camera_vision)
+	{
 		
+		if (this->vision_form->IsDisposed)
+		{
+			std::cout <<"I come here for some reason" <<std::endl;
+			this->vision_form = gcnew CameraView();
+			this->vision_form->setParent(this);
+			
+		}
+		this->vision_form->Show();
 		System::Drawing::Graphics^ graphics = this->vision_form->CreateGraphics();
 		System::IntPtr ptr(colorImage.ptr());
 		System::Drawing::Bitmap^ b  =gcnew System::Drawing::Bitmap(colorImage.cols,colorImage.rows,colorImage.step,System::Drawing::Imaging::PixelFormat::Format24bppRgb,ptr);
 		System::Drawing::RectangleF rect(0,0,this->vision_form->Width,this->vision_form->Height);
 		graphics->DrawImage(b,rect);
-		std::cout << "I get here but image is not drawn" << std::endl;
 
-	}
+	}*/
 }
+
+
+
