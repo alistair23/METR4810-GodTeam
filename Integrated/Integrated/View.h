@@ -22,6 +22,7 @@ public:
 	void redraw();
 	void drawNewDots(std::vector<Point>& segment);
 
+	cv::Mat* getDisplayImage();
 	Point getMousePos();
 
 private:
@@ -31,6 +32,7 @@ private:
 	
 	cv::Mat background_;
 	cv::Mat background_no_dots_;
+	cv::Mat img_display;
 
 };
 

@@ -91,6 +91,8 @@ namespace RaceControl {
 	private: System::Windows::Forms::CheckBox^  checkBox2;
 	private: System::Windows::Forms::Button^  button5;
 	private: System::Windows::Forms::Button^  button6;
+	private: System::Windows::Forms::Button^  button7;
+	private: System::Windows::Forms::Button^  button8;
 
 
 
@@ -195,6 +197,8 @@ namespace RaceControl {
 			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->button7 = (gcnew System::Windows::Forms::Button());
+			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->button5 = (gcnew System::Windows::Forms::Button());
 			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
 			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
@@ -215,7 +219,7 @@ namespace RaceControl {
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->trackBar2 = (gcnew System::Windows::Forms::TrackBar());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->button6 = (gcnew System::Windows::Forms::Button());
+			this->button8 = (gcnew System::Windows::Forms::Button());
 			this->groupBox1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->BeginInit();
@@ -251,7 +255,7 @@ namespace RaceControl {
 			// label1
 			// 
 			this->label1->AutoSize = true;
-			this->label1->Location = System::Drawing::Point(168, 129);
+			this->label1->Location = System::Drawing::Point(168, 120);
 			this->label1->Name = L"label1";
 			this->label1->Size = System::Drawing::Size(118, 13);
 			this->label1->TabIndex = 3;
@@ -269,7 +273,7 @@ namespace RaceControl {
 			// label2
 			// 
 			this->label2->AutoSize = true;
-			this->label2->Location = System::Drawing::Point(392, 15);
+			this->label2->Location = System::Drawing::Point(392, 14);
 			this->label2->Name = L"label2";
 			this->label2->Size = System::Drawing::Size(86, 13);
 			this->label2->TabIndex = 5;
@@ -313,6 +317,8 @@ namespace RaceControl {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->button8);
+			this->groupBox1->Controls->Add(this->button7);
 			this->groupBox1->Controls->Add(this->button6);
 			this->groupBox1->Controls->Add(this->button5);
 			this->groupBox1->Controls->Add(this->checkBox3);
@@ -346,11 +352,31 @@ namespace RaceControl {
 			this->groupBox1->Controls->Add(this->textBox1);
 			this->groupBox1->Location = System::Drawing::Point(12, 12);
 			this->groupBox1->Name = L"groupBox1";
-			this->groupBox1->Size = System::Drawing::Size(560, 463);
+			this->groupBox1->Size = System::Drawing::Size(560, 523);
 			this->groupBox1->TabIndex = 12;
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"Serial Command";
 			this->groupBox1->Enter += gcnew System::EventHandler(this, &MyForm::groupBox1_Enter);
+			// 
+			// button7
+			// 
+			this->button7->Location = System::Drawing::Point(375, 434);
+			this->button7->Name = L"button7";
+			this->button7->Size = System::Drawing::Size(105, 22);
+			this->button7->TabIndex = 35;
+			this->button7->Text = L"GetMidPoints";
+			this->button7->UseVisualStyleBackColor = true;
+			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
+			// 
+			// button6
+			// 
+			this->button6->Location = System::Drawing::Point(275, 434);
+			this->button6->Name = L"button6";
+			this->button6->Size = System::Drawing::Size(92, 23);
+			this->button6->TabIndex = 34;
+			this->button6->Text = L"Get Transform";
+			this->button6->UseVisualStyleBackColor = true;
+			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click);
 			// 
 			// button5
 			// 
@@ -469,7 +495,7 @@ namespace RaceControl {
 			// label7
 			// 
 			this->label7->AutoSize = true;
-			this->label7->Location = System::Drawing::Point(168, 14);
+			this->label7->Location = System::Drawing::Point(165, 14);
 			this->label7->Name = L"label7";
 			this->label7->Size = System::Drawing::Size(82, 13);
 			this->label7->TabIndex = 19;
@@ -540,21 +566,21 @@ namespace RaceControl {
 			this->trackBar1->Size = System::Drawing::Size(45, 268);
 			this->trackBar1->TabIndex = 11;
 			// 
-			// button6
+			// button8
 			// 
-			this->button6->Location = System::Drawing::Point(275, 434);
-			this->button6->Name = L"button6";
-			this->button6->Size = System::Drawing::Size(92, 23);
-			this->button6->TabIndex = 34;
-			this->button6->Text = L"Get Transform";
-			this->button6->UseVisualStyleBackColor = true;
-			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click);
+			this->button8->Location = System::Drawing::Point(171, 474);
+			this->button8->Name = L"button8";
+			this->button8->Size = System::Drawing::Size(97, 23);
+			this->button8->TabIndex = 36;
+			this->button8->Text = L"Launch ";
+			this->button8->UseVisualStyleBackColor = true;
+			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click);
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(584, 487);
+			this->ClientSize = System::Drawing::Size(584, 547);
 			this->Controls->Add(this->groupBox1);
 			this->Name = L"MyForm";
 			this->Text = L"Serial Command";
@@ -883,5 +909,7 @@ private: System::Void button5_Click(System::Object^  sender, System::EventArgs^ 
 		 }
 
 private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) ;
+private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button8_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

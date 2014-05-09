@@ -54,10 +54,14 @@ void View::setBackground(cv::Mat& background) {
 	background_no_dots_ = background.clone();
 }
 
+void View::updateMyCar(MyCar my_car) {
+	my_car_ = my_car;
+}
+
 void View::redraw() {
+	std::cout << "Background rows: " << background_.rows << std::endl;
+	img_display = background_.clone();
 	
-	cv::Mat image = background_.clone();
-	/*
 	// Draw my_car_
 	cv::RotatedRect rect(
 		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
@@ -65,10 +69,11 @@ void View::redraw() {
 	cv::Point2f vertices[4];
 	rect.points(vertices);
 	for (int i = 0; i < 4; i++)
-		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
+		cv::line(img_display, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
 
 	// DEBUGGING
 	// Draw other car at mouse click point
+	/*
 	float other_length = DEFAULT_CAR_LENGTH_PIX;
 	float other_width = DEFAULT_CAR_WIDTH_PIX;
 	rect.size = cv::Size(other_length, other_width);
@@ -78,8 +83,13 @@ void View::redraw() {
 	for (int i = 0; i < 4; i++)
 		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255));
 		*/
-	cv::imshow("View", image);
+		
+	cv::imshow("View", img_display);
 	cv::waitKey(frame_time_);
+}
+
+cv::Mat* View::getDisplayImage() {
+	return &img_display;
 }
 
 void View::drawNewDots(std::vector<Point>& segment) {

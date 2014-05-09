@@ -138,6 +138,12 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 	this->image = colorImage;
 	this->camera_vision = true;
 	this->drawTimer->Enabled = true;
+	if (this->vision_form->IsDisposed)
+	{
+		this->vision_form = gcnew CameraView();
+		this->vision_form->setParent(this);
+	}
+	this->vision_form->Size = System::Drawing::Size(this->image->cols, this->image->rows);
 	this->vision_form->Show();
 
 	/*
@@ -164,8 +170,17 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 
 System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
 
-			 this->controller_->getCameraTransform(1);
+			 this->controller_->getCameraTransform(0);
 		 }
 
+ System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e)
+ {
+	 controller_->getMidPoints(0);
+ }
+ System::Void RaceControl::MyForm::button8_Click(System::Object^  sender, System::EventArgs^  e) {
+
+	 controller_->car_tracking_on = true;
+
+}
 
 

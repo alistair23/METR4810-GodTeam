@@ -82,6 +82,8 @@ void Vision::setupCamTransform(int cam_index) {
 // give unwarped top-down view. Input image must contain our 
 // special marker used during setup time. Returns true if success
 bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
+	
+	std::cout << "Getting transform..." << std::endl;
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
 	// Make hsv copy
@@ -108,6 +110,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 
+	std::cout << "Looking through ellipses" << std::endl;
+
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
@@ -123,8 +127,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	}
 
 	// Show circles found
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	// Look for concentric circles: this indicates our marker
 	// Max distance between centres to consider concentric (in pixels):
@@ -176,9 +180,9 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 						//cv::ellipse(cdst, ellipses[k], cv::Scalar(123,45,67), 2);
 
 						int blackness = 999 - values[1] - values[2];
-						int blueness = 999 - abs(117 - values[0]);
+						int blueness = 999 - abs(110 - values[0]);
 						int redness = 999 - std::min(values[0], 179 - values[0]);
-						int greenness = 999 - abs(57 - values[0]);
+						int greenness = 999 - abs(70 - values[0]);
 
 						if (blackness > max_blackness) {
 							max_blackness = blackness;
@@ -201,25 +205,27 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				
 				// Error checks
 				int vals[] = {blue_circle, red_circle, green_circle, black_circle};
-				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 1.4;
-				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 1.4;
+				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 2;
+				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 2;
 				error = false;
 				for (int l = 0; l < 4; l++) {
 					if (vals[l] == -1) {
 						error = true;
 						break;
 					}
-					for (int m = l + 1; m < 4; m++) {
+					/*for (int m = l + 1; m < 4; m++) {
 						float this_dist = dist(ellipses[vals[l]].center, ellipses[vals[m]].center);
 						if (l == m || this_dist > max_dist || this_dist < min_dist) {
 							error = true;
 							break;
 						}
-					}
+					}*/
 				}
 			}
 		}
 	}
+
+	std::cout << "Error: " << error << std::endl;
 
 	if (error) {
 		std::cout << "Failed to find marker!" << std::endl;
@@ -235,8 +241,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::putText(cdst, "Black", ellipses[black_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
 
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	// Get perspective transform
 	// Input Quadilateral or Image plane coordinates
@@ -442,8 +448,8 @@ bool Vision::getCarMarkers(
 		cv::drawContours(cdst,contour, -1, cv::Scalar(20 * i,25 *i,30), 2);
 		cv::imshow("Display", cdst);
 		cv::waitKey();
-	}
-	*/
+	}*/
+	
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
@@ -453,7 +459,7 @@ bool Vision::getCarMarkers(
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
 
 		// Check circularity and that it isn't too small
-		if (r.size.height/r.size.width < 1.5 && r.size.area() > 20) {
+		if (r.size.height/r.size.width < 1.5){// && r.size.area() > 5) {
 			ellipses.push_back(r);
 			//cv::ellipse(cdst, r, cv::Scalar(100,200,100), 1);
 		}
@@ -461,7 +467,7 @@ bool Vision::getCarMarkers(
 
 	// Show circles found
 	//cv::imshow("Display", cdst);
-	//cv::waitKey();
+	//cv::waitKey(10);
 	
 	other_cars.clear();
 
@@ -736,8 +742,8 @@ bool Vision::transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point
 		cv::ellipse(cdst, ellipses[i], cv::Scalar(100,200,100), 2);
 	}
 
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Now look for the circle pairs marking a checkpoint/finish line
 	// This will be used for the perspective transform

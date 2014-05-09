@@ -51,7 +51,7 @@ public:
 
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(
-		cv::Mat& img_thresh, cv::Mat& img_white_warped,
+		cv::Mat& img_in, cv::Mat& img_white_warped,
 		cv::Point2f start_pos, float start_dir);
 
 	// Color threshold on img to get binary image with

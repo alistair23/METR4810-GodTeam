@@ -19,8 +19,10 @@ Controller::Controller() :
 
 	while(!vision_->connectRoboRealm());
 
-	cv::Mat bob = cv::imread("Resources/circle_marker.jpg");
-	//view_->setBackground(bob);
+	
+	Thread^ carDetectionThread = gcnew Thread( gcnew ThreadStart(this, &Controller::detectCar) );
+	carDetectionThread -> Start();
+	
 	img = new cv::Mat();
 
 	//Console::WriteLine(L"Hello World");
@@ -80,4 +82,46 @@ void Controller::getCameraTransform( int camera)
 {
 	vision_->setupCamTransform(camera);
 	showImage(*(vision_->getDisplayImage()));
+}
+
+void Controller::getMidPoints(int camera)
+{
+	vision_->update();
+	Car temp = vision_->getMyCarInfo();
+	cv::Mat img_bgr;
+	vision_->getCamImg(camera, img_bgr);
+	cv::Mat img_white(img_bgr.rows, img_bgr.cols, CV_8UC1, 255);
+	vision_->applyTrans(img_bgr, vision_->transform_mats_[camera]);
+	vision_->applyTrans(img_white, vision_->transform_mats_[camera]);
+	view_->setBackground(img_bgr);
+	std::vector<Point> track = vision_->getMidpoints(img_bgr, img_white,
+		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir());
+	view_->drawNewDots(track);
+	view_->updateMyCar(*my_car_);
+	view_->redraw();
+	showImage(*(view_->getDisplayImage()));
+}
+
+void Controller::detectCar()
+{
+	while (true)
+	{
+		if(!car_tracking_on)
+		{
+			Thread::Sleep(10);
+		}
+		else
+		{
+			vision_->update();
+			Car temp = vision_->getMyCarInfo();
+			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
+			//cv::Mat img_bgr;
+			//vision_->getCamImg(current_camera_, img_bgr);
+			//vision_->applyTrans(img_bgr, vision_->transform_mats_[current_camera_]);
+			//view_->setBackground(img_bgr);
+			view_->updateMyCar(*my_car_);
+			view_->redraw();
+			//showImage(*(view_->getDisplayImage()));
+		}
+	}
 }
