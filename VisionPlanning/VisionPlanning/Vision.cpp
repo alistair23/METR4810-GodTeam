@@ -120,11 +120,11 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::waitKey();
 
 	// Look for concentric circles: this indicates our marker
-	int concentric1 = -1;
-	int concentric2 = -1;
-	float pair_error = 99999;
+	// Max distance between centres to consider concentric (in pixels):
+	float concentric_thresh = 5;	
 	float scale;
-
+	int black_circle = -1, blue_circle = -1, green_circle = -1, red_circle = -1;
+	bool error = true;
 	// Go through each ellipse pair
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
@@ -136,85 +136,87 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 			// Check if concentric. Distance between centres is used as 
 			// error rating
 			float dist_in_pix = dist(ellipses[i].center, ellipses[j].center);
-			float this_pair_error = abs(dist_in_pix);
+			if (dist_in_pix < concentric_thresh) {
 
-			if (this_pair_error < pair_error) {
-				concentric1 = i;
-				concentric2 = j;
-				pair_error = this_pair_error;
+				// Get an approximate scale, using larger circle's diameter
+				// This is for finding the four other circles
+				float large_circle_pix;
+				if (ellipses[i].size.height > ellipses[j].size.height)
+					large_circle_pix = ellipses[i].size.height;
+				else
+					large_circle_pix = ellipses[j].size.height;
+				approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
+				float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.2, 2); 
+
+				// Identify red, green, blue, black circles
+				int max_blackness = 0, max_blueness = 0, max_greenness = 0, max_redness = 0;
+
+				for (std::size_t k = 0; k < ellipses.size(); k++) {
+					if (dist_sq(ellipses[k].center, ellipses[i].center) < thresh_dist_sq) {
+						cv::Scalar values = getColour(img_hsv, ellipses[i].center);
+
+						// Note, in opencv hsv hue range is 0 - 179
+						// while saturation & luminosity range is 0 - 255
+
+						// Ignore circles which are too large
+						if (ellipses[i].size.height > large_circle_pix)
+							continue;
+
+						// Ignore white
+						//if (values[2] > 240)
+						//	continue;
+
+						cv::ellipse(cdst, ellipses[i], cv::Scalar(123,45,67), 2);
+
+						int blackness = 999 - values[1] - values[2];
+						int blueness = 999 - abs(117 - values[0]);
+						int redness = 999 - std::min(values[0], 179 - values[0]);
+						int greenness = 999 - abs(57 - values[0]);
+
+						if (blackness > max_blackness) {
+							max_blackness = blackness;
+							black_circle = i;
+						}
+						if (values[1] > 20 && values[2] > 20 && blueness > max_blueness) {
+							max_blueness = blueness;
+							blue_circle = i;
+						}
+						if (values[1] > 20 && values[2] > 20 && redness > max_redness) {
+							max_redness = redness;
+							red_circle = i;
+						}
+						if (values[1] > 20 && values[2] > 20 && greenness > max_greenness) {
+							max_greenness = greenness;
+							green_circle = i;
+						}
+					}
+				}
+				
+				// Error checks
+				int vals[] = {blue_circle, red_circle, green_circle, black_circle};
+				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 1.2;
+				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 1.2;
+				error = false;
+				for (int l = 0; l < 4; l++) {
+					std::cout << sizeof(vals) << std::endl;
+					if (vals[l] == -1) {
+						error = true;
+						break;
+					}
+					for (int m = l + 1; m < 4; m++) {
+						float this_dist = dist(ellipses[vals[l]].center, ellipses[vals[m]].center);
+						if (l == m || this_dist > max_dist || this_dist < min_dist) {
+							error = true;
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
-	
-	if (concentric1 == -1)	{
-		std::cout << "Failed to find transform marker!" << std::endl;
-		return false;
-	}
 
-	// Show concentric circles found
-	cv::ellipse(cdst, ellipses[concentric1], cv::Scalar(100,200,100), 2);
-	cv::ellipse(cdst, ellipses[concentric2], cv::Scalar(100,200,100), 2);
-	cv::imshow("Display", cdst);
-	cv::waitKey();
-
-	// Get an approximate scale, using larger circle
-	// This is for finding the four other circles
-	float large_circle_pix;
-	if (ellipses[concentric1].size.height > ellipses[concentric2].size.height)
-		large_circle_pix = ellipses[concentric1].size.height;
-	else
-		large_circle_pix = ellipses[concentric2].size.height;
-	approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
-	float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.1, 2); 
-
-	// Identify red, green, blue, black circles
-	int black_circle = -1, blue_circle = -1, green_circle = -1, red_circle = -1;
-	int max_blackness = 0, max_blueness = 0, max_greenness = 0, max_redness = 0;
-
-	for (std::size_t i = 0; i < ellipses.size(); i++) {
-		if (dist_sq(ellipses[i].center, ellipses[concentric1].center) < thresh_dist_sq) {
-			cv::Scalar values = getColour(img_hsv, ellipses[i].center);
-
-			// Note, in opencv hsv hue range is 0 - 179
-			// while saturation & luminosity range is 0 - 255
-
-			// Ignore circles which are too large
-			if (ellipses[i].size.height > large_circle_pix)
-				continue;
-
-			// Ignore white
-			//if (values[2] > 240)
-			//	continue;
-
-			cv::ellipse(cdst, ellipses[i], cv::Scalar(123,45,67), 2);
-
-			int blackness = 999 - values[1] - values[2];
-			int blueness = 999 - abs(117 - values[0]);
-			int redness = 999 - std::min(values[0], 179 - values[0]);
-			int greenness = 999 - abs(57 - values[0]);
-
-			if (blackness > max_blackness) {
-				max_blackness = blackness;
-				black_circle = i;
-			}
-			if (values[1] > 20 && values[2] > 20 && blueness > max_blueness) {
-				max_blueness = blueness;
-				blue_circle = i;
-			}
-			if (values[1] > 20 && values[2] > 20 && redness > max_redness) {
-				max_redness = redness;
-				red_circle = i;
-			}
-			if (values[1] > 20 && values[2] > 20 && greenness > max_greenness) {
-				max_greenness = greenness;
-				green_circle = i;
-			}
-		}
-	}
-
-	if (blue_circle == -1 || red_circle == -1 ||
-		green_circle == -1 || black_circle == -1) {
-		std::cout << "Failed to find transform marker!!" << std::endl;
+	if (error) {
+		std::cout << "Failed to find marker!" << std::endl;
 		return false;
 	}
 
@@ -385,6 +387,8 @@ void Vision::getCamImg(int cam, cv::Mat& img_out) {
 		if (!connectRoboRealm())	// Attempt connection
 			return;					// Failed to connect
 
+	// Wait for latest image
+	roborealm_.waitImage();
 	int width, height;
 	roborealm_.getDimension(&width, &height);
 	uchar *data = new uchar[width * height * 3];
@@ -1049,7 +1053,7 @@ bool Vision::inImg(cv::Mat& img, int x, int y) {
 }
 
 int Vision::getTileType(cv::Mat& img_roi, int rot) {
-
+	
 	float max_percent = 0;
 	float best_tile;
 

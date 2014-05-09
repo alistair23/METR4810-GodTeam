@@ -13,13 +13,12 @@ class LocalPlanner {
 public:
 
 	LocalPlanner(std::vector<Point> global_path);
-	std::vector<Point> getSegment(int num_points);
+	std::vector<Point> getSegment(int num_points = 20);
 	void update(MyCar my_car, std::vector<Car> other_cars);
 
 private:
 	
-	
-	int getClosestGlobal(Point pos);
+	int getClosest(Point& pos, std::vector<Point>& path, double look_ahead);
 	bool isValid(Point pos, long long time);
 
 	// Returns id of car in collision given position of my car
@@ -28,6 +27,8 @@ private:
 	bool lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1, cv::Point2f b2);
 
 	std::vector<Point> global_path_;
+	std::vector<Point> prev_segment_;
+	int global_index_;
 
 	MyCar my_car_;
 	std::vector<Car> other_cars_;

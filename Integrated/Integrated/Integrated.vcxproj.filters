@@ -54,9 +54,6 @@
     <ClInclude Include="Point.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Racetrack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RR_API.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -48,11 +48,12 @@ public:
 
 
 	// WORK IN PROGRESS
-	std::vector<Point> extractRacetrack(cv::Mat& img_thresh, cv::Point2f origin,
-		cv::Point2f start_position, float start_orientation, cv::Point2f end_position); 
+	std::vector<Point> getMidpoints(
+		cv::Mat& img_thresh, cv::Mat& img_white_warped,
+		cv::Point2f start_pos, float start_dir);
 
 	// Color threshold on img to get binary image with
-	// road black and everything else white
+	// road white and everything else black
 	void colorThresh(cv::Mat& img);
 
 	// Applies perspective transform to an image
@@ -63,6 +64,8 @@ public:
 	// Stores perspective transforms for each camera
 	std::vector<cv::Mat> transform_mats_;
 	std::vector<cv::Mat> inv_transform_mats;
+
+	bool inImg(cv::Mat& img, int x, int y);
 
 private:
 
@@ -82,12 +85,13 @@ private:
 	// Get average colour around point in image
 	cv::Scalar getColour(cv::Mat& img, cv::Point2f p, int pix_length = 5);
 
-	cv::Point2f getBoundary(cv::Mat& img, cv::Point2f start, float dir);
+	cv::Point2f getBoundary(cv::Mat& img, cv::Point2f start, float dir,
+		bool& at_img_edge, uchar road_colour = 0);
 
 	int getTileType(cv::Mat& img_roi, int rot);
 
-	//Tile finish_tile_1;
-	//Tile finish_tile_2;
+	Tile finish_tile_1;
+	Tile finish_tile_2;
 
 	std::vector<Tile> tiles;
 

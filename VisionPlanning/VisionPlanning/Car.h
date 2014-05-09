@@ -10,7 +10,7 @@ public:
 
 	Car();
 	Car(Point pos, double dir, double spd, double length = DEFAULT_CAR_LENGTH_PIX, double width = DEFAULT_CAR_WIDTH_PIX);
-	Car(const Car& p);	// Copy
+	Car(const Car& c);	// Copy
 	const Car &Car::operator = (const Car& c);
 	void update(Point pos, double dir, double spd);
 	void setPos(Point pos);

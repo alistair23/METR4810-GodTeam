@@ -19,24 +19,31 @@ void LocalPlanner::update(MyCar my_car, std::vector<Car> other_cars) {
 
 std::vector<Point> LocalPlanner::getSegment(int num_points) {
 	
-	int closest_global = getClosestGlobal(my_car_.getPos());
-
-	// If we are just behind the finish line, just start segment
-	// after finish line (prevent index out of range errors)
-	if (closest_global + num_points >= global_path_.size())
-		closest_global = 0;
-
-	// TODO keep stuff from previous segment (remove front, add to back)
-	// Copy over global points to a new segment
 	std::vector<Point> segment;
-	for (int i = closest_global; i < closest_global + num_points; i++) {
-		segment.push_back(global_path_[i]);
+	// Reuse path from before (unless this is the first time)
+	if (prev_segment_.size() > 0) {
+		int closest = getClosest(my_car_.getPos(), prev_segment_, 50);
+		for (int i = closest; i < prev_segment_.size(); i++) {
+			segment.push_back(prev_segment_[i]);
+			segment.back().locked = false;
+		}
+		global_index_ += closest;
+	}
+	else {
+		global_index_ = getClosest(my_car_.getPos(), global_path_, 50);
+	}
+
+	// Copy over global points to satisfy num_points
+	std::size_t s = segment.size();
+	for (int i = 0; i < num_points - s; i++) {
+		int j = global_index_ + s + i;
+		segment.push_back(global_path_[j % global_path_.size()]);
 	}
 
 	// TODO Shift first point to match current?
 
 	// Check points validity, record indices of points in collision
-	long long timetodo = 0;
+	long long timetodo = 0;	// TODO
 	std::vector<int> invalidPoints;
 
 	// First point needs to be checked specially, as 
@@ -50,8 +57,12 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 	}
 	
 	// If there are no points in collision, we go with the existing plan
-	if (invalidPoints.size() == 0) 
-		return segment;
+	// TODO smoothen?
+	std::cout << invalidPoints.size() << std::endl;
+	if (invalidPoints.size() == 0)  {
+		prev_segment_ = segment;
+		//return segment;
+	}
 	
 
 	// Otherwise there are three options. Check each and use the 
@@ -67,12 +78,13 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 
 	// First check overtaking right option
 	// Make a copy of the segment
+	std::vector<Point> left_segment = segment;
 	std::vector<Point> right_segment = segment;
 	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
 
 		// Get references to invalid segment point and corresponding global path point
 		Point& seg_point = right_segment[invalidPoints[i]];
-		Point& global_point = global_path_[(invalidPoints[i] + closest_global) % global_path_.size()];
+		Point& global_point = global_path_[(invalidPoints[i] + global_index_) % global_path_.size()];
 
 		// Get gradient from point towards right track edge
 		double step_size = 1;	// In pixels
@@ -82,7 +94,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		// Go along gradient until valid point is found
 		double deformation = seg_point.dist(global_point);
 		bool pointValid = false;
-		while (!pointValid && deformation < global_point.r_edge_dist) {
+		while (!pointValid && deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
 			deformation += step_size;
 			seg_point.x += dx;
 			seg_point.y += dy;
@@ -90,22 +102,21 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		}
 
 		// If a point can't be corrected, then cannot overtake right
-		//if (!pointValid) {
-		//	right_cost = -1;
-		//	break;
-		//}
+		if (!pointValid) {
+			right_cost = -1;
+			break;
+		}
 
 		seg_point.locked = true;
 	}
 	
 	// Check overtaking left option
 	// Make a copy of the segment
-	std::vector<Point> left_segment = segment;
 	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
 
 		// Get references to invalid segment point and corresponding global path point
 		Point& seg_point = left_segment[invalidPoints[i]];
-		Point& global_point = global_path_[(invalidPoints[i] + closest_global) % global_path_.size()];
+		Point& global_point = global_path_[(invalidPoints[i] + global_index_) % global_path_.size()];
 
 		// Get gradient from point towards left track edge
 		double step_size = 1;	// In pixels
@@ -115,7 +126,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		// Go along gradient until valid point is found
 		double deformation = seg_point.dist(global_point);
 		bool pointValid = false;
-		while (!pointValid && deformation < global_point.l_edge_dist) {
+		while (!pointValid && deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
 			deformation += step_size;
 			seg_point.x += dx;
 			seg_point.y += dy;
@@ -131,28 +142,37 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		seg_point.locked = true;
 	}
 	
-	// Check following other car option, i.e. match velocity
+	// TODO Check following other car option, i.e. match velocity
+
+	// TODO avoid all this copying?
+	if (right_cost != -1) {
+		segment = right_segment;
+	}
+	else if (left_cost != -1) {
+		segment = left_segment;
+	}
 
 	// Smooth out path through iterative process
 	int iterations = 25;
-	double change_factor = 0.25;
+	double change_factor = 0.04;
+	double global_path_attraction_factor = 0.5;
 	for (int i = 0; i < iterations; i++) {
-		for (std::size_t j = 1; j < right_segment.size(); j++) {
-			if (right_segment[j].locked)
+		for (std::size_t j = 1; j < segment.size(); j++) {
+			if (segment[j].locked)
 				continue;
 
 			double force = 0;	// Acts left/right, perpendicular to track edge
 
 			// Get references to corresponding global path point
-			Point& global_point = global_path_[(j + closest_global) % global_path_.size()];
+			Point& global_point = global_path_[(j + global_index_) % global_path_.size()];
 
 			// Get unit vector perpendicular to track edge
 			double angle = global_point.track_angle + (M_PI * 0.5);
 			Vector2D v(cos(angle), sin(angle));
 
 			// Get vector from this point to the one before
-			double dx = right_segment[j - 1].x - right_segment[j].x;
-			double dy = right_segment[j - 1].y - right_segment[j].y;
+			double dx = segment[j - 1].x - segment[j].x;
+			double dy = segment[j - 1].y - segment[j].y;
 			Vector2D u(dx, dy);
 
 			// Get length of projection of u on v (dot product)
@@ -161,38 +181,38 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 			force += d;
 
 			// Repeat for force due to point after this one
-			if (j != right_segment.size() - 1) {
-				u.y = right_segment[j + 1].y - right_segment[j].y;
-				u.x = right_segment[j + 1].x - right_segment[j].x;
+			if (j != segment.size() - 1) {
+				u.y = segment[j + 1].y - segment[j].y;
+				u.x = segment[j + 1].x - segment[j].x;
 				force += v.dot(u);
 			}
 
-			right_segment[j].x += force * change_factor * cos(angle);
-			right_segment[j].y += force * change_factor * sin(angle);
+			// Attractive force to global path point
+			//u.y = global_point.y - right_segment[j].y;
+			//u.x = global_point.x - right_segment[j].x;
+			//force += global_path_attraction_factor * v.dot(u);
 
-			// TODO attractive force due to global path point
+			segment[j].x += force * change_factor * cos(angle);
+			segment[j].y += force * change_factor * sin(angle);
 		}
 	}
-	
-	if (right_cost != -1)
-		return right_segment;
 
-
+	prev_segment_ = segment;
 	return segment;
 }
 
-// Return the index of the point on the global path ahead 
+// Return the index of a point on the path, ahead 
 // by look_ahead_dist.  If no points are within
 // look_ahead_dist, returns index of closest point
-int LocalPlanner::getClosestGlobal(Point pos) {
-	double look_ahead_dist_sq = 2500;
-	int i = global_path_.size() - 1;
-	double dist_sq = pos.distSquared(global_path_[i]);
+int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path, double look_ahead) {
+	double look_ahead_sq = look_ahead * look_ahead;
+	int i = path.size() - 1;
+	double dist_sq = pos.distSquared(path[i]);
 	double min_dist_sq = 999999;
 	int min_index = 0;
-	while (dist_sq > look_ahead_dist_sq && i > 0) {
+	while (dist_sq > look_ahead_sq && i > 0) {
 		i -= 1;
-		dist_sq = pos.distSquared(global_path_[i]);
+		dist_sq = pos.distSquared(path[i]);
 		if (dist_sq < min_dist_sq) {
 			min_dist_sq = dist_sq;
 			min_index = i;
@@ -207,7 +227,6 @@ int LocalPlanner::getClosestGlobal(Point pos) {
 // Returns id of car in collision given position of my car
 // Returns -1 if no collision detected
 int LocalPlanner::carInCollision(Point pos, double dir, long long time) {
-	dir = 0;
 	cv::RotatedRect my_rect(cv::Point2f(pos.x, pos.y),
 		cv::Size(my_car_.getLength(), my_car_.getWidth()), dir);
 	cv::Point2f my_vertices[4];

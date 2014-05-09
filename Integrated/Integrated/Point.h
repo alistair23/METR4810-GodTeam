@@ -1,6 +1,8 @@
 #ifndef _INCLUDED_POINT_H
 #define _INCLUDED_POINT_H
 
+#include "Globals.h"
+
 class Point
 {
 
@@ -15,7 +17,7 @@ public:
 	const Point &Point::operator = (const Point& p);
 
 	// Constructor
-	Point(double x, double y, double track_angle = 0, double r_edge_dist = 0, double l_edge_dist = 0);
+	Point(double x, double y, double track_angle = 0);
 
 	// Returns distance to other point
 	double dist(const Point& p);
@@ -40,10 +42,7 @@ public:
 	// Stuff for path planning
 	bool locked;		// For trajectory deformation; do not move
 
-	// Defined for global path points:
 	double track_angle;	// Radians, parallel to track edge
-	double r_edge_dist;	// Distance to right boundary
-	double l_edge_dist;	// Distance to left boundary
 	
 
 	// TODO

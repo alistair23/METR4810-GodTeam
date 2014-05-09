@@ -128,7 +128,6 @@
     </ClInclude>
     <ClInclude Include="Point.h" />
     <ClInclude Include="Controller.h" />
-    <ClInclude Include="Racetrack.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="RR_API.h" />
     <ClInclude Include="Simulator.h" />

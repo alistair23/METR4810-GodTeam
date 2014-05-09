@@ -86,11 +86,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\OpenCV-2.4.6\build\include\opencv;C:\OpenCV-2.4.6\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\OpenCV2.4.6\build\include\opencv;C:\OpenCV2.4.6\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\OpenCV-2.4.6\build\x64\vc11\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\OpenCV2.4.6\build\x64\vc11\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_calib3d246d.lib;opencv_contrib246d.lib;opencv_core246d.lib;opencv_features2d246d.lib;opencv_flann246d.lib;opencv_gpu246d.lib;opencv_highgui246d.lib;opencv_imgproc246d.lib;opencv_legacy246d.lib;opencv_ml246d.lib;opencv_nonfree246d.lib;opencv_objdetect246d.lib;opencv_ocl246d.lib;opencv_photo246d.lib;opencv_stitching246d.lib;opencv_superres246d.lib;opencv_ts246d.lib;opencv_video246d.lib;opencv_videostab246d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -124,7 +124,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CamCalib.h" />
-    <ClInclude Include="GlobalPlanner.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="Intrinsics.h" />
     <ClInclude Include="LocalPlanner.h" />
@@ -148,8 +147,8 @@
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="RR_API.cpp" />
-    <ClCompile Include="Rubbish.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
+    <ClCompile Include="Rubbish.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="View.cpp" />
     <ClCompile Include="Vision.cpp" />
