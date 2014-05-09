@@ -5,6 +5,7 @@
 #include "Point.h"
 
 using namespace std;
+using namespace RaceControl;
 
 // Default constructor
 Point::Point():

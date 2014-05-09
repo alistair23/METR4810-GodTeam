@@ -8,6 +8,8 @@
 #include "Car.h"
 #include "MyCar.h"
 
+namespace RaceControl {
+
 class LocalPlanner {
 
 public:
@@ -35,5 +37,5 @@ private:
 
 };
 
-
+}
 #endif

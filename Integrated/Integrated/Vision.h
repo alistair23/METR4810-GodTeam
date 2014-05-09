@@ -13,6 +13,8 @@
 #include "Car.h"
 #include "RR_API.h"
 
+namespace RaceControl {
+
 class Vision {
 
 public:
@@ -67,7 +69,11 @@ public:
 
 	bool inImg(cv::Mat& img, int x, int y);
 
+	cv::Mat* getDisplayImage();
+
 private:
+
+	cv::Mat img_display_;
 
 	// Returns euclidean distance between two opencv points
 	float dist(cv::Point2f& p1, cv::Point2f& p2);
@@ -111,5 +117,5 @@ private:
 
 };
 
-
+} // namespace RaceControl
 #endif

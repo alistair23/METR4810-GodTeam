@@ -59,6 +59,7 @@ namespace RaceControl {
 			this->vision_form = gcnew CameraView();
 			this->vision_form->setParent(this);
 			
+			
 			this->drawTimer = gcnew System::Timers::Timer( 1000 );
 			drawTimer->Elapsed += gcnew System::Timers::ElapsedEventHandler(this, &MyForm::updateImage);
 			drawTimer->Enabled = false;
@@ -89,6 +90,7 @@ namespace RaceControl {
 	private: System::Windows::Forms::CheckBox^  checkBox3;
 	private: System::Windows::Forms::CheckBox^  checkBox2;
 	private: System::Windows::Forms::Button^  button5;
+	private: System::Windows::Forms::Button^  button6;
 
 
 
@@ -193,6 +195,7 @@ namespace RaceControl {
 			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->button5 = (gcnew System::Windows::Forms::Button());
 			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
 			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
 			this->label9 = (gcnew System::Windows::Forms::Label());
@@ -212,7 +215,7 @@ namespace RaceControl {
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->trackBar2 = (gcnew System::Windows::Forms::TrackBar());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->button5 = (gcnew System::Windows::Forms::Button());
+			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->groupBox1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->BeginInit();
@@ -310,6 +313,7 @@ namespace RaceControl {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->button6);
 			this->groupBox1->Controls->Add(this->button5);
 			this->groupBox1->Controls->Add(this->checkBox3);
 			this->groupBox1->Controls->Add(this->checkBox2);
@@ -347,6 +351,16 @@ namespace RaceControl {
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"Serial Command";
 			this->groupBox1->Enter += gcnew System::EventHandler(this, &MyForm::groupBox1_Enter);
+			// 
+			// button5
+			// 
+			this->button5->Location = System::Drawing::Point(171, 434);
+			this->button5->Name = L"button5";
+			this->button5->Size = System::Drawing::Size(98, 23);
+			this->button5->TabIndex = 33;
+			this->button5->Text = L"Vision";
+			this->button5->UseVisualStyleBackColor = true;
+			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// checkBox3
 			// 
@@ -526,15 +540,15 @@ namespace RaceControl {
 			this->trackBar1->Size = System::Drawing::Size(45, 268);
 			this->trackBar1->TabIndex = 11;
 			// 
-			// button5
+			// button6
 			// 
-			this->button5->Location = System::Drawing::Point(171, 434);
-			this->button5->Name = L"button5";
-			this->button5->Size = System::Drawing::Size(98, 23);
-			this->button5->TabIndex = 33;
-			this->button5->Text = L"Vision";
-			this->button5->UseVisualStyleBackColor = true;
-			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
+			this->button6->Location = System::Drawing::Point(275, 434);
+			this->button6->Name = L"button6";
+			this->button6->Size = System::Drawing::Size(92, 23);
+			this->button6->TabIndex = 34;
+			this->button6->Text = L"Get Transform";
+			this->button6->UseVisualStyleBackColor = true;
+			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click);
 			// 
 			// MyForm
 			// 
@@ -800,16 +814,9 @@ private: System::Void updateImage( System::Object^ source, System::Timers::Elaps
 			 if (camera_vision)
 			{
 		
-				if (this->vision_form->IsDisposed)
-				{
-					std::cout <<"I come here for some reason" <<std::endl;
-					this->vision_form = gcnew CameraView();
-					this->vision_form->setParent(this);
-			
-				}
-				this->vision_form->Show();
+				
 				System::Drawing::Graphics^ graphics = this->vision_form->CreateGraphics();
-				System::IntPtr ptr(this->image);
+				System::IntPtr ptr(this->image->ptr());
 				std::cout <<"columns:" <<this->image->cols << "rows:" << this->image->rows << std::endl;
 				System::Drawing::Bitmap^ b  =gcnew System::Drawing::Bitmap(this->image->cols,this->image->rows,this->image->step,System::Drawing::Imaging::PixelFormat::Format24bppRgb,ptr);
 				System::Drawing::RectangleF rect(0,0,this->vision_form->Width,this->vision_form->Height);
@@ -866,6 +873,15 @@ private: System::Void button5_Click(System::Object^  sender, System::EventArgs^ 
 
 			//controller_->startVision();
 			 camera_vision = true;
+			 if (this->vision_form->IsDisposed)
+				{
+					this->vision_form = gcnew CameraView();
+					this->vision_form->setParent(this);
+					this->vision_form->Show();
+				}
+			 drawTimer->Enabled = true;
 		 }
+
+private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) ;
 };
 }

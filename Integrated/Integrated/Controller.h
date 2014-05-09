@@ -18,7 +18,8 @@ public:
 	~Controller();
 	!Controller();
 
-	void startVision();
+	void showImage(cv::Mat im);
+	void getCameraTransform( int camera);
 
 	cv::Mat* img;
 
@@ -26,7 +27,7 @@ private:
 	MyCar *my_car_;
 	MyForm^ form_;
 	Vision *vision_;
-	CarView::View *view_;
+	View *view_;
 
 	void updateView(Object^ stateInfo);
 

@@ -3,6 +3,8 @@
 
 #include "Globals.h"
 
+namespace RaceControl {
+
 class Point
 {
 
@@ -50,5 +52,5 @@ public:
 	// double speed;
 
 };
-
+}
 #endif

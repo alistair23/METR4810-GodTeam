@@ -154,7 +154,6 @@
     <ClCompile Include="PIDTuningForm.cpp" />
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="RaceControl.cpp" />
-    <ClCompile Include="Racetrack.cpp" />
     <ClCompile Include="RR_API.cpp" />
     <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -5,6 +5,8 @@
 #include "Point.h"
 #include "Globals.h"
 
+namespace RaceControl {
+
 class MyCar: public Car {
 
 public:
@@ -30,5 +32,7 @@ private:
 	double l_speed_;		// Speed of left wheels in pixels/s
 
 };
+
+}
 
 #endif

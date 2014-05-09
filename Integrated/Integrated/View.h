@@ -8,7 +8,7 @@
 #include "Point.h"
 #include "MyCar.h"
 
-namespace CarView {
+namespace RaceControl {
 
 class View 
 {

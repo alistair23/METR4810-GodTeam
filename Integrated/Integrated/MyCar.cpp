@@ -5,6 +5,8 @@
 #include <math.h>
 #include "CommonFunctions.h"
 
+using namespace RaceControl;
+
 MyCar::MyCar():
 	Car(),
 	axle_length_(0.075 / M_PER_PIX),

@@ -9,6 +9,8 @@
 #include "Globals.h"
 #include "CommonFunctions.h"
 
+using namespace RaceControl;
+
 Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	num_cam_(num_cam),
 	ip_address_(ip_address),
@@ -54,6 +56,10 @@ bool Vision::connectRoboRealm() {
 	}
 }
 
+cv::Mat* Vision::getDisplayImage() {
+	return &img_display_;
+}
+
 // Gets the perspective transform for a camera
 void Vision::setupCamTransform(int cam_index) {
 	bool gotTrans = false;
@@ -65,8 +71,9 @@ void Vision::setupCamTransform(int cam_index) {
 
 		if (!gotTrans)
 			std::cout << "Failed to get transform for camera " << cam_index << std::endl;
-		cv::imshow("Display", img);
-		cv::waitKey();
+
+		//cv::imshow("Display", img);
+		//cv::waitKey();
 	}
 	std::cout << "Successfully got transform for camera " << cam_index << std::endl;
 }
@@ -75,7 +82,7 @@ void Vision::setupCamTransform(int cam_index) {
 // give unwarped top-down view. Input image must contain our 
 // special marker used during setup time. Returns true if success
 bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
-	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
+	//cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
 	// Make hsv copy
 	cv::Mat img_hsv;
@@ -116,8 +123,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	}
 
 	// Show circles found
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Look for concentric circles: this indicates our marker
 	// Max distance between centres to consider concentric (in pixels):
@@ -229,8 +236,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	cv::putText(cdst, "Black", ellipses[black_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
 
-	cv::imshow("Display", cdst);
-	cv::waitKey();
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
 
 	// Get perspective transform
 	// Input Quadilateral or Image plane coordinates
@@ -254,10 +261,10 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
     transform_out = getPerspectiveTransform( input_quad, output_quad );
 
 	// Show the effect of applying perspective transform to input image
-	cv::Mat img_output;
-    warpPerspective(img_in, img_output, transform_out, img_output.size() );
-	cv::imshow("Display", img_output);
-	cv::waitKey();
+	//cv::Mat img_output;
+    warpPerspective(img_in, img_display_, transform_out, img_display_.size() );
+	//cv::imshow("Display", img_output);
+	//cv::waitKey();
 
 	return true;
 }

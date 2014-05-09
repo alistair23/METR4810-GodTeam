@@ -118,9 +118,6 @@
     <ClCompile Include="MyCar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Racetrack.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RR_API.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

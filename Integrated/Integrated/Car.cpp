@@ -1,6 +1,8 @@
 #include "Car.h"
 #include "CommonFunctions.h"
 
+using namespace RaceControl;
+
 Car::Car():
 	pos_(Point(0,0)),
 	dir_(0),

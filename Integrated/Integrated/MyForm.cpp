@@ -138,6 +138,8 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 	this->image = colorImage;
 	this->camera_vision = true;
 	this->drawTimer->Enabled = true;
+	this->vision_form->Show();
+
 	/*
 
 	if (camera_vision)
@@ -159,6 +161,11 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 
 	}*/
 }
+
+System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
+
+			 this->controller_->getCameraTransform(1);
+		 }
 
 
 

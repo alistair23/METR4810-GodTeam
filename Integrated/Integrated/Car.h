@@ -4,6 +4,8 @@
 #include "Point.h"
 #include "Globals.h"
 
+namespace RaceControl {
+
 class Car {
 
 public:
@@ -35,6 +37,6 @@ protected:
 	long long update_time_;	// Time at last update according to time_now() in CommonFunctions.h
 
 };
-
+}
 
 #endif

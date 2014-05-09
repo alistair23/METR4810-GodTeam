@@ -12,14 +12,16 @@ using namespace RaceControl;
 Controller::Controller() :
 	my_car_(new MyCar()),
 	vision_(new Vision()),
-	view_(new CarView::View())
+	view_(new View())
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
 
+	while(!vision_->connectRoboRealm());
+
 	cv::Mat bob = cv::imread("Resources/circle_marker.jpg");
 	//view_->setBackground(bob);
-	startVision();
+	img = new cv::Mat();
 
 	//Console::WriteLine(L"Hello World");
 	Application::EnableVisualStyles();
@@ -37,16 +39,17 @@ Controller::!Controller() {
 	delete my_car_;
 	delete vision_;
 	delete view_;
+	delete img;
 }
 
-void Controller::startVision() {
+void Controller::showImage(cv::Mat im) {
 	std::cout << "vision is started" << std::endl;
 	//view_->createWindow();
 	
 	std::cout << " updateView is called..." << std::endl;
 	std::cout << "view is updating..." << std::endl;
-	img = new cv::Mat();
-	*img = cv::imread("Resources/circle_marker.jpg");
+	
+	*img = im; //cv::imread("Resources/circle_marker.jpg");
 	std::cout <<"columns:" <<(*img).cols << "rows:" << (*img).rows << std::endl;
 	form_->DrawCVImage(img);
 	//AutoResetEvent^ autoResetEvent     = gcnew AutoResetEvent(false);
@@ -71,4 +74,10 @@ void Controller::updateView(Object^ stateInfo) {
 		Thread::Sleep(10);
 	}
 	
+}
+
+void Controller::getCameraTransform( int camera)
+{
+	vision_->setupCamTransform(camera);
+	showImage(*(vision_->getDisplayImage()));
 }

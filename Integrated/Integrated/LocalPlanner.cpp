@@ -6,6 +6,8 @@
 #include "Globals.h"
 #include "Vector2D.h"
 
+using namespace RaceControl;
+
 LocalPlanner::LocalPlanner(std::vector<Point> global_path):
 	global_path_(global_path)
 {

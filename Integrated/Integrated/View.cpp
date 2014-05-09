@@ -6,7 +6,7 @@
 #include "View.h"
 #include "Globals.h"
 
-using namespace CarView;
+using namespace RaceControl;
 
 // For some reason putting this in header causes an error...
 void onMouse( int event, int x, int y, int, void* );	
