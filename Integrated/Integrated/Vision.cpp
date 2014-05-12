@@ -11,6 +11,18 @@
 
 using namespace RaceControl;
 
+struct sort_pred {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second > right.second;
+    }
+};
+
+struct sort_v_pred {
+    bool operator()(const std::pair<std::vector<int>,int> &left, const std::pair<std::vector<int>,int> &right) {
+        return left.second > right.second;
+    }
+};
+
 Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	num_cam_(num_cam),
 	ip_address_(ip_address),
@@ -67,10 +79,13 @@ void Vision::setupCamTransform(int cam_index) {
 		cv::Mat img;
 		getCamImg(cam_index, img);
 		gotTrans = getTransform(img, transform_mats_[cam_index]);
-		inv_transform_mats.push_back(transform_mats_[cam_index].inv());
 
-		if (!gotTrans)
+		if (!gotTrans) {
 			std::cout << "Failed to get transform for camera " << cam_index << std::endl;
+			return;
+		}
+
+		inv_transform_mats.push_back(transform_mats_[cam_index].inv());
 
 		//cv::imshow("Display", img);
 		//cv::waitKey();
@@ -97,7 +112,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 
 	// Canny edge detection
 	cv::Mat img_canny;
-	int threshold = 30;
+	int threshold = 60;
 	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -134,8 +149,9 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	// Max distance between centres to consider concentric (in pixels):
 	float concentric_thresh = 5;	
 	float scale;
-	int black_circle = -1, blue_circle = -1, green_circle = -1, red_circle = -1;
 	bool error = true;
+	std::vector<std::pair<std::vector<int>, int>> possible_configs;
+
 	// Go through each ellipse pair
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
@@ -151,17 +167,20 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 
 				// Get an approximate scale, using larger circle's diameter
 				// This is for finding the four other circles
-				float large_circle_pix;
-				if (ellipses[i].size.height > ellipses[j].size.height)
+				float large_circle_pix, small_circle_pix;
+				if (ellipses[i].size.height > ellipses[j].size.height) {
 					large_circle_pix = ellipses[i].size.height;
-				else
+					small_circle_pix = ellipses[j].size.height;
+				} else {
 					large_circle_pix = ellipses[j].size.height;
+					small_circle_pix = ellipses[j].size.height;
+				}
 				approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
 				float thresh_distSq = pow(((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.2), 2); 
 
 				// Identify red, green, blue, black circles
-				int max_blackness = 0, max_blueness = 0, max_greenness = 0, max_redness = 0;
-
+				int max_blueness = 0, max_greenness = 0, max_redness = 0, max_blackness = 0;
+				std::vector<std::pair<int, int>> blacks, blues, greens, reds;
 				for (std::size_t k = 0; k < ellipses.size(); k++) {
 					if (distSq(ellipses[k].center, ellipses[i].center) < thresh_distSq) {
 						cv::Scalar values = getColour(img_hsv, ellipses[k].center);
@@ -169,68 +188,94 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 						// Note, in opencv hsv hue range is 0 - 179
 						// while saturation & luminosity range is 0 - 255
 
-						// Ignore circles which are too large
-						if (ellipses[k].size.height > large_circle_pix)
+						// Ignore circles which are too large/small
+						if (ellipses[k].size.height > large_circle_pix ||
+							ellipses[k].size.height < 0.5 * small_circle_pix)
 							continue;
 
 						// Ignore white
-						//if (values[2] > 240)
-						//	continue;
+						if (values[2] > 252)
+							continue;
+
+						// Ignore the centre circles
+						if (k == i || k == j)
+							continue;
 
 						//cv::ellipse(cdst, ellipses[k], cv::Scalar(123,45,67), 2);
-
-						int blackness = 999 - values[1] - values[2];
 						int blueness = 999 - abs(110 - values[0]);
 						int redness = 999 - std::min(values[0], 179 - values[0]);
-						int greenness = 999 - abs(70 - values[0]);
-
-						if (blackness > max_blackness) {
-							max_blackness = blackness;
-							black_circle = k;
+						int greenness = 999 - abs(50 - values[0]);
+						if (values[2] < 25) {
+							blueness = 0;
+							redness = 0;
+							greenness = 0;
 						}
-						if (values[1] > 20 && values[2] > 20 && blueness > max_blueness) {
-							max_blueness = blueness;
-							blue_circle = k;
-						}
-						if (values[1] > 20 && values[2] > 20 && redness > max_redness) {
-							max_redness = redness;
-							red_circle = k;
-						}
-						if (values[1] > 20 && values[2] > 20 && greenness > max_greenness) {
-							max_greenness = greenness;
-							green_circle = k;
-						}
+						int blackness = 999 - values[1] - values[2];
+						blues.push_back(std::pair<int, int>(k, blueness));
+						reds.push_back(std::pair<int, int>(k, redness));
+						greens.push_back(std::pair<int, int>(k, greenness));
+						blacks.push_back(std::pair<int, int>(k, blackness));
 					}
 				}
 				
+				std::sort(blacks.begin(), blacks.end(), sort_pred());
+				std::sort(blues.begin(), blues.end(), sort_pred());
+				std::sort(greens.begin(), greens.end(), sort_pred());
+				std::sort(reds.begin(), reds.end(), sort_pred());
+
 				// Error checks
-				int vals[] = {blue_circle, red_circle, green_circle, black_circle};
+				
 				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 2;
-				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 2;
+				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 0.4;
 				error = false;
-				for (int l = 0; l < 4; l++) {
-					if (vals[l] == -1) {
-						error = true;
-						break;
-					}
-					/*for (int m = l + 1; m < 4; m++) {
-						float this_dist = dist(ellipses[vals[l]].center, ellipses[vals[m]].center);
-						if (l == m || this_dist > max_dist || this_dist < min_dist) {
-							error = true;
-							break;
+
+				for (int iblack = 0; iblack < blacks.size(); iblack++) {
+					for (int iblue = 0; iblue < blues.size(); iblue++) {
+						for (int igreen = 0; igreen < greens.size(); igreen++) {
+							for (int ired = 0; ired < reds.size(); ired++) {
+								std::vector<int> config;
+								config.push_back(blues[iblue].first);
+								config.push_back(reds[ired].first);
+								config.push_back(greens[igreen].first);
+								config.push_back(blacks[iblack].first);
+								error = false;
+								for (int l = 0; l < 3; l++) {
+									if (config[l] == -1) {
+										error = true;
+										break;
+									}
+									for (int m = l + 1; m < 4; m++) {
+										float this_dist = dist(ellipses[config[l]].center, ellipses[config[m]].center);
+										if (config[l] == config[m] || this_dist > max_dist || this_dist < min_dist) {
+											error = true;
+											break;
+										}
+									}
+								}
+
+								if (!error) {
+									int color_correctness = blues[iblue].second 
+										+ reds[ired].second + greens[igreen].second + blacks[iblack].second;
+									possible_configs.push_back(std::pair<std::vector<int>, int>(config, color_correctness));
+								}
+							}
 						}
-					}*/
+					}
 				}
 			}
 		}
 	}
 
-	std::cout << "Error: " << error << std::endl;
-
-	if (error) {
+	if (possible_configs.size() == 0) {
 		std::cout << "Failed to find marker!" << std::endl;
 		return false;
 	}
+
+	std::sort(possible_configs.begin(), possible_configs.end(), sort_v_pred());
+	int blue_circle = possible_configs[0].first[0];
+	int red_circle = possible_configs[0].first[1];
+	int green_circle = possible_configs[0].first[2];
+	int black_circle = possible_configs[0].first[3];
 
 	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
@@ -321,6 +366,7 @@ void Vision::update() {
 		// TODO memorise my_car pos before perspective warp
 	    cv::Rect roi(predicted_pos_pers.x - search_size, 
 		predicted_pos_pers.y - search_size, 2 * search_size, 2 * search_size);
+		cv::circle(img_in, cv::Point2f(predicted_pos_pers.x, predicted_pos_pers.y), 2, cv::Scalar(255,100,0));
 	
 		std::cout << "car size: "<<last_car_size_ << std::endl;
 		//cv::Rect roi(last_my_car_pos_.x - search_size, 
@@ -407,6 +453,8 @@ void Vision::getCamImg(int cam, cv::Mat& img_out) {
 	roborealm_.getImage(data, &width, &height, width * height * 3);
 	cv::Mat img(height, width, CV_8UC3, data);
 	cv::cvtColor(img, img_out, CV_RGB2BGR);
+	
+	cv::imshow("Roborelam output",img_out);
 	delete [] data;
 }
 

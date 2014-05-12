@@ -99,7 +99,7 @@ void Controller::getMidPoints(int camera)
 	view_->drawNewDots(track);
 	view_->updateMyCar(*my_car_);
 	view_->redraw();
-	showImage(*(view_->getDisplayImage()));
+	//showImage(*(view_->getDisplayImage()));
 }
 
 void Controller::detectCar()
