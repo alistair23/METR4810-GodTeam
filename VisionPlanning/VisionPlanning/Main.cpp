@@ -26,6 +26,8 @@ std::mutex rc_mutex;
 
 Point mouse_click_pos;
 
+cv::Mat img_calib;
+
 // Code to test simulation. 
 // Sets motor speeds, then updates car.
 
@@ -206,6 +208,33 @@ void setWheelSpeeds(MyCar& c, Point& goal) {
 	}
 }
 
+void onMainMouse(int event, int x, int y, int, void*) {
+	if( event != CV_EVENT_LBUTTONDOWN )
+		return;
+
+	// Define region of interest
+	cv::Rect roi(x - 5, y - 5, 10, 10);
+
+	// Make sure roi is within image bounds
+	while (roi.x + roi.width > img_calib.cols)
+		roi.x -= 1;
+	while (roi.x < 0)
+		roi.x += 1;
+	while (roi.y + roi.height > img_calib.rows)
+		roi.y -= 1;
+	while (roi.y < 0)
+		roi.y += 1;
+
+	// Get image roi
+	cv::Mat img_roi = img_calib(roi);
+
+	// Take mean over roi
+	cv::Scalar vals = mean(img_roi);
+
+	std::cout << "HSV: " << vals[0] << " " << vals[1] << " " << vals[2] << std::endl;
+
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -271,6 +300,7 @@ int main(int argc, char *argv[]) {
 	}
 	*/
 
+	/*
 	Vision v;
 
 	cv::Mat img_bgr = cv::imread("Resources/racetrack1.jpg");
@@ -297,11 +327,11 @@ int main(int argc, char *argv[]) {
 	thread2.join();
 	//thread3.join();
 	thread4.join();
+	*/
 	
-	
-
 
 	/*
+	
 	Vision vision;
 	while (!vision.connectRoboRealm());
 	vision.setupCamTransform(0);
@@ -340,9 +370,17 @@ int main(int argc, char *argv[]) {
 			count = 0;
 		}
 	}
-	*/
-
 	
+	*/
+	
+	// "Colour calibration"
+	cv::Mat temp = cv::imread("Resources/snap.jpg");
+	cv::cvtColor(temp, img_calib, CV_BGR2HSV); 
+	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
+	cv::setMouseCallback("Display", onMainMouse, 0 );
+	cv::imshow("Display", temp);
+	cv::waitKey();
 
 	return 0;
 }
+

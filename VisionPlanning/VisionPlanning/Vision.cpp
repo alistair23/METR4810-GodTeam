@@ -146,74 +146,76 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				else
 					large_circle_pix = ellipses[j].size.height;
 				approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
-				float thresh_dist_sq = pow((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.2, 2); 
+				float thresh_distSq = pow(((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.2), 2); 
 
 				// Identify red, green, blue, black circles
 				int max_blackness = 0, max_blueness = 0, max_greenness = 0, max_redness = 0;
 
 				for (std::size_t k = 0; k < ellipses.size(); k++) {
-					if (dist_sq(ellipses[k].center, ellipses[i].center) < thresh_dist_sq) {
-						cv::Scalar values = getColour(img_hsv, ellipses[i].center);
+					if (distSq(ellipses[k].center, ellipses[i].center) < thresh_distSq) {
+						cv::Scalar values = getColour(img_hsv, ellipses[k].center);
 
 						// Note, in opencv hsv hue range is 0 - 179
 						// while saturation & luminosity range is 0 - 255
 
 						// Ignore circles which are too large
-						if (ellipses[i].size.height > large_circle_pix)
+						if (ellipses[k].size.height > large_circle_pix)
 							continue;
 
 						// Ignore white
 						//if (values[2] > 240)
 						//	continue;
 
-						cv::ellipse(cdst, ellipses[i], cv::Scalar(123,45,67), 2);
+						cv::ellipse(cdst, ellipses[k], cv::Scalar(123,45,67), 2);
 
 						int blackness = 999 - values[1] - values[2];
-						int blueness = 999 - abs(117 - values[0]);
+						int blueness = 999 - abs(110 - values[0]);
 						int redness = 999 - std::min(values[0], 179 - values[0]);
-						int greenness = 999 - abs(57 - values[0]);
+						int greenness = 999 - abs(70 - values[0]);
 
 						if (blackness > max_blackness) {
 							max_blackness = blackness;
-							black_circle = i;
+							black_circle = k;
 						}
 						if (values[1] > 20 && values[2] > 20 && blueness > max_blueness) {
 							max_blueness = blueness;
-							blue_circle = i;
+							blue_circle = k;
 						}
 						if (values[1] > 20 && values[2] > 20 && redness > max_redness) {
 							max_redness = redness;
-							red_circle = i;
+							red_circle = k;
 						}
 						if (values[1] > 20 && values[2] > 20 && greenness > max_greenness) {
 							max_greenness = greenness;
-							green_circle = i;
+							green_circle = k;
 						}
 					}
 				}
 				
 				// Error checks
 				int vals[] = {blue_circle, red_circle, green_circle, black_circle};
-				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 1.2;
-				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 1.2;
+				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 2;
+				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) / 2;
 				error = false;
 				for (int l = 0; l < 4; l++) {
-					std::cout << sizeof(vals) << std::endl;
 					if (vals[l] == -1) {
 						error = true;
 						break;
 					}
-					for (int m = l + 1; m < 4; m++) {
+					/*for (int m = l + 1; m < 4; m++) {
 						float this_dist = dist(ellipses[vals[l]].center, ellipses[vals[m]].center);
 						if (l == m || this_dist > max_dist || this_dist < min_dist) {
 							error = true;
 							break;
 						}
-					}
+					}*/
 				}
 			}
 		}
 	}
+
+	cv::imshow("Display", cdst);
+	cv::waitKey();
 
 	if (error) {
 		std::cout << "Failed to find marker!" << std::endl;
@@ -973,7 +975,7 @@ float Vision::dist(cv::Point2f& p1, cv::Point2f& p2) {
 }
 
 // Returns euclidean distance squared between two opencv points
-float Vision::dist_sq(cv::Point2f& p1, cv::Point2f& p2) {
+float Vision::distSq(cv::Point2f& p1, cv::Point2f& p2) {
 	return pow(p1.x - p2.x, 2) + (pow(p1.y - p2.y, 2));
 }
 

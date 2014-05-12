@@ -297,7 +297,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	float side_in_pix = OUR_SQUARE_SIDE / M_PER_PIX;
 
 	// Order is blue, red, green, black (clockwise)
-	output_quad[0] = ellipses[blue_circle].center;
+	output_quad[0] = cv::Point2f(0, 0); //ellipses[blue_circle].center;
 	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
 	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
 	output_quad[3] = cv::Point2f(output_quad[0].x, output_quad[0].y + side_in_pix);
@@ -310,11 +310,42 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
     // Get the Perspective Transform Matrix
     transform_out = getPerspectiveTransform( input_quad, output_quad );
 
+	// Find bounding box for transformed image corners
+	std::vector<cv::Point2f> orig_corners, trans_corners;
+	orig_corners.push_back(cv::Point2f(0, 0));
+	orig_corners.push_back(cv::Point2f(0, img_in.cols));
+	orig_corners.push_back(cv::Point2f(img_in.rows, img_in.cols));
+	orig_corners.push_back(cv::Point2f(img_in.rows, 0));
+	cv::perspectiveTransform(orig_corners, trans_corners, transform_out);
+	int top = trans_corners[0].y;
+	int bottom = trans_corners[0].y;
+	int left = trans_corners[0].x;
+	int right = trans_corners[0].x;
+	for (int i = 1; i < 4; i++) {
+		if (trans_corners[i].y < top)
+			top = trans_corners[i].y;
+		if (trans_corners[i].y > bottom)
+			bottom = trans_corners[i].y;
+		if (trans_corners[i].x < left)
+			left = trans_corners[i].x;
+		if (trans_corners[i].x > right)
+			right = trans_corners[i].x;
+	}
+
+	// Translate transform
+	output_quad[0] = cv::Point2f(output_quad[0].x - left, output_quad[0].x - top);
+	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
+	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
+	output_quad[3] = cv::Point2f(output_quad[0].x, output_quad[0].y + side_in_pix);
+
+	// Make output image the minimum required size
+	cv::Size min_size(right - left, bottom - top);
+
 	// Show the effect of applying perspective transform to input image
 	//cv::Mat img_output;
-    warpPerspective(img_in, img_display_, transform_out, img_display_.size() );
-	//cv::imshow("Display", img_output);
-	//cv::waitKey();
+    warpPerspective(img_in, img_display_, transform_out, min_size);
+	cv::imshow("Display", img_display_);
+	cv::waitKey();
 
 	return true;
 }

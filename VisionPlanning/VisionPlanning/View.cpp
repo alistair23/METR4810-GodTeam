@@ -43,12 +43,6 @@ View::View(cv::Mat background, MyCar& my_car):
 	redraw();
 }
 
-void View::spin() {
-	redraw();
-	cv::waitKey(frame_time_);
-	spin();
-}
-
 void View::redraw() {
 	
 	cv::Mat image = background_.clone();
