@@ -13,9 +13,12 @@ namespace RaceControl {
 class LocalPlanner {
 
 public:
-
-	LocalPlanner(std::vector<Point> global_path);
-	std::vector<Point> getSegment(int num_points = 20);
+	
+	LocalPlanner(int num_cameras = 4);
+	LocalPlanner(std::vector<std::vector<Point>> global_paths);
+	void setGlobalPath(std::vector<Point> global_path, int camera);
+	std::vector<Point> getSegment(int curr_camera, int num_points = 20);
+	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
 
 private:
@@ -28,8 +31,9 @@ private:
 	int carInCollision(Point pos, double angle, long long time);
 	bool lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1, cv::Point2f b2);
 
-	std::vector<Point> global_path_;
+	std::vector<std::vector<Point>> global_paths_;
 	std::vector<Point> prev_segment_;
+	int prev_camera_;
 	int global_index_;
 
 	MyCar my_car_;

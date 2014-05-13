@@ -8,10 +8,24 @@
 
 using namespace RaceControl;
 
-LocalPlanner::LocalPlanner(std::vector<Point> global_path):
-	global_path_(global_path)
+LocalPlanner::LocalPlanner(int num_cameras) 
+{
+	for (int i = 0; i < num_cameras; i++)
+		global_paths_.push_back(std::vector<Point>());
+}
+
+LocalPlanner::LocalPlanner(std::vector<std::vector<Point>> global_path):
+	global_paths_(global_path)
 {
 
+}
+
+void LocalPlanner::setGlobalPath(std::vector<Point> global_path, int camera) {
+	global_paths_[camera] = global_path;
+}
+
+void LocalPlanner::updateMyCar(Point pos, double dir, double spd) {
+	my_car_.update(pos, dir, spd);
 }
 
 void LocalPlanner::update(MyCar my_car, std::vector<Car> other_cars) {
@@ -19,12 +33,12 @@ void LocalPlanner::update(MyCar my_car, std::vector<Car> other_cars) {
 	other_cars_ = other_cars;
 }
 
-std::vector<Point> LocalPlanner::getSegment(int num_points) {
+std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	
 	std::vector<Point> segment;
 	// Reuse path from before (unless this is the first time)
-	if (prev_segment_.size() > 0) {
-		int closest = getClosest(my_car_.getPos(), prev_segment_, 50);
+	if (prev_segment_.size() > 0 && prev_camera_ == camera) {
+		int closest = getClosest(my_car_.getPos(), prev_segment_, 30);
 		for (int i = closest; i < prev_segment_.size(); i++) {
 			segment.push_back(prev_segment_[i]);
 			segment.back().locked = false;
@@ -32,17 +46,20 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 		global_index_ += closest;
 	}
 	else {
-		global_index_ = getClosest(my_car_.getPos(), global_path_, 50);
+		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], 30);
 	}
 
 	// Copy over global points to satisfy num_points
 	std::size_t s = segment.size();
 	for (int i = 0; i < num_points - s; i++) {
 		int j = global_index_ + s + i;
-		segment.push_back(global_path_[j % global_path_.size()]);
+		segment.push_back(global_paths_[camera][j % global_paths_[camera].size()]);
 	}
 
-	// TODO Shift first point to match current?
+	// Shift first point to match current
+	segment[0].x = my_car_.getPos().x;
+	segment[0].y = my_car_.getPos().y;
+	segment[0].locked = true;
 
 	// Check points validity, record indices of points in collision
 	long long timetodo = 0;	// TODO
@@ -86,7 +103,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 
 		// Get references to invalid segment point and corresponding global path point
 		Point& seg_point = right_segment[invalidPoints[i]];
-		Point& global_point = global_path_[(invalidPoints[i] + global_index_) % global_path_.size()];
+		Point& global_point = global_paths_[camera][(invalidPoints[i] + global_index_) % global_paths_[camera].size()];
 
 		// Get gradient from point towards right track edge
 		double step_size = 1;	// In pixels
@@ -118,7 +135,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 
 		// Get references to invalid segment point and corresponding global path point
 		Point& seg_point = left_segment[invalidPoints[i]];
-		Point& global_point = global_path_[(invalidPoints[i] + global_index_) % global_path_.size()];
+		Point& global_point = global_paths_[camera][(invalidPoints[i] + global_index_) % global_paths_[camera].size()];
 
 		// Get gradient from point towards left track edge
 		double step_size = 1;	// In pixels
@@ -166,7 +183,7 @@ std::vector<Point> LocalPlanner::getSegment(int num_points) {
 			double force = 0;	// Acts left/right, perpendicular to track edge
 
 			// Get references to corresponding global path point
-			Point& global_point = global_path_[(j + global_index_) % global_path_.size()];
+			Point& global_point = global_paths_[camera][(j + global_index_) % global_paths_[camera].size()];
 
 			// Get unit vector perpendicular to track edge
 			double angle = global_point.track_angle + (M_PI * 0.5);

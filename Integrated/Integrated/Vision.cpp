@@ -313,9 +313,9 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	// Find bounding box for transformed image corners
 	std::vector<cv::Point2f> orig_corners, trans_corners;
 	orig_corners.push_back(cv::Point2f(0, 0));
-	orig_corners.push_back(cv::Point2f(0, img_in.cols));
-	orig_corners.push_back(cv::Point2f(img_in.rows, img_in.cols));
-	orig_corners.push_back(cv::Point2f(img_in.rows, 0));
+	orig_corners.push_back(cv::Point2f(0, img_in.rows));
+	orig_corners.push_back(cv::Point2f(img_in.cols, img_in.rows));
+	orig_corners.push_back(cv::Point2f(img_in.cols, 0));
 	cv::perspectiveTransform(orig_corners, trans_corners, transform_out);
 	int top = trans_corners[0].y;
 	int bottom = trans_corners[0].y;
@@ -333,10 +333,13 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	}
 
 	// Translate transform
-	output_quad[0] = cv::Point2f(output_quad[0].x - left, output_quad[0].x - top);
+	output_quad[0] = cv::Point2f(-left, -top);
 	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
 	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
 	output_quad[3] = cv::Point2f(output_quad[0].x, output_quad[0].y + side_in_pix);
+
+	// Get the Perspective Transform Matrix
+    transform_out = getPerspectiveTransform( input_quad, output_quad );
 
 	// Make output image the minimum required size
 	cv::Size min_size(right - left, bottom - top);

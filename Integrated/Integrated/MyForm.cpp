@@ -180,6 +180,7 @@ System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System:
  System::Void RaceControl::MyForm::button8_Click(System::Object^  sender, System::EventArgs^  e) {
 
 	 controller_->car_tracking_on = true;
+	 controller_->local_planning_on = true;
 
 }
 
