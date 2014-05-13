@@ -40,6 +40,8 @@ const Car &Car::operator = (const Car& c) {
 	pos_ = c.getPos();
 	dir_ = c.getDir();
 	spd_ = c.getSpd();
+	width_ = c.getWidth();
+	length_ = c.getLength();
 	update_time_ = c.getUpdateTime();
 	return *this;
 }

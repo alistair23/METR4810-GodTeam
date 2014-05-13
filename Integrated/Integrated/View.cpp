@@ -60,6 +60,7 @@ void View::updateMyCar(MyCar my_car) {
 
 void View::redraw() {
 	std::cout << "Background rows: " << background_.rows << std::endl;
+	
 	img_display = background_.clone();
 	
 	// Draw my_car_
@@ -70,7 +71,7 @@ void View::redraw() {
 	rect.points(vertices);
 	for (int i = 0; i < 4; i++)
 		cv::line(img_display, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
-
+		
 	// DEBUGGING
 	// Draw other car at mouse click point
 	/*

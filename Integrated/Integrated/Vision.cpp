@@ -168,12 +168,17 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				// Get an approximate scale, using larger circle's diameter
 				// This is for finding the four other circles
 				float large_circle_pix, small_circle_pix;
+				int large_circle_index, small_circle_index;
 				if (ellipses[i].size.height > ellipses[j].size.height) {
 					large_circle_pix = ellipses[i].size.height;
+					large_circle_index = i;
 					small_circle_pix = ellipses[j].size.height;
+					small_circle_index = j;
 				} else {
 					large_circle_pix = ellipses[j].size.height;
+					large_circle_index = j; 
 					small_circle_pix = ellipses[j].size.height;
+					small_circle_index = i;
 				}
 				approx_cam_m_per_pix_[0] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
 				float thresh_distSq = pow(((OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 1.2), 2); 
@@ -183,7 +188,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				std::vector<std::pair<int, int>> blacks, blues, greens, reds;
 				for (std::size_t k = 0; k < ellipses.size(); k++) {
 					if (distSq(ellipses[k].center, ellipses[i].center) < thresh_distSq) {
-						cv::Scalar values = getColour(img_hsv, ellipses[k].center);
+						cv::Scalar values = getColour(img_hsv, ellipses[k].center, ellipses[k].size.height * 0.25);
 
 						// Note, in opencv hsv hue range is 0 - 179
 						// while saturation & luminosity range is 0 - 255
@@ -192,9 +197,9 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 						if (ellipses[k].size.height > large_circle_pix ||
 							ellipses[k].size.height < 0.5 * small_circle_pix)
 							continue;
-
+						std::cout <<"color values"<< values[0] << ","<<values[1] <<"," << values[2]<<std::endl;
 						// Ignore white
-						if (values[2] > 252)
+						if (values[2] == 255)
 							continue;
 
 						// Ignore the centre circles
@@ -205,7 +210,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 						int blueness = 999 - abs(110 - values[0]);
 						int redness = 999 - std::min(values[0], 179 - values[0]);
 						int greenness = 999 - abs(50 - values[0]);
-						if (values[2] < 25) {
+						if (values[2] < 20) {
 							blueness = 0;
 							redness = 0;
 							greenness = 0;
@@ -246,7 +251,10 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 									}
 									for (int m = l + 1; m < 4; m++) {
 										float this_dist = dist(ellipses[config[l]].center, ellipses[config[m]].center);
-										if (config[l] == config[m] || this_dist > max_dist || this_dist < min_dist) {
+										bool is_on_center = dist(ellipses[config[l]].center, ellipses[small_circle_index].center) <= concentric_thresh;
+										is_on_center = is_on_center || dist(ellipses[config[m]].center, ellipses[small_circle_index].center) <= concentric_thresh;
+										
+										if (config[l] == config[m] || this_dist > max_dist || this_dist < min_dist || is_on_center) {
 											error = true;
 											break;
 										}
@@ -652,11 +660,11 @@ cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
 	cv::Rect roi(p.x - pix_length, p.y - pix_length, 2 * pix_length, 2 * pix_length);
 
 	// Make sure roi is within image bounds
-	while (roi.x + roi.width > img.cols)
+	while (roi.x + roi.width >= img.cols)
 		roi.x -= 1;
 	while (roi.x < 0)
 		roi.x += 1;
-	while (roi.y + roi.height > img.rows)
+	while (roi.y + roi.height >= img.rows)
 		roi.y -= 1;
 	while (roi.y < 0)
 		roi.y += 1;

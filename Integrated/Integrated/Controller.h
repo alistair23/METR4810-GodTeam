@@ -26,6 +26,7 @@ public:
 	cv::Mat* img;
 	bool car_tracking_on;
 	bool local_planning_on;
+	bool go_signal_found;
 
 private:
 	MyCar *my_car_;
@@ -37,9 +38,12 @@ private:
 	std::vector<Point>* current_path_;
 	int current_path_lock_;	// 0 if current_path_ is free, otherwise 1
 	int my_car_lock_;
+	long long old_time_;
+	int path_index_;
 	void updateView(Object^ stateInfo);
 	void detectCar();
 	void runPlanner();
+	void sendCarCommand();
 	
 
 };

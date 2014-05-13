@@ -44,6 +44,8 @@ const MyCar &MyCar::operator = (const MyCar& c) {
 	axle_length_ = c.getAxleLength();
 	r_speed_ = c.getRSpeed();
 	l_speed_ = c.getLSpeed();
+	width_ = c.getWidth();
+	length_ = c.getLength();
 	return *this;
 }
 
