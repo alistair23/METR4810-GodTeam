@@ -57,9 +57,6 @@
     <ClInclude Include="RR_API.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Simulator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Tile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -119,9 +116,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RR_API.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Simulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Tile.cpp">

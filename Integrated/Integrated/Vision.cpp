@@ -27,7 +27,7 @@ Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	num_cam_(num_cam),
 	ip_address_(ip_address),
 	port_num_(port_num),
-
+	curr_cam_(0),
 	// Load tile images
 	finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
 	finish_tile_2(cv::imread("Resources/finish_2.jpg"), 0)
@@ -42,7 +42,7 @@ Vision::Vision(int num_cam, std::string ip_address, int port_num):
 	// Initialise vector containing perspective transform matrices
 	for (int i = 0; i < num_cam; i++) {
 		transform_mats_.push_back(cv::Mat());
-		
+		inv_transform_mats_.push_back(cv::Mat());
 		approx_cam_m_per_pix_.push_back(0);
 	}
 }
@@ -85,7 +85,7 @@ void Vision::setupCamTransform(int cam_index) {
 			return;
 		}
 
-		inv_transform_mats.push_back(transform_mats_[cam_index].inv());
+		inv_transform_mats_[cam_index] = transform_mats_[cam_index].inv();
 
 		//cv::imshow("Display", img);
 		//cv::waitKey();
@@ -101,9 +101,9 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 	std::cout << "Getting transform..." << std::endl;
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 
-	// Make hsv copy
-	cv::Mat img_hsv;
-	cv::cvtColor(img_in, img_hsv, CV_BGR2HSV);
+	// Make hls copy
+	cv::Mat img_hls;
+	cv::cvtColor(img_in, img_hls, CV_BGR2HLS_FULL);
 
 	// Make grayscale copy, Reduce noise with a kernel 3x3
 	cv::Mat img_gray;
@@ -188,18 +188,15 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				std::vector<std::pair<int, int>> blacks, blues, greens, reds;
 				for (std::size_t k = 0; k < ellipses.size(); k++) {
 					if (distSq(ellipses[k].center, ellipses[i].center) < thresh_distSq) {
-						cv::Scalar values = getColour(img_hsv, ellipses[k].center, ellipses[k].size.height * 0.25);
-
-						// Note, in opencv hsv hue range is 0 - 179
-						// while saturation & luminosity range is 0 - 255
+						cv::Scalar values = getColour(img_hls, ellipses[k].center, ellipses[k].size.height * 0.25);
 
 						// Ignore circles which are too large/small
 						if (ellipses[k].size.height > large_circle_pix ||
-							ellipses[k].size.height < 0.5 * small_circle_pix)
+							ellipses[k].size.height < 0.7 * small_circle_pix)
 							continue;
-						std::cout <<"color values"<< values[0] << ","<<values[1] <<"," << values[2]<<std::endl;
-						// Ignore white
-						if (values[2] == 255)
+						
+						// Ignore white (high luminosity)
+						if (values[1] >= 248)
 							continue;
 
 						// Ignore the centre circles
@@ -207,15 +204,15 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 							continue;
 
 						//cv::ellipse(cdst, ellipses[k], cv::Scalar(123,45,67), 2);
-						int blueness = 999 - abs(110 - values[0]);
-						int redness = 999 - std::min(values[0], 179 - values[0]);
-						int greenness = 999 - abs(50 - values[0]);
-						if (values[2] < 20) {
+						int blueness = 999 - abs(170 - values[0]);
+						int redness = 999 - std::min(values[0], 255 - values[0]);
+						int greenness = 999 - abs(110 - values[0]);
+						if (values[1] < 40) {
 							blueness = 0;
 							redness = 0;
 							greenness = 0;
 						}
-						int blackness = 999 - values[1] - values[2];
+						int blackness = 999 - values[1] -values[2];
 						blues.push_back(std::pair<int, int>(k, blueness));
 						reds.push_back(std::pair<int, int>(k, redness));
 						greens.push_back(std::pair<int, int>(k, greenness));
@@ -232,7 +229,6 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out) {
 				
 				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 2;
 				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 0.4;
-				error = false;
 
 				for (int iblack = 0; iblack < blacks.size(); iblack++) {
 					for (int iblue = 0; iblue < blues.size(); iblue++) {
@@ -400,7 +396,7 @@ void Vision::update() {
 		std::vector<cv::Point2f> perspective_point;
 		std::vector<cv::Point2f> warped_point;
 		warped_point.push_back(cv::Point2f(predicted_pos.x, predicted_pos.y));
-		cv::perspectiveTransform(warped_point, perspective_point, inv_transform_mats[0]);
+		cv::perspectiveTransform(warped_point, perspective_point, inv_transform_mats_[curr_cam_]);
 		predicted_pos_pers = perspective_point[0];
 
 		int search_size = 1.5 * std::max(last_car_size_, 50);

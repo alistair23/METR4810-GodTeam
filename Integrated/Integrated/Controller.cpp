@@ -19,7 +19,7 @@ Controller::Controller() :
 	current_path_(new std::vector<Point>()),
 	local_planning_on(false),
 	car_tracking_on(false),
-	go_signal_found(false)
+	go_signal_found(true)
 
 {
 	form_ = gcnew MyForm();
@@ -46,8 +46,6 @@ Controller::Controller() :
 	Application::Run(form_);
 
 
-	//TEMPORARY
-	go_signal_found = true;
 }
 
 Controller::~Controller() {
@@ -128,9 +126,11 @@ void Controller::detectCar()
 		if(!car_tracking_on)
 		{
 			Thread::Sleep(10);
+			
 		}
 		else
 		{
+			
 			vision_->update();
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
@@ -149,7 +149,6 @@ void Controller::detectCar()
 				Interlocked::Exchange(current_path_lock_, 0);
 			}
 			view_->redraw();
-			std::cout << "drawn..." << std::endl;
 			//showImage(*(view_->getDisplayImage()));
 		}
 	}
@@ -180,80 +179,81 @@ void Controller::runPlanner(){
 	}
 }
 
-void Controller::sendCarCommand(){
+void Controller::sendCarCommand() {
 
 	while(true)
 	{
-		if (!(go_signal_found && local_planning_on))
+		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
 		{
 			Sleep(10);
 			old_time_ = time_now();
 		}
-		else{
+		else {
 			long long update_time = time_now();
 
-			if (0 == Interlocked::Exchange(my_car_lock_, 1)) {
-				my_car_->step(update_time - old_time_);
-				old_time_ = update_time;
-				double dist_sq_thresh = 100;
-				double max_speed = 0.4 / M_PER_PIX;
-				double angle_thresh = 60 * M_PI / 180;
+			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
+			my_car_->step(0.001 * (update_time - old_time_));
+			old_time_ = update_time;
+			double dist_sq_thresh = 100;
+			double max_speed = 100;
+			double angle_thresh = 60 * M_PI / 180;
 
+			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
-				while (true) {
+			Point* goal = &(*current_path_)[path_index_];
+			double dist_sq = my_car_->getPos().distSquared(*goal);
 
-					while (0 != Interlocked::Exchange(current_path_lock_, 1));
-					std::cout << "SendCarCommand path size: " << current_path_->size() << std::endl;
-					if (path_index_ < current_path_->size()) {
-						Point& goal((*current_path_)[path_index_]);
-						double dist_sq = my_car_->getPos().distSquared(goal);
-
-						// Check if we have reached point
-						if (dist_sq < dist_sq_thresh)
-							path_index_++;
-						else {
-
-							double angle = my_car_->getPos().angle(goal) - my_car_->getDir();
-
-							// A simple control algorithm: just head 
-							// straight to waypoints. Will be
-							// replaced later.
-							while (angle > M_PI)
-								angle -= 2 * M_PI;
-							while (angle < -M_PI)
-								angle += 2 * M_PI;
-
-							if (angle >= 0 && angle <= angle_thresh) {
-								my_car_->setRSpeed((1 - angle/angle_thresh) * max_speed);
-								my_car_->setLSpeed(max_speed);
-							}
-							else if (angle <= 0 && angle >= -angle_thresh) {
-								my_car_->setRSpeed(max_speed);
-								my_car_->setLSpeed((1 + angle/angle_thresh) * max_speed);
-							}
-							else if (angle > angle_thresh) { // && angle <= 180
-								my_car_->setRSpeed(-max_speed);
-								my_car_->setLSpeed(max_speed);
-							}
-							else {
-								my_car_->setRSpeed(max_speed);
-								my_car_->setLSpeed(-max_speed);
-							}
-						}
-					}
-					Interlocked::Exchange(current_path_lock_, 0);
-				}
-
-				// Send commands over bluetooth
-				std::cout <<"Right speed: " << my_car_->getRSpeed()<<std::endl;
-				std::cout << "Left speed: " << my_car_->getLSpeed() << std::endl; 
-
-				// Release the lock
-				Interlocked::Exchange(current_path_lock_, 0);
+			while (dist_sq < dist_sq_thresh && path_index_ < current_path_->size() - 1) {
+				path_index_++;
+				goal = &(*current_path_)[path_index_];
+				dist_sq = my_car_->getPos().distSquared(*goal);
 			}
-			
-			Thread::Sleep(10);
-		}
-	}
 
+			if (path_index_ < current_path_->size()) {
+
+				double angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
+
+				// A simple control algorithm: just head 
+				// straight to waypoints. Will be
+				// replaced later.
+				while (angle > M_PI)
+					angle -= 2 * M_PI;
+				while (angle <= -M_PI)
+					angle += 2 * M_PI;
+
+				if (angle >= 0 && angle <= angle_thresh) {
+					my_car_->setRSpeed((1 - angle/angle_thresh) * max_speed);
+					my_car_->setLSpeed(max_speed);
+				}
+				else if (angle <= 0 && angle >= -angle_thresh) {
+					my_car_->setRSpeed(max_speed);
+					my_car_->setLSpeed((1 + angle/angle_thresh) * max_speed);
+				}
+				else if (angle > angle_thresh) { // && angle <= 180
+					my_car_->setRSpeed(-max_speed);
+					my_car_->setLSpeed(max_speed);
+				}
+				else {
+					my_car_->setRSpeed(max_speed);
+					my_car_->setLSpeed(-max_speed);
+				}
+			}
+			else {
+				my_car_->setRSpeed(0);
+				my_car_->setLSpeed(0);
+			}
+		}
+		Interlocked::Exchange(my_car_lock_, 0);
+
+
+		// Send commands over bluetooth
+		std::cout <<"Right speed: " << my_car_->getRSpeed()<<std::endl;
+		std::cout << "Left speed: " << my_car_->getLSpeed() << std::endl; 
+
+		// Release the lock
+		Interlocked::Exchange(current_path_lock_, 0);
+
+
+		Thread::Sleep(100);
+	}
 }

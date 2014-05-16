@@ -65,7 +65,7 @@ public:
 
 	// Stores perspective transforms for each camera
 	std::vector<cv::Mat> transform_mats_;
-	std::vector<cv::Mat> inv_transform_mats;
+	std::vector<cv::Mat> inv_transform_mats_;
 
 	bool inImg(cv::Mat& img, int x, int y);
 

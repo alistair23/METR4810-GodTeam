@@ -77,7 +77,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	
 	// If there are no points in collision, we go with the existing plan
 	// TODO smoothen?
-	std::cout << invalidPoints.size() << std::endl;
+	//std::cout << invalidPoints.size() << std::endl;
 	if (invalidPoints.size() == 0)  {
 		prev_segment_ = segment;
 		//return segment;
