@@ -107,7 +107,11 @@ namespace RaceControl {
 			this->groupBox1->Controls->Add(this->textBox1);
 			this->groupBox1->Location = System::Drawing::Point(9, 13);
 			this->groupBox1->Name = L"groupBox1";
+
 			this->groupBox1->Size = System::Drawing::Size(255, 202);
+
+			this->groupBox1->Size = System::Drawing::Size(240, 202);
+
 			this->groupBox1->TabIndex = 0;
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"PID parameters";
