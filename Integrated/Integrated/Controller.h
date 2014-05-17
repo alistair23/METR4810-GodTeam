@@ -22,6 +22,7 @@ public:
 	void showImage(cv::Mat im);
 	void getCameraTransform( int camera);
 	void getMidPoints(int camera);
+	//void connectToRoborealm(int port_num1, int port_num2, int port_num3, int port_num4, System::String^ ip_address);
 
 	cv::Mat* img;
 	bool car_tracking_on;

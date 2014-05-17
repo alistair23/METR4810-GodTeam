@@ -78,21 +78,74 @@ namespace RaceControl {
 			pictureBox1->Image = bitmap;*/
 			
 		}
-		/*MyForm(PIDTuningForm^ form1)
+	private: System::Windows::Forms::TabControl^  tabControl1;
+	private: System::Windows::Forms::TabPage^  tabPage1;
+
+	public: 
+
+	private: System::Windows::Forms::Button^  button8;
+	private: System::Windows::Forms::Button^  button7;
+	private: System::Windows::Forms::Button^  button6;
+	private: System::Windows::Forms::Button^  button5;
+	private: System::Windows::Forms::CheckBox^  checkBox3;
+	private: System::Windows::Forms::CheckBox^  checkBox2;
+	private: System::Windows::Forms::Label^  label9;
+	private: System::Windows::Forms::RadioButton^  radioButton3;
+	private: System::Windows::Forms::Button^  button4;
+	private: System::Windows::Forms::CheckBox^  checkBox1;
+	private: System::Windows::Forms::RadioButton^  radioButton2;
+	private: System::Windows::Forms::RadioButton^  radioButton1;
+	private: System::Windows::Forms::Button^  button3;
+	private: System::Windows::Forms::Label^  label8;
+	private: System::Windows::Forms::Label^  label7;
+	private: System::Windows::Forms::TextBox^  textBox6;
+	private: System::Windows::Forms::TextBox^  textBox5;
+	private: System::Windows::Forms::TextBox^  textBox4;
+	private: System::Windows::Forms::TextBox^  textBox3;
+	private: System::Windows::Forms::Label^  label6;
+	private: System::Windows::Forms::Button^  button2;
+	private: System::Windows::Forms::Label^  label5;
+	private: System::Windows::Forms::Button^  button1;
+	private: System::Windows::Forms::TrackBar^  trackBar2;
+	private: System::Windows::Forms::TrackBar^  trackBar1;
+	private: System::Windows::Forms::ComboBox^  comboBox2;
+	private: System::Windows::Forms::Label^  label2;
+	private: System::Windows::Forms::Label^  label4;
+	private: System::Windows::Forms::Label^  label3;
+	private: System::Windows::Forms::TextBox^  textBox2;
+	private: System::Windows::Forms::ComboBox^  comboBox1;
+	private: System::Windows::Forms::Label^  label1;
+	private: System::Windows::Forms::TextBox^  textBox1;
+	private: System::Windows::Forms::TabPage^  tabPage2;
+	private: System::Windows::Forms::Label^  label14;
+	private: System::Windows::Forms::TextBox^  textBox11;
+	private: System::Windows::Forms::Button^  button9;
+	private: System::Windows::Forms::Label^  label13;
+	private: System::Windows::Forms::Label^  label12;
+	private: System::Windows::Forms::Label^  label11;
+	private: System::Windows::Forms::Label^  label10;
+	private: System::Windows::Forms::TextBox^  textBox10;
+	private: System::Windows::Forms::TextBox^  textBox9;
+	private: System::Windows::Forms::TextBox^  textBox8;
+	private: System::Windows::Forms::TextBox^  textBox7;
+			 /*MyForm(PIDTuningForm^ form1)
 		{
 			MyForm();
 			this->form = form1;
 
 		} */             
 
-	private: System::Windows::Forms::RadioButton^  radioButton3;
-	private: System::Windows::Forms::Label^  label9;
-	private: System::Windows::Forms::CheckBox^  checkBox3;
-	private: System::Windows::Forms::CheckBox^  checkBox2;
-	private: System::Windows::Forms::Button^  button5;
-	private: System::Windows::Forms::Button^  button6;
-	private: System::Windows::Forms::Button^  button7;
-	private: System::Windows::Forms::Button^  button8;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -118,31 +171,31 @@ namespace RaceControl {
 					PCKTCODE_SETGAIN_IN,
 					PCKTCODE_DEBUG
 			 };
-	private: System::Windows::Forms::Button^  button1;
-	protected: 
-	private: System::Windows::Forms::Button^  button2;
-	private: System::IO::Ports::SerialPort^  serialPort1;
-	private: System::Windows::Forms::TextBox^  textBox1;
-	private: System::Windows::Forms::Label^  label1;
-	private: System::Windows::Forms::ComboBox^  comboBox1;
-	private: System::Windows::Forms::Label^  label2;
-	private: System::Windows::Forms::TextBox^  textBox2;
-	private: System::Windows::Forms::Label^  label3;
-	private: System::Windows::Forms::ComboBox^  comboBox2;
-	private: System::Windows::Forms::Label^  label4;
 
-	private: System::Windows::Forms::GroupBox^  groupBox1;
-	private: System::Windows::Forms::TextBox^  textBox4;
-	private: System::Windows::Forms::TextBox^  textBox3;
-	private: System::Windows::Forms::Label^  label6;
-	private: System::Windows::Forms::Label^  label5;
-	private: System::Windows::Forms::TrackBar^  trackBar2;
-	private: System::Windows::Forms::TrackBar^  trackBar1;
-	private: System::Windows::Forms::Label^  label8;
-	private: System::Windows::Forms::Label^  label7;
-	private: System::Windows::Forms::TextBox^  textBox6;
-	private: System::Windows::Forms::TextBox^  textBox5;
-	private: System::Windows::Forms::CheckBox^  checkBox1;
+	protected: 
+
+	private: System::IO::Ports::SerialPort^  serialPort1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	private: System::ComponentModel::IContainer^  components;
 
@@ -155,10 +208,10 @@ namespace RaceControl {
 			 bool moving_forward;
 			 bool moving_reverse;
 			
-	private: System::Windows::Forms::Button^  button3;
-	private: System::Windows::Forms::RadioButton^  radioButton2;
-	private: System::Windows::Forms::RadioButton^  radioButton1;
-	private: System::Windows::Forms::Button^  button4;
+
+
+
+
 	private: System::Timers::Timer^ aTimer;
 			 System::Timers::Timer^ drawTimer;
 	public:  UInt16 kp_l;
@@ -185,18 +238,10 @@ namespace RaceControl {
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
-			this->button1 = (gcnew System::Windows::Forms::Button());
-			this->button2 = (gcnew System::Windows::Forms::Button());
 			this->serialPort1 = (gcnew System::IO::Ports::SerialPort(this->components));
-			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
-			this->label1 = (gcnew System::Windows::Forms::Label());
-			this->comboBox1 = (gcnew System::Windows::Forms::ComboBox());
-			this->label2 = (gcnew System::Windows::Forms::Label());
-			this->textBox2 = (gcnew System::Windows::Forms::TextBox());
-			this->label3 = (gcnew System::Windows::Forms::Label());
-			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
-			this->label4 = (gcnew System::Windows::Forms::Label());
-			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
+			this->tabPage1 = (gcnew System::Windows::Forms::TabPage());
+			this->button8 = (gcnew System::Windows::Forms::Button());
 			this->button7 = (gcnew System::Windows::Forms::Button());
 			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->button5 = (gcnew System::Windows::Forms::Button());
@@ -216,225 +261,176 @@ namespace RaceControl {
 			this->textBox4 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox3 = (gcnew System::Windows::Forms::TextBox());
 			this->label6 = (gcnew System::Windows::Forms::Label());
+			this->button2 = (gcnew System::Windows::Forms::Button());
 			this->label5 = (gcnew System::Windows::Forms::Label());
+			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->trackBar2 = (gcnew System::Windows::Forms::TrackBar());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->button8 = (gcnew System::Windows::Forms::Button());
-			this->groupBox1->SuspendLayout();
+			this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
+			this->label2 = (gcnew System::Windows::Forms::Label());
+			this->label4 = (gcnew System::Windows::Forms::Label());
+			this->label3 = (gcnew System::Windows::Forms::Label());
+			this->textBox2 = (gcnew System::Windows::Forms::TextBox());
+			this->comboBox1 = (gcnew System::Windows::Forms::ComboBox());
+			this->label1 = (gcnew System::Windows::Forms::Label());
+			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
+			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->label14 = (gcnew System::Windows::Forms::Label());
+			this->textBox11 = (gcnew System::Windows::Forms::TextBox());
+			this->button9 = (gcnew System::Windows::Forms::Button());
+			this->label13 = (gcnew System::Windows::Forms::Label());
+			this->label12 = (gcnew System::Windows::Forms::Label());
+			this->label11 = (gcnew System::Windows::Forms::Label());
+			this->label10 = (gcnew System::Windows::Forms::Label());
+			this->textBox10 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox9 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
+			this->tabControl1->SuspendLayout();
+			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->BeginInit();
+			this->tabPage2->SuspendLayout();
 			this->SuspendLayout();
 			// 
-			// button1
+			// tabControl1
 			// 
-			this->button1->Location = System::Drawing::Point(171, 390);
-			this->button1->Name = L"button1";
-			this->button1->Size = System::Drawing::Size(98, 23);
-			this->button1->TabIndex = 0;
-			this->button1->Text = L"Connect";
-			this->button1->UseVisualStyleBackColor = true;
-			this->button1->Click += gcnew System::EventHandler(this, &MyForm::button1_Click);
+			this->tabControl1->Controls->Add(this->tabPage1);
+			this->tabControl1->Controls->Add(this->tabPage2);
+			this->tabControl1->Location = System::Drawing::Point(12, 6);
+			this->tabControl1->Name = L"tabControl1";
+			this->tabControl1->SelectedIndex = 0;
+			this->tabControl1->Size = System::Drawing::Size(558, 529);
+			this->tabControl1->TabIndex = 13;
 			// 
-			// button2
+			// tabPage1
 			// 
-			this->button2->Location = System::Drawing::Point(275, 390);
-			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(92, 23);
-			this->button2->TabIndex = 1;
-			this->button2->Text = L"Send";
-			this->button2->UseVisualStyleBackColor = true;
-			this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
+			this->tabPage1->Controls->Add(this->button8);
+			this->tabPage1->Controls->Add(this->button7);
+			this->tabPage1->Controls->Add(this->button6);
+			this->tabPage1->Controls->Add(this->button5);
+			this->tabPage1->Controls->Add(this->checkBox3);
+			this->tabPage1->Controls->Add(this->checkBox2);
+			this->tabPage1->Controls->Add(this->label9);
+			this->tabPage1->Controls->Add(this->radioButton3);
+			this->tabPage1->Controls->Add(this->button4);
+			this->tabPage1->Controls->Add(this->checkBox1);
+			this->tabPage1->Controls->Add(this->radioButton2);
+			this->tabPage1->Controls->Add(this->radioButton1);
+			this->tabPage1->Controls->Add(this->button3);
+			this->tabPage1->Controls->Add(this->label8);
+			this->tabPage1->Controls->Add(this->label7);
+			this->tabPage1->Controls->Add(this->textBox6);
+			this->tabPage1->Controls->Add(this->textBox5);
+			this->tabPage1->Controls->Add(this->textBox4);
+			this->tabPage1->Controls->Add(this->textBox3);
+			this->tabPage1->Controls->Add(this->label6);
+			this->tabPage1->Controls->Add(this->button2);
+			this->tabPage1->Controls->Add(this->label5);
+			this->tabPage1->Controls->Add(this->button1);
+			this->tabPage1->Controls->Add(this->trackBar2);
+			this->tabPage1->Controls->Add(this->trackBar1);
+			this->tabPage1->Controls->Add(this->comboBox2);
+			this->tabPage1->Controls->Add(this->label2);
+			this->tabPage1->Controls->Add(this->label4);
+			this->tabPage1->Controls->Add(this->label3);
+			this->tabPage1->Controls->Add(this->textBox2);
+			this->tabPage1->Controls->Add(this->comboBox1);
+			this->tabPage1->Controls->Add(this->label1);
+			this->tabPage1->Controls->Add(this->textBox1);
+			this->tabPage1->Location = System::Drawing::Point(4, 22);
+			this->tabPage1->Name = L"tabPage1";
+			this->tabPage1->Padding = System::Windows::Forms::Padding(3);
+			this->tabPage1->Size = System::Drawing::Size(550, 503);
+			this->tabPage1->TabIndex = 0;
+			this->tabPage1->Text = L"Main";
+			this->tabPage1->UseVisualStyleBackColor = true;
 			// 
-			// textBox1
+			// button8
 			// 
-			this->textBox1->Location = System::Drawing::Point(168, 145);
-			this->textBox1->Name = L"textBox1";
-			this->textBox1->Size = System::Drawing::Size(348, 20);
-			this->textBox1->TabIndex = 2;
-			// 
-			// label1
-			// 
-			this->label1->AutoSize = true;
-			this->label1->Location = System::Drawing::Point(168, 120);
-			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(118, 13);
-			this->label1->TabIndex = 3;
-			this->label1->Text = L"Hexadecimal Command";
-			// 
-			// comboBox1
-			// 
-			this->comboBox1->AllowDrop = true;
-			this->comboBox1->FormattingEnabled = true;
-			this->comboBox1->Location = System::Drawing::Point(395, 31);
-			this->comboBox1->Name = L"comboBox1";
-			this->comboBox1->Size = System::Drawing::Size(121, 21);
-			this->comboBox1->TabIndex = 4;
-			// 
-			// label2
-			// 
-			this->label2->AutoSize = true;
-			this->label2->Location = System::Drawing::Point(392, 14);
-			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(86, 13);
-			this->label2->TabIndex = 5;
-			this->label2->Text = L"Select COM Port";
-			// 
-			// textBox2
-			// 
-			this->textBox2->Location = System::Drawing::Point(168, 184);
-			this->textBox2->Multiline = true;
-			this->textBox2->Name = L"textBox2";
-			this->textBox2->ScrollBars = System::Windows::Forms::ScrollBars::Vertical;
-			this->textBox2->Size = System::Drawing::Size(348, 149);
-			this->textBox2->TabIndex = 6;
-			// 
-			// label3
-			// 
-			this->label3->AutoSize = true;
-			this->label3->Location = System::Drawing::Point(165, 168);
-			this->label3->Name = L"label3";
-			this->label3->Size = System::Drawing::Size(47, 13);
-			this->label3->TabIndex = 7;
-			this->label3->Text = L"Terminal";
-			// 
-			// comboBox2
-			// 
-			this->comboBox2->AllowDrop = true;
-			this->comboBox2->FormattingEnabled = true;
-			this->comboBox2->Location = System::Drawing::Point(395, 83);
-			this->comboBox2->Name = L"comboBox2";
-			this->comboBox2->Size = System::Drawing::Size(121, 21);
-			this->comboBox2->TabIndex = 9;
-			// 
-			// label4
-			// 
-			this->label4->AutoSize = true;
-			this->label4->Location = System::Drawing::Point(392, 67);
-			this->label4->Name = L"label4";
-			this->label4->Size = System::Drawing::Size(58, 13);
-			this->label4->TabIndex = 10;
-			this->label4->Text = L"Buad Rate";
-			// 
-			// groupBox1
-			// 
-			this->groupBox1->Controls->Add(this->button8);
-			this->groupBox1->Controls->Add(this->button7);
-			this->groupBox1->Controls->Add(this->button6);
-			this->groupBox1->Controls->Add(this->button5);
-			this->groupBox1->Controls->Add(this->checkBox3);
-			this->groupBox1->Controls->Add(this->checkBox2);
-			this->groupBox1->Controls->Add(this->label9);
-			this->groupBox1->Controls->Add(this->radioButton3);
-			this->groupBox1->Controls->Add(this->button4);
-			this->groupBox1->Controls->Add(this->checkBox1);
-			this->groupBox1->Controls->Add(this->radioButton2);
-			this->groupBox1->Controls->Add(this->radioButton1);
-			this->groupBox1->Controls->Add(this->button3);
-			this->groupBox1->Controls->Add(this->label8);
-			this->groupBox1->Controls->Add(this->label7);
-			this->groupBox1->Controls->Add(this->textBox6);
-			this->groupBox1->Controls->Add(this->textBox5);
-			this->groupBox1->Controls->Add(this->textBox4);
-			this->groupBox1->Controls->Add(this->textBox3);
-			this->groupBox1->Controls->Add(this->label6);
-			this->groupBox1->Controls->Add(this->button2);
-			this->groupBox1->Controls->Add(this->label5);
-			this->groupBox1->Controls->Add(this->button1);
-			this->groupBox1->Controls->Add(this->trackBar2);
-			this->groupBox1->Controls->Add(this->trackBar1);
-			this->groupBox1->Controls->Add(this->comboBox2);
-			this->groupBox1->Controls->Add(this->label2);
-			this->groupBox1->Controls->Add(this->label4);
-			this->groupBox1->Controls->Add(this->label3);
-			this->groupBox1->Controls->Add(this->textBox2);
-			this->groupBox1->Controls->Add(this->comboBox1);
-			this->groupBox1->Controls->Add(this->label1);
-			this->groupBox1->Controls->Add(this->textBox1);
-			this->groupBox1->Location = System::Drawing::Point(12, 12);
-			this->groupBox1->Name = L"groupBox1";
-			this->groupBox1->Size = System::Drawing::Size(560, 523);
-			this->groupBox1->TabIndex = 12;
-			this->groupBox1->TabStop = false;
-			this->groupBox1->Text = L"Serial Command";
-			this->groupBox1->Enter += gcnew System::EventHandler(this, &MyForm::groupBox1_Enter);
+			this->button8->Location = System::Drawing::Point(185, 460);
+			this->button8->Name = L"button8";
+			this->button8->Size = System::Drawing::Size(97, 23);
+			this->button8->TabIndex = 69;
+			this->button8->Text = L"Launch ";
+			this->button8->UseVisualStyleBackColor = true;
+			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click_1);
 			// 
 			// button7
 			// 
-			this->button7->Location = System::Drawing::Point(375, 434);
+			this->button7->Location = System::Drawing::Point(389, 420);
 			this->button7->Name = L"button7";
 			this->button7->Size = System::Drawing::Size(105, 22);
-			this->button7->TabIndex = 35;
+			this->button7->TabIndex = 68;
 			this->button7->Text = L"GetMidPoints";
 			this->button7->UseVisualStyleBackColor = true;
 			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
 			// 
 			// button6
 			// 
-			this->button6->Location = System::Drawing::Point(275, 434);
+			this->button6->Location = System::Drawing::Point(289, 420);
 			this->button6->Name = L"button6";
 			this->button6->Size = System::Drawing::Size(92, 23);
-			this->button6->TabIndex = 34;
+			this->button6->TabIndex = 67;
 			this->button6->Text = L"Get Transform";
 			this->button6->UseVisualStyleBackColor = true;
-			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click);
+			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click_1);
 			// 
 			// button5
 			// 
-			this->button5->Location = System::Drawing::Point(171, 434);
+			this->button5->Location = System::Drawing::Point(185, 420);
 			this->button5->Name = L"button5";
 			this->button5->Size = System::Drawing::Size(98, 23);
-			this->button5->TabIndex = 33;
+			this->button5->TabIndex = 66;
 			this->button5->Text = L"Vision";
 			this->button5->UseVisualStyleBackColor = true;
-			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// checkBox3
 			// 
 			this->checkBox3->AutoSize = true;
-			this->checkBox3->Location = System::Drawing::Point(20, 415);
+			this->checkBox3->Location = System::Drawing::Point(34, 401);
 			this->checkBox3->Name = L"checkBox3";
 			this->checkBox3->Size = System::Drawing::Size(115, 17);
-			this->checkBox3->TabIndex = 32;
+			this->checkBox3->TabIndex = 65;
 			this->checkBox3->Text = L"Continuous Control";
 			this->checkBox3->UseVisualStyleBackColor = true;
 			// 
 			// checkBox2
 			// 
 			this->checkBox2->AutoSize = true;
-			this->checkBox2->Location = System::Drawing::Point(20, 392);
+			this->checkBox2->Location = System::Drawing::Point(34, 378);
 			this->checkBox2->Name = L"checkBox2";
 			this->checkBox2->Size = System::Drawing::Size(115, 17);
-			this->checkBox2->TabIndex = 31;
+			this->checkBox2->TabIndex = 64;
 			this->checkBox2->Text = L"Manual Navigation";
 			this->checkBox2->UseVisualStyleBackColor = true;
 			// 
 			// label9
 			// 
 			this->label9->AutoSize = true;
-			this->label9->Location = System::Drawing::Point(171, 343);
+			this->label9->Location = System::Drawing::Point(185, 329);
 			this->label9->Name = L"label9";
 			this->label9->Size = System::Drawing::Size(80, 13);
-			this->label9->TabIndex = 30;
+			this->label9->TabIndex = 63;
 			this->label9->Text = L"Receive Mode:";
 			// 
 			// radioButton3
 			// 
 			this->radioButton3->AutoSize = true;
-			this->radioButton3->Location = System::Drawing::Point(275, 342);
+			this->radioButton3->Location = System::Drawing::Point(289, 328);
 			this->radioButton3->Name = L"radioButton3";
 			this->radioButton3->Size = System::Drawing::Size(86, 17);
-			this->radioButton3->TabIndex = 29;
+			this->radioButton3->TabIndex = 62;
 			this->radioButton3->TabStop = true;
 			this->radioButton3->Text = L"Motor Speed";
 			this->radioButton3->UseVisualStyleBackColor = true;
-			this->radioButton3->CheckedChanged += gcnew System::EventHandler(this, &MyForm::radioButton3_CheckedChanged);
 			// 
 			// button4
 			// 
-			this->button4->Location = System::Drawing::Point(16, 343);
+			this->button4->Location = System::Drawing::Point(30, 329);
 			this->button4->Name = L"button4";
 			this->button4->Size = System::Drawing::Size(114, 25);
-			this->button4->TabIndex = 28;
+			this->button4->TabIndex = 61;
 			this->button4->Text = L"Tune PID";
 			this->button4->UseVisualStyleBackColor = true;
 			this->button4->Click += gcnew System::EventHandler(this, &MyForm::button4_Click);
@@ -442,21 +438,20 @@ namespace RaceControl {
 			// checkBox1
 			// 
 			this->checkBox1->AutoSize = true;
-			this->checkBox1->Location = System::Drawing::Point(20, 374);
+			this->checkBox1->Location = System::Drawing::Point(34, 360);
 			this->checkBox1->Name = L"checkBox1";
 			this->checkBox1->Size = System::Drawing::Size(125, 17);
-			this->checkBox1->TabIndex = 23;
+			this->checkBox1->TabIndex = 57;
 			this->checkBox1->Text = L"Enable Motor Control";
 			this->checkBox1->UseVisualStyleBackColor = true;
-			this->checkBox1->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkBox1_CheckedChanged);
 			// 
 			// radioButton2
 			// 
 			this->radioButton2->AutoSize = true;
-			this->radioButton2->Location = System::Drawing::Point(375, 342);
+			this->radioButton2->Location = System::Drawing::Point(389, 328);
 			this->radioButton2->Name = L"radioButton2";
 			this->radioButton2->Size = System::Drawing::Size(52, 17);
-			this->radioButton2->TabIndex = 27;
+			this->radioButton2->TabIndex = 60;
 			this->radioButton2->TabStop = true;
 			this->radioButton2->Text = L"String";
 			this->radioButton2->UseVisualStyleBackColor = true;
@@ -465,20 +460,20 @@ namespace RaceControl {
 			// 
 			this->radioButton1->AutoSize = true;
 			this->radioButton1->Checked = true;
-			this->radioButton1->Location = System::Drawing::Point(446, 342);
+			this->radioButton1->Location = System::Drawing::Point(460, 328);
 			this->radioButton1->Name = L"radioButton1";
 			this->radioButton1->Size = System::Drawing::Size(70, 17);
-			this->radioButton1->TabIndex = 26;
+			this->radioButton1->TabIndex = 59;
 			this->radioButton1->TabStop = true;
 			this->radioButton1->Text = L"Hex View";
 			this->radioButton1->UseVisualStyleBackColor = true;
 			// 
 			// button3
 			// 
-			this->button3->Location = System::Drawing::Point(375, 390);
+			this->button3->Location = System::Drawing::Point(389, 376);
 			this->button3->Name = L"button3";
 			this->button3->Size = System::Drawing::Size(103, 23);
-			this->button3->TabIndex = 25;
+			this->button3->TabIndex = 58;
 			this->button3->Text = L"Stop Command";
 			this->button3->UseVisualStyleBackColor = true;
 			this->button3->Click += gcnew System::EventHandler(this, &MyForm::button3_Click);
@@ -486,108 +481,301 @@ namespace RaceControl {
 			// label8
 			// 
 			this->label8->AutoSize = true;
-			this->label8->Location = System::Drawing::Point(166, 64);
+			this->label8->Location = System::Drawing::Point(180, 50);
 			this->label8->Name = L"label8";
 			this->label8->Size = System::Drawing::Size(88, 13);
-			this->label8->TabIndex = 20;
+			this->label8->TabIndex = 56;
 			this->label8->Text = L"right motor speed";
 			// 
 			// label7
 			// 
 			this->label7->AutoSize = true;
-			this->label7->Location = System::Drawing::Point(165, 14);
+			this->label7->Location = System::Drawing::Point(179, 0);
 			this->label7->Name = L"label7";
 			this->label7->Size = System::Drawing::Size(82, 13);
-			this->label7->TabIndex = 19;
+			this->label7->TabIndex = 55;
 			this->label7->Text = L"left motor speed";
 			// 
 			// textBox6
 			// 
-			this->textBox6->Location = System::Drawing::Point(168, 83);
+			this->textBox6->Location = System::Drawing::Point(182, 69);
 			this->textBox6->Name = L"textBox6";
 			this->textBox6->Size = System::Drawing::Size(100, 20);
-			this->textBox6->TabIndex = 18;
+			this->textBox6->TabIndex = 54;
 			// 
 			// textBox5
 			// 
-			this->textBox5->Location = System::Drawing::Point(168, 31);
+			this->textBox5->Location = System::Drawing::Point(182, 17);
 			this->textBox5->Name = L"textBox5";
 			this->textBox5->Size = System::Drawing::Size(100, 20);
-			this->textBox5->TabIndex = 17;
+			this->textBox5->TabIndex = 53;
 			// 
 			// textBox4
 			// 
-			this->textBox4->Location = System::Drawing::Point(92, 313);
+			this->textBox4->Location = System::Drawing::Point(106, 299);
 			this->textBox4->Name = L"textBox4";
 			this->textBox4->Size = System::Drawing::Size(67, 20);
-			this->textBox4->TabIndex = 16;
+			this->textBox4->TabIndex = 52;
 			// 
 			// textBox3
 			// 
-			this->textBox3->Location = System::Drawing::Point(6, 313);
+			this->textBox3->Location = System::Drawing::Point(20, 299);
 			this->textBox3->Name = L"textBox3";
 			this->textBox3->Size = System::Drawing::Size(67, 20);
-			this->textBox3->TabIndex = 15;
+			this->textBox3->TabIndex = 51;
 			// 
 			// label6
 			// 
 			this->label6->AutoSize = true;
-			this->label6->Location = System::Drawing::Point(103, 286);
+			this->label6->Location = System::Drawing::Point(117, 272);
 			this->label6->Name = L"label6";
 			this->label6->Size = System::Drawing::Size(56, 13);
-			this->label6->TabIndex = 14;
+			this->label6->TabIndex = 50;
 			this->label6->Text = L"right motor";
-			this->label6->Click += gcnew System::EventHandler(this, &MyForm::label6_Click);
+			// 
+			// button2
+			// 
+			this->button2->Location = System::Drawing::Point(289, 376);
+			this->button2->Name = L"button2";
+			this->button2->Size = System::Drawing::Size(92, 23);
+			this->button2->TabIndex = 38;
+			this->button2->Text = L"Send";
+			this->button2->UseVisualStyleBackColor = true;
+			this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
 			// 
 			// label5
 			// 
 			this->label5->AutoSize = true;
-			this->label5->Location = System::Drawing::Point(15, 286);
+			this->label5->Location = System::Drawing::Point(29, 272);
 			this->label5->Name = L"label5";
 			this->label5->Size = System::Drawing::Size(50, 13);
-			this->label5->TabIndex = 13;
+			this->label5->TabIndex = 49;
 			this->label5->Text = L"left motor";
+			// 
+			// button1
+			// 
+			this->button1->Location = System::Drawing::Point(185, 376);
+			this->button1->Name = L"button1";
+			this->button1->Size = System::Drawing::Size(98, 23);
+			this->button1->TabIndex = 37;
+			this->button1->Text = L"Connect";
+			this->button1->UseVisualStyleBackColor = true;
+			this->button1->Click += gcnew System::EventHandler(this, &MyForm::button1_Click);
 			// 
 			// trackBar2
 			// 
-			this->trackBar2->Location = System::Drawing::Point(114, 18);
+			this->trackBar2->Location = System::Drawing::Point(128, 4);
 			this->trackBar2->Maximum = 100;
 			this->trackBar2->Name = L"trackBar2";
 			this->trackBar2->Orientation = System::Windows::Forms::Orientation::Vertical;
 			this->trackBar2->Size = System::Drawing::Size(45, 265);
-			this->trackBar2->TabIndex = 12;
+			this->trackBar2->TabIndex = 48;
 			// 
 			// trackBar1
 			// 
-			this->trackBar1->Location = System::Drawing::Point(20, 20);
+			this->trackBar1->Location = System::Drawing::Point(34, 6);
 			this->trackBar1->Maximum = 100;
 			this->trackBar1->Name = L"trackBar1";
 			this->trackBar1->Orientation = System::Windows::Forms::Orientation::Vertical;
 			this->trackBar1->Size = System::Drawing::Size(45, 268);
-			this->trackBar1->TabIndex = 11;
+			this->trackBar1->TabIndex = 47;
 			// 
-			// button8
+			// comboBox2
 			// 
-			this->button8->Location = System::Drawing::Point(171, 474);
-			this->button8->Name = L"button8";
-			this->button8->Size = System::Drawing::Size(97, 23);
-			this->button8->TabIndex = 36;
-			this->button8->Text = L"Launch ";
-			this->button8->UseVisualStyleBackColor = true;
-			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click);
+			this->comboBox2->AllowDrop = true;
+			this->comboBox2->FormattingEnabled = true;
+			this->comboBox2->Location = System::Drawing::Point(409, 69);
+			this->comboBox2->Name = L"comboBox2";
+			this->comboBox2->Size = System::Drawing::Size(121, 21);
+			this->comboBox2->TabIndex = 45;
+			// 
+			// label2
+			// 
+			this->label2->AutoSize = true;
+			this->label2->Location = System::Drawing::Point(406, 0);
+			this->label2->Name = L"label2";
+			this->label2->Size = System::Drawing::Size(86, 13);
+			this->label2->TabIndex = 42;
+			this->label2->Text = L"Select COM Port";
+			// 
+			// label4
+			// 
+			this->label4->AutoSize = true;
+			this->label4->Location = System::Drawing::Point(406, 53);
+			this->label4->Name = L"label4";
+			this->label4->Size = System::Drawing::Size(58, 13);
+			this->label4->TabIndex = 46;
+			this->label4->Text = L"Buad Rate";
+			// 
+			// label3
+			// 
+			this->label3->AutoSize = true;
+			this->label3->Location = System::Drawing::Point(179, 154);
+			this->label3->Name = L"label3";
+			this->label3->Size = System::Drawing::Size(47, 13);
+			this->label3->TabIndex = 44;
+			this->label3->Text = L"Terminal";
+			// 
+			// textBox2
+			// 
+			this->textBox2->Location = System::Drawing::Point(182, 170);
+			this->textBox2->Multiline = true;
+			this->textBox2->Name = L"textBox2";
+			this->textBox2->ScrollBars = System::Windows::Forms::ScrollBars::Vertical;
+			this->textBox2->Size = System::Drawing::Size(348, 149);
+			this->textBox2->TabIndex = 43;
+			// 
+			// comboBox1
+			// 
+			this->comboBox1->AllowDrop = true;
+			this->comboBox1->FormattingEnabled = true;
+			this->comboBox1->Location = System::Drawing::Point(409, 17);
+			this->comboBox1->Name = L"comboBox1";
+			this->comboBox1->Size = System::Drawing::Size(121, 21);
+			this->comboBox1->TabIndex = 41;
+			// 
+			// label1
+			// 
+			this->label1->AutoSize = true;
+			this->label1->Location = System::Drawing::Point(182, 106);
+			this->label1->Name = L"label1";
+			this->label1->Size = System::Drawing::Size(118, 13);
+			this->label1->TabIndex = 40;
+			this->label1->Text = L"Hexadecimal Command";
+			// 
+			// textBox1
+			// 
+			this->textBox1->Location = System::Drawing::Point(182, 131);
+			this->textBox1->Name = L"textBox1";
+			this->textBox1->Size = System::Drawing::Size(348, 20);
+			this->textBox1->TabIndex = 39;
+			// 
+			// tabPage2
+			// 
+			this->tabPage2->Controls->Add(this->label14);
+			this->tabPage2->Controls->Add(this->textBox11);
+			this->tabPage2->Controls->Add(this->button9);
+			this->tabPage2->Controls->Add(this->label13);
+			this->tabPage2->Controls->Add(this->label12);
+			this->tabPage2->Controls->Add(this->label11);
+			this->tabPage2->Controls->Add(this->label10);
+			this->tabPage2->Controls->Add(this->textBox10);
+			this->tabPage2->Controls->Add(this->textBox9);
+			this->tabPage2->Controls->Add(this->textBox8);
+			this->tabPage2->Controls->Add(this->textBox7);
+			this->tabPage2->Location = System::Drawing::Point(4, 22);
+			this->tabPage2->Name = L"tabPage2";
+			this->tabPage2->Padding = System::Windows::Forms::Padding(3);
+			this->tabPage2->Size = System::Drawing::Size(550, 503);
+			this->tabPage2->TabIndex = 1;
+			this->tabPage2->Text = L"Camera Setup";
+			this->tabPage2->UseVisualStyleBackColor = true;
+			// 
+			// label14
+			// 
+			this->label14->AutoSize = true;
+			this->label14->Location = System::Drawing::Point(15, 255);
+			this->label14->Name = L"label14";
+			this->label14->Size = System::Drawing::Size(58, 13);
+			this->label14->TabIndex = 10;
+			this->label14->Text = L"IP Address";
+			// 
+			// textBox11
+			// 
+			this->textBox11->Location = System::Drawing::Point(88, 255);
+			this->textBox11->Name = L"textBox11";
+			this->textBox11->Size = System::Drawing::Size(203, 20);
+			this->textBox11->TabIndex = 9;
+			// 
+			// button9
+			// 
+			this->button9->Location = System::Drawing::Point(88, 349);
+			this->button9->Name = L"button9";
+			this->button9->Size = System::Drawing::Size(182, 30);
+			this->button9->TabIndex = 8;
+			this->button9->Text = L"Connect to Roborealm";
+			this->button9->UseVisualStyleBackColor = true;
+			this->button9->Click += gcnew System::EventHandler(this, &MyForm::button9_Click);
+			// 
+			// label13
+			// 
+			this->label13->AutoSize = true;
+			this->label13->Location = System::Drawing::Point(15, 193);
+			this->label13->Name = L"label13";
+			this->label13->Size = System::Drawing::Size(52, 13);
+			this->label13->TabIndex = 7;
+			this->label13->Text = L"Camera 4";
+			// 
+			// label12
+			// 
+			this->label12->AutoSize = true;
+			this->label12->Location = System::Drawing::Point(15, 134);
+			this->label12->Name = L"label12";
+			this->label12->Size = System::Drawing::Size(52, 13);
+			this->label12->TabIndex = 6;
+			this->label12->Text = L"Camera 3";
+			// 
+			// label11
+			// 
+			this->label11->AutoSize = true;
+			this->label11->Location = System::Drawing::Point(15, 92);
+			this->label11->Name = L"label11";
+			this->label11->Size = System::Drawing::Size(52, 13);
+			this->label11->TabIndex = 5;
+			this->label11->Text = L"Camera 2";
+			// 
+			// label10
+			// 
+			this->label10->AutoSize = true;
+			this->label10->Location = System::Drawing::Point(15, 43);
+			this->label10->Name = L"label10";
+			this->label10->Size = System::Drawing::Size(52, 13);
+			this->label10->TabIndex = 4;
+			this->label10->Text = L"Camera 1";
+			// 
+			// textBox10
+			// 
+			this->textBox10->Location = System::Drawing::Point(88, 190);
+			this->textBox10->Name = L"textBox10";
+			this->textBox10->Size = System::Drawing::Size(82, 20);
+			this->textBox10->TabIndex = 3;
+			// 
+			// textBox9
+			// 
+			this->textBox9->Location = System::Drawing::Point(88, 134);
+			this->textBox9->Name = L"textBox9";
+			this->textBox9->Size = System::Drawing::Size(82, 20);
+			this->textBox9->TabIndex = 2;
+			// 
+			// textBox8
+			// 
+			this->textBox8->Location = System::Drawing::Point(88, 89);
+			this->textBox8->Name = L"textBox8";
+			this->textBox8->Size = System::Drawing::Size(82, 20);
+			this->textBox8->TabIndex = 1;
+			// 
+			// textBox7
+			// 
+			this->textBox7->Location = System::Drawing::Point(88, 42);
+			this->textBox7->Name = L"textBox7";
+			this->textBox7->Size = System::Drawing::Size(82, 20);
+			this->textBox7->TabIndex = 0;
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(584, 547);
-			this->Controls->Add(this->groupBox1);
+			this->ClientSize = System::Drawing::Size(587, 547);
+			this->Controls->Add(this->tabControl1);
 			this->Name = L"MyForm";
 			this->Text = L"Serial Command";
-			this->groupBox1->ResumeLayout(false);
-			this->groupBox1->PerformLayout();
+			this->tabControl1->ResumeLayout(false);
+			this->tabPage1->ResumeLayout(false);
+			this->tabPage1->PerformLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->EndInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar1))->EndInit();
+			this->tabPage2->ResumeLayout(false);
+			this->tabPage2->PerformLayout();
 			this->ResumeLayout(false);
 
 		}
@@ -601,8 +789,8 @@ private: bool is_decimal(System::String^ s);
 private: void intializeTrackbars();
 private: array<System::Byte>^ interpretHexadecimalCommand();
 private: void sendSerialData(array<System::Byte>^ byteArray);
-private: void setMotorSpeeds();
-private: void setMotorSpeeds(int speed_L, int speed_R);
+public: void setMotorSpeeds();
+public: void setMotorSpeeds(int speed_L, int speed_R);
 public: void setMotorGains();
 
 
@@ -881,10 +1069,7 @@ private: System::Void dataReceivedHandler(System::Object^ sender,\
 				 */
 			 }
 		 }
-		 private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) {
-					  if(this->aTimer->Enabled)
-						  this->aTimer->Enabled = false;
-				  }
+private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) ;
 private: System::Void label6_Click(System::Object^  sender, System::EventArgs^  e) {
 		 }
 private: System::Void button4_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -908,8 +1093,24 @@ private: System::Void button5_Click(System::Object^  sender, System::EventArgs^ 
 			 drawTimer->Enabled = true;
 		 }
 
-private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) ;
+private: System::Void button6_Click_1(System::Object^  sender, System::EventArgs^  e) ;
 private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e);
-private: System::Void button8_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button8_Click_1(System::Object^  sender, System::EventArgs^  e);
+
+
+
+private: System::Void button9_Click(System::Object^  sender, System::EventArgs^  e) {
+			 /*System::Int16 port_num_1, port_num_2, port_num_3, port_num_4;
+			 System::String^ ip_address;
+			 port_num_1 = System::Convert::ToInt16(this->textBox7->Text);
+			 port_num_2 = System::Convert::ToInt16(this->textBox8->Text);
+			 port_num_3 = System::Convert::ToInt16(this->textBox9->Text);
+			 port_num_4 = System::Convert::ToInt16(this->textBox10->Text);
+			 ip_address = this->textBox11->Text;
+			 controller_ -> connectToRoborealm(port_num_1, port_num_2, port_num_3, port_num_4, ip_address);
+			 */
+			 
+		 }
+
 };
 }

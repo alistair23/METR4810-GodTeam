@@ -168,7 +168,7 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 	}*/
 }
 
-System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::button6_Click_1(System::Object^  sender, System::EventArgs^  e) {
 
 			 this->controller_->getCameraTransform(0);
 		 }
@@ -177,11 +177,19 @@ System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System:
  {
 	 controller_->getMidPoints(0);
  }
- System::Void RaceControl::MyForm::button8_Click(System::Object^  sender, System::EventArgs^  e) {
+ System::Void RaceControl::MyForm::button8_Click_1(System::Object^  sender, System::EventArgs^  e) {
 
 	 controller_->car_tracking_on = true;
 	 controller_->local_planning_on = true;
+	 controller_->go_signal_found = true;
 
+}
+ System::Void RaceControl::MyForm::button3_Click(System::Object^  sender, System::EventArgs^  e) {
+					  
+	controller_->go_signal_found = false;
+	this->setMotorSpeeds(0 , 0);
+	//if(this->aTimer->Enabled)
+		//this->aTimer->Enabled = false;
 }
 
 

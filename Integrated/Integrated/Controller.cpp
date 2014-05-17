@@ -195,7 +195,7 @@ void Controller::sendCarCommand() {
 			my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
 			double dist_sq_thresh = 100;
-			double max_speed = 100;
+			double max_speed = 25;
 			double angle_thresh = 60 * M_PI / 180;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -242,18 +242,23 @@ void Controller::sendCarCommand() {
 				my_car_->setRSpeed(0);
 				my_car_->setLSpeed(0);
 			}
+			Interlocked::Exchange(my_car_lock_, 0);
+
+			// Send commands over bluetooth
+			std::cout <<"Right speed: " << my_car_->getRSpeed()<<std::endl;
+			std::cout << "Left speed: " << my_car_->getLSpeed() << std::endl; 
+			form_ ->setMotorSpeeds((int)(my_car_->getLSpeed()), (int)(my_car_->getRSpeed()));		
+
+			// Release the lock
+			Interlocked::Exchange(current_path_lock_, 0);
+
 		}
-		Interlocked::Exchange(my_car_lock_, 0);
-
-
-		// Send commands over bluetooth
-		std::cout <<"Right speed: " << my_car_->getRSpeed()<<std::endl;
-		std::cout << "Left speed: " << my_car_->getLSpeed() << std::endl; 
-
-		// Release the lock
-		Interlocked::Exchange(current_path_lock_, 0);
-
+		
 
 		Thread::Sleep(100);
 	}
 }
+
+//void connectToRoborealm(int port_num1, int port_num2, int port_num3, int port_num4, System::String^ ip_address){
+	//while(!vision_->connectRoboRealm());
+//}
