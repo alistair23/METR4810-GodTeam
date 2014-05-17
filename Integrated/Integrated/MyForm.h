@@ -84,8 +84,8 @@ namespace RaceControl {
 	public: 
 
 	private: System::Windows::Forms::Button^  button8;
-	private: System::Windows::Forms::Button^  button7;
-	private: System::Windows::Forms::Button^  button6;
+
+
 	private: System::Windows::Forms::Button^  button5;
 	private: System::Windows::Forms::CheckBox^  checkBox3;
 	private: System::Windows::Forms::CheckBox^  checkBox2;
@@ -128,7 +128,14 @@ namespace RaceControl {
 	private: System::Windows::Forms::TextBox^  textBox9;
 	private: System::Windows::Forms::TextBox^  textBox8;
 	private: System::Windows::Forms::TextBox^  textBox7;
-			 /*MyForm(PIDTuningForm^ form1)
+private: System::Windows::Forms::Label^  label15;
+private: System::Windows::Forms::ComboBox^  comboBox3;
+private: System::Windows::Forms::Label^  label16;
+private: System::Windows::Forms::ComboBox^  comboBox4;
+private: System::Windows::Forms::Label^  label17;
+private: System::Windows::Forms::Button^  button7;
+private: System::Windows::Forms::Button^  button6;
+		 /*MyForm(PIDTuningForm^ form1)
 		{
 			MyForm();
 			this->form = form1;
@@ -177,26 +184,6 @@ namespace RaceControl {
 	private: System::IO::Ports::SerialPort^  serialPort1;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	private: System::ComponentModel::IContainer^  components;
 
 	delegate void SetTextDelegate(String^ text);
@@ -242,8 +229,6 @@ namespace RaceControl {
 			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
 			this->tabPage1 = (gcnew System::Windows::Forms::TabPage());
 			this->button8 = (gcnew System::Windows::Forms::Button());
-			this->button7 = (gcnew System::Windows::Forms::Button());
-			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->button5 = (gcnew System::Windows::Forms::Button());
 			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
 			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
@@ -275,6 +260,13 @@ namespace RaceControl {
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->comboBox4 = (gcnew System::Windows::Forms::ComboBox());
+			this->label17 = (gcnew System::Windows::Forms::Label());
+			this->button7 = (gcnew System::Windows::Forms::Button());
+			this->button6 = (gcnew System::Windows::Forms::Button());
+			this->label16 = (gcnew System::Windows::Forms::Label());
+			this->label15 = (gcnew System::Windows::Forms::Label());
+			this->comboBox3 = (gcnew System::Windows::Forms::ComboBox());
 			this->label14 = (gcnew System::Windows::Forms::Label());
 			this->textBox11 = (gcnew System::Windows::Forms::TextBox());
 			this->button9 = (gcnew System::Windows::Forms::Button());
@@ -306,8 +298,6 @@ namespace RaceControl {
 			// tabPage1
 			// 
 			this->tabPage1->Controls->Add(this->button8);
-			this->tabPage1->Controls->Add(this->button7);
-			this->tabPage1->Controls->Add(this->button6);
 			this->tabPage1->Controls->Add(this->button5);
 			this->tabPage1->Controls->Add(this->checkBox3);
 			this->tabPage1->Controls->Add(this->checkBox2);
@@ -355,26 +345,6 @@ namespace RaceControl {
 			this->button8->Text = L"Launch ";
 			this->button8->UseVisualStyleBackColor = true;
 			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click_1);
-			// 
-			// button7
-			// 
-			this->button7->Location = System::Drawing::Point(389, 420);
-			this->button7->Name = L"button7";
-			this->button7->Size = System::Drawing::Size(105, 22);
-			this->button7->TabIndex = 68;
-			this->button7->Text = L"GetMidPoints";
-			this->button7->UseVisualStyleBackColor = true;
-			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
-			// 
-			// button6
-			// 
-			this->button6->Location = System::Drawing::Point(289, 420);
-			this->button6->Name = L"button6";
-			this->button6->Size = System::Drawing::Size(92, 23);
-			this->button6->TabIndex = 67;
-			this->button6->Text = L"Get Transform";
-			this->button6->UseVisualStyleBackColor = true;
-			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click_1);
 			// 
 			// button5
 			// 
@@ -652,6 +622,13 @@ namespace RaceControl {
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->comboBox4);
+			this->tabPage2->Controls->Add(this->label17);
+			this->tabPage2->Controls->Add(this->button7);
+			this->tabPage2->Controls->Add(this->button6);
+			this->tabPage2->Controls->Add(this->label16);
+			this->tabPage2->Controls->Add(this->label15);
+			this->tabPage2->Controls->Add(this->comboBox3);
 			this->tabPage2->Controls->Add(this->label14);
 			this->tabPage2->Controls->Add(this->textBox11);
 			this->tabPage2->Controls->Add(this->button9);
@@ -671,10 +648,79 @@ namespace RaceControl {
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
 			// 
+			// comboBox4
+			// 
+			this->comboBox4->FormattingEnabled = true;
+			this->comboBox4->Items->AddRange(gcnew cli::array< System::Object^  >(4) {L"0", L"1", L"2", L"3"});
+			this->comboBox4->Location = System::Drawing::Point(88, 400);
+			this->comboBox4->Name = L"comboBox4";
+			this->comboBox4->Size = System::Drawing::Size(61, 21);
+			this->comboBox4->TabIndex = 72;
+			this->comboBox4->Text = L"0";
+			// 
+			// label17
+			// 
+			this->label17->AutoSize = true;
+			this->label17->Location = System::Drawing::Point(24, 405);
+			this->label17->Name = L"label17";
+			this->label17->Size = System::Drawing::Size(43, 13);
+			this->label17->TabIndex = 71;
+			this->label17->Text = L"Camera";
+			// 
+			// button7
+			// 
+			this->button7->Enabled = false;
+			this->button7->Location = System::Drawing::Point(295, 401);
+			this->button7->Name = L"button7";
+			this->button7->Size = System::Drawing::Size(105, 22);
+			this->button7->TabIndex = 70;
+			this->button7->Text = L"GetMidPoints";
+			this->button7->UseVisualStyleBackColor = true;
+			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
+			// 
+			// button6
+			// 
+			this->button6->Enabled = false;
+			this->button6->Location = System::Drawing::Point(182, 400);
+			this->button6->Name = L"button6";
+			this->button6->Size = System::Drawing::Size(92, 23);
+			this->button6->TabIndex = 69;
+			this->button6->Text = L"Get Transform";
+			this->button6->UseVisualStyleBackColor = true;
+			this->button6->Click += gcnew System::EventHandler(this, &MyForm::button6_Click);
+			// 
+			// label16
+			// 
+			this->label16->AutoSize = true;
+			this->label16->Location = System::Drawing::Point(241, 49);
+			this->label16->Name = L"label16";
+			this->label16->Size = System::Drawing::Size(102, 13);
+			this->label16->TabIndex = 13;
+			this->label16->Text = L"Number of cameras:";
+			// 
+			// label15
+			// 
+			this->label15->AutoSize = true;
+			this->label15->Location = System::Drawing::Point(85, 16);
+			this->label15->Name = L"label15";
+			this->label15->Size = System::Drawing::Size(64, 13);
+			this->label15->TabIndex = 12;
+			this->label15->Text = L"Port number";
+			// 
+			// comboBox3
+			// 
+			this->comboBox3->FormattingEnabled = true;
+			this->comboBox3->Items->AddRange(gcnew cli::array< System::Object^  >(4) {L"1", L"2", L"3", L"4"});
+			this->comboBox3->Location = System::Drawing::Point(349, 43);
+			this->comboBox3->Name = L"comboBox3";
+			this->comboBox3->Size = System::Drawing::Size(121, 21);
+			this->comboBox3->TabIndex = 11;
+			this->comboBox3->Text = L"1";
+			// 
 			// label14
 			// 
 			this->label14->AutoSize = true;
-			this->label14->Location = System::Drawing::Point(15, 255);
+			this->label14->Location = System::Drawing::Point(15, 231);
 			this->label14->Name = L"label14";
 			this->label14->Size = System::Drawing::Size(58, 13);
 			this->label14->TabIndex = 10;
@@ -682,14 +728,15 @@ namespace RaceControl {
 			// 
 			// textBox11
 			// 
-			this->textBox11->Location = System::Drawing::Point(88, 255);
+			this->textBox11->Location = System::Drawing::Point(88, 231);
 			this->textBox11->Name = L"textBox11";
-			this->textBox11->Size = System::Drawing::Size(203, 20);
+			this->textBox11->Size = System::Drawing::Size(148, 20);
 			this->textBox11->TabIndex = 9;
+			this->textBox11->Text = L"127.0.0.1";
 			// 
 			// button9
 			// 
-			this->button9->Location = System::Drawing::Point(88, 349);
+			this->button9->Location = System::Drawing::Point(18, 271);
 			this->button9->Name = L"button9";
 			this->button9->Size = System::Drawing::Size(182, 30);
 			this->button9->TabIndex = 8;
@@ -700,7 +747,7 @@ namespace RaceControl {
 			// label13
 			// 
 			this->label13->AutoSize = true;
-			this->label13->Location = System::Drawing::Point(15, 193);
+			this->label13->Location = System::Drawing::Point(15, 181);
 			this->label13->Name = L"label13";
 			this->label13->Size = System::Drawing::Size(52, 13);
 			this->label13->TabIndex = 7;
@@ -735,10 +782,11 @@ namespace RaceControl {
 			// 
 			// textBox10
 			// 
-			this->textBox10->Location = System::Drawing::Point(88, 190);
+			this->textBox10->Location = System::Drawing::Point(88, 178);
 			this->textBox10->Name = L"textBox10";
 			this->textBox10->Size = System::Drawing::Size(82, 20);
 			this->textBox10->TabIndex = 3;
+			this->textBox10->Text = L"6063";
 			// 
 			// textBox9
 			// 
@@ -746,6 +794,7 @@ namespace RaceControl {
 			this->textBox9->Name = L"textBox9";
 			this->textBox9->Size = System::Drawing::Size(82, 20);
 			this->textBox9->TabIndex = 2;
+			this->textBox9->Text = L"6062";
 			// 
 			// textBox8
 			// 
@@ -753,6 +802,7 @@ namespace RaceControl {
 			this->textBox8->Name = L"textBox8";
 			this->textBox8->Size = System::Drawing::Size(82, 20);
 			this->textBox8->TabIndex = 1;
+			this->textBox8->Text = L"6061";
 			// 
 			// textBox7
 			// 
@@ -760,6 +810,7 @@ namespace RaceControl {
 			this->textBox7->Name = L"textBox7";
 			this->textBox7->Size = System::Drawing::Size(82, 20);
 			this->textBox7->TabIndex = 0;
+			this->textBox7->Text = L"6060";
 			// 
 			// MyForm
 			// 
@@ -1093,24 +1144,10 @@ private: System::Void button5_Click(System::Object^  sender, System::EventArgs^ 
 			 drawTimer->Enabled = true;
 		 }
 
-private: System::Void button6_Click_1(System::Object^  sender, System::EventArgs^  e) ;
+private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button8_Click_1(System::Object^  sender, System::EventArgs^  e);
-
-
-
-private: System::Void button9_Click(System::Object^  sender, System::EventArgs^  e) {
-			 /*System::Int16 port_num_1, port_num_2, port_num_3, port_num_4;
-			 System::String^ ip_address;
-			 port_num_1 = System::Convert::ToInt16(this->textBox7->Text);
-			 port_num_2 = System::Convert::ToInt16(this->textBox8->Text);
-			 port_num_3 = System::Convert::ToInt16(this->textBox9->Text);
-			 port_num_4 = System::Convert::ToInt16(this->textBox10->Text);
-			 ip_address = this->textBox11->Text;
-			 controller_ -> connectToRoborealm(port_num_1, port_num_2, port_num_3, port_num_4, ip_address);
-			 */
-			 
-		 }
+private: System::Void button9_Click(System::Object^  sender, System::EventArgs^  e);
 
 };
 }

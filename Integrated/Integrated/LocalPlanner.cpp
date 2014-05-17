@@ -24,6 +24,18 @@ void LocalPlanner::setGlobalPath(std::vector<Point> global_path, int camera) {
 	global_paths_[camera] = global_path;
 }
 
+bool LocalPlanner::isGlobalPathSet(int camera) {
+	return global_paths_[camera].size() > 0;
+}
+
+Point LocalPlanner::getGlobalPathEnd(int camera) {
+	return global_paths_[camera][global_paths_[camera].size() - 1];
+}
+
+Point LocalPlanner::getGlobalPathStart(int camera) {
+	return global_paths_[camera][0];
+}
+
 void LocalPlanner::updateMyCar(Point pos, double dir, double spd) {
 	my_car_.update(pos, dir, spd);
 }
