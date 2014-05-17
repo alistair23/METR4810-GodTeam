@@ -19,20 +19,19 @@ class Vision {
 
 public:
 
-	Vision(int num_cam = 1, std::string ip_address = "127.0.0.1", int port_num = 6060);
+	Vision();
+	void initCameras(std::vector<int> port_nums, std::string ip_address);
 
 	// Connect to RoboRealm server. Returns true if success
-	bool connectRoboRealm();
+	bool connectRoboRealm(int camera);
 
-	void setupCamTransform(int cam_index);
-
-	// Find perspective transform which when applied to image will
-	// give unwarped top-down view. Input image must contain our 
-	// special marker used during setup time. Returns true if success
-	bool getTransform(cv::Mat& img_in, cv::Mat& transform_output);
+	void setupCamTransform(int camera);
 
 	// Grab camera frame and update car and obstacle info
-	void update();
+	// If no argument is supplied for my car position guess, 
+	// jump straight to full image search.
+	// Returns true if my car is found, false otherwise
+	bool update(int camera, Point car_pos_guess = Point(-1, -1));
 
 	// Grab a camera image from RoboRealm server
 	// cam is the index of the camera to grab image from
@@ -46,8 +45,6 @@ public:
 	// output in other_cars. Returns true if my car is found
 	bool getCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
 		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
-
-
 
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(
@@ -75,6 +72,11 @@ private:
 
 	cv::Mat img_display_;
 
+	// Find perspective transform which when applied to image will
+	// give unwarped top-down view. Input image must contain our 
+	// special marker used during setup time. Returns true if success
+	bool getTransform(cv::Mat& img_in, cv::Mat& transform_output, int camera);
+
 	// Returns euclidean distance between two opencv points
 	float dist(cv::Point2f& p1, cv::Point2f& p2);
 
@@ -101,11 +103,9 @@ private:
 
 	std::vector<Tile> tiles;
 
-	int curr_cam_;	// Current camera being monitored
-	int num_cam_;	// Total number of cameras
-	RR_API roborealm_;
+	std::vector<RR_API> roborealms_;
 	std::string ip_address_;
-	int port_num_;
+	std::vector<int> port_nums_;
 	
 	// Approximate metres per pixel for camera before any transform
 	std::vector<float> approx_cam_m_per_pix_;

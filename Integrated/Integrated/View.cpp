@@ -86,7 +86,6 @@ void View::redraw() {
 		*/
 		
 	cv::imshow("View", img_display);
-	
 	cv::waitKey(frame_time_);
 }
 

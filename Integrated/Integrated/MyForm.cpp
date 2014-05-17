@@ -168,15 +168,16 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 	}*/
 }
 
-System::Void RaceControl::MyForm::button6_Click_1(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	this->controller_->getCameraTransform(camera);
+}
 
-			 this->controller_->getCameraTransform(0);
-		 }
+System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->getMidPoints(camera);
+}
 
- System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e)
- {
-	 controller_->getMidPoints(0);
- }
  System::Void RaceControl::MyForm::button8_Click_1(System::Object^  sender, System::EventArgs^  e) {
 
 	 controller_->car_tracking_on = true;
@@ -191,5 +192,19 @@ System::Void RaceControl::MyForm::button6_Click_1(System::Object^  sender, Syste
 	//if(this->aTimer->Enabled)
 		//this->aTimer->Enabled = false;
 }
+
+ System::Void RaceControl::MyForm::button9_Click(System::Object^  sender, System::EventArgs^  e) {
+	 System::Int16 port_num_1, port_num_2, port_num_3, port_num_4, num_cameras;
+	 System::String^ ip_address;
+	 port_num_1 = System::Convert::ToInt16(this->textBox7->Text);
+	 port_num_2 = System::Convert::ToInt16(this->textBox8->Text);
+	 port_num_3 = System::Convert::ToInt16(this->textBox9->Text);
+	 port_num_4 = System::Convert::ToInt16(this->textBox10->Text);
+	 ip_address = this->textBox11->Text;
+	 num_cameras = System::Convert::ToInt16(this->comboBox3->Text);
+	 controller_ -> connectToRoborealm(port_num_1, port_num_2, port_num_3, port_num_4, ip_address, num_cameras);
+	this->button6->Enabled = true;
+	this->button7->Enabled = true;
+ }
 
 

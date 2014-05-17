@@ -22,7 +22,7 @@ public:
 	void showImage(cv::Mat im);
 	void getCameraTransform( int camera);
 	void getMidPoints(int camera);
-	//void connectToRoborealm(int port_num1, int port_num2, int port_num3, int port_num4, System::String^ ip_address);
+	void connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras);
 
 	cv::Mat* img;
 	bool car_tracking_on;
@@ -36,6 +36,7 @@ private:
 	View *view_;
 	LocalPlanner *planner_;
 	int current_camera_;
+	int num_cameras_;
 	std::vector<Point>* current_path_;
 	int current_path_lock_;	// 0 if current_path_ is free, otherwise 1
 	int my_car_lock_;

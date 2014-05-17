@@ -1,6 +1,8 @@
 #define _USE_MATH_DEFINES
 #include <msclr/lock.h>
 #include <cv.h>
+#include <string>
+#include <msclr\marshal_cppstd.h>	// For converting System::String^ to std::string
 
 #include "Controller.h"
 #include "CommonFunctions.h"
@@ -16,6 +18,8 @@ Controller::Controller() :
 	vision_(new Vision()),
 	view_(new View()),
 	planner_(new LocalPlanner()),
+	current_camera_(0),
+	num_cameras_(0),
 	current_path_(new std::vector<Point>()),
 	local_planning_on(false),
 	car_tracking_on(false),
@@ -24,9 +28,6 @@ Controller::Controller() :
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
-
-	while(!vision_->connectRoboRealm());
-
 	
 	Thread^ carDetectionThread = gcnew Thread( gcnew ThreadStart(this, &Controller::detectCar) );
 	carDetectionThread -> Start();
@@ -44,7 +45,6 @@ Controller::Controller() :
     // Create the main window and run i
 	//form = gcnew RaceControl::MyForm();
 	Application::Run(form_);
-
 
 }
 
@@ -102,7 +102,7 @@ void Controller::getCameraTransform( int camera)
 
 void Controller::getMidPoints(int camera)
 {
-	vision_->update();
+	vision_->update(camera);
 	Car temp = vision_->getMyCarInfo();
 	cv::Mat img_bgr;
 	vision_->getCamImg(camera, img_bgr);
@@ -114,8 +114,8 @@ void Controller::getMidPoints(int camera)
 		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir());
 	view_->drawNewDots(track);
 	view_->updateMyCar(*my_car_);
-	view_->redraw();
 	planner_->setGlobalPath(track, camera);
+	view_->redraw();
 	//showImage(*(view_->getDisplayImage()));
 }
 
@@ -130,8 +130,47 @@ void Controller::detectCar()
 		}
 		else
 		{
+			bool found_my_car = false;
+
+			// Use predicted car position as a guess
+			while (0 != Interlocked::Exchange(my_car_lock_, 1));
+			Point guess(my_car_->getPos());
+			Interlocked::Exchange(my_car_lock_, 0);
+
+			// If near end of current global path, preferentially 
+			// use next camera
+			if (num_cameras_ > 1) {
+				Point next_camera_guess;
+				bool prefer_next_camera = false;
+				double thresh = 0.2 / M_PER_PIX;
+				int next_camera = (current_camera_ + 1) % num_cameras_;
+				while (0 != Interlocked::Exchange(current_path_lock_, 1));
+				if (guess.dist(planner_->getGlobalPathEnd(current_camera_)) < thresh) {
+					next_camera_guess = planner_->getGlobalPathStart(next_camera);
+					prefer_next_camera = true;
+				}
+				Interlocked::Exchange(current_path_lock_, 0);
+				if (prefer_next_camera)
+					found_my_car = vision_->update(next_camera, next_camera_guess);
+			}
+			int temp_camera = current_camera_;
+			while (!found_my_car) {				
+				if (current_camera_ == temp_camera) {
+					while (0 != Interlocked::Exchange(my_car_lock_, 1));
+					guess = my_car_->getPos();
+					Interlocked::Exchange(my_car_lock_, 0);
+					found_my_car = vision_->update(current_camera_, guess);
+				}
+				else {
+					found_my_car = vision_->update(current_camera_);
+				}
+
+				// If we didn't find car in current camera, step through 
+				// other cameras until car is found.
+				if (!found_my_car)
+					current_camera_ = (current_camera_ + 1) % num_cameras_;
+			}
 			
-			vision_->update();
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
@@ -149,7 +188,6 @@ void Controller::detectCar()
 				Interlocked::Exchange(current_path_lock_, 0);
 			}
 			view_->redraw();
-			//showImage(*(view_->getDisplayImage()));
 		}
 	}
 }
@@ -259,6 +297,12 @@ void Controller::sendCarCommand() {
 	}
 }
 
-//void connectToRoborealm(int port_num1, int port_num2, int port_num3, int port_num4, System::String^ ip_address){
-	//while(!vision_->connectRoboRealm());
-//}
+void Controller::connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras){
+	num_cameras_ = num_cameras;
+	int temp[4] = {port_num_1, port_num_2, port_num_3, port_num_4};
+	std::vector<int> port_nums;
+	for (int i = 0; i < num_cameras; i++) {
+		port_nums.push_back(temp[i]);
+	}
+	vision_->initCameras(port_nums, msclr::interop::marshal_as<std::string>(ip_address));
+}

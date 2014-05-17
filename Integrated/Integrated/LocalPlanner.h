@@ -17,6 +17,9 @@ public:
 	LocalPlanner(int num_cameras = 4);
 	LocalPlanner(std::vector<std::vector<Point>> global_paths);
 	void setGlobalPath(std::vector<Point> global_path, int camera);
+	bool isGlobalPathSet(int camera);
+	Point getGlobalPathEnd(int camera);
+	Point getGlobalPathStart(int camera);
 	std::vector<Point> getSegment(int curr_camera, int num_points = 20);
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
