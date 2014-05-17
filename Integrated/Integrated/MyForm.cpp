@@ -101,11 +101,11 @@ void RaceControl::MyForm::setMotorGains()
 	//set packet code
 	packet[0] = (Byte)PCKTCODE::PCKTCODE_SETGAIN_IN;
 	//set packet length
-	packet[1] = 6;
+	packet[1] = 3;
 	//insert gains
-	packet[2] = System::Convert::ToSByte(kp_l);
-	packet[3] = System::Convert::ToSByte(ki_l);
-	packet[4] = System::Convert::ToSByte(kd_l);
+	packet[2] = System::Convert::ToByte(kp_l);
+	packet[3] = System::Convert::ToByte(kd_l);
+	packet[4] = System::Convert::ToByte(ki_l);
 	//packet[5] = System::Convert::ToSByte(kp_r);
 	//packet[6] = System::Convert::ToSByte(ki_r);
 	//packet[7] = System::Convert::ToSByte(kd_r);
