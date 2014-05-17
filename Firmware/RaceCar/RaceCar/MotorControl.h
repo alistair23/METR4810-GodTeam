@@ -5,17 +5,23 @@
  *  Author: Kianoosh
  */ 
 
+#ifdef F_CPU
+#undef F_CPU 
+#define F_CPU 8000000UL
+#else
+#define F_CPU 8000000UL
+#endif
 
 #ifndef MOTORCONTROL_H_
 #define MOTORCONTROL_H_
-#define F_CPU 1000000UL
+//#define F_CPU 1000000UL
 #include <stdint.h>
 #define MOTOR_L (0)
 #define MOTOR_R (1)
 #define MAX_SPEED (825) //measured from oscilloscope with voltage 6.5V
 #define GEAR_RATIO (30)
 #define ENCODER_FINS (3)
-#define MEASURE_PERIOD (65535.0/F_CPU)
+#define MEASURE_PERIOD (4 * 65535.0 / (F_CPU))
 
 // initialize PWM
 extern void MotorControl_InitMotorControl();

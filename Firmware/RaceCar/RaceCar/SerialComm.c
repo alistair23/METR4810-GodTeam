@@ -8,7 +8,7 @@
  * Always make sure the rate with which the data is sent back to PC is always less than the transmission rate 
  */ 
 
-
+#include "MotorControl.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
@@ -16,15 +16,18 @@
 #include <string.h>
 #include <util/atomic.h>
 #include "SerialComm.h"
-#include "MotorControl.h"
 
+extern volatile float error_l_sum; //integral error
+extern volatile float error_r_sum;
+extern volatile int8_t speed_l_measured;
+extern volatile int8_t speed_r_measured;
 int8_t speed_l_desired;
 int8_t speed_r_desired;
 uint8_t motor_enable;
 uint8_t car_enable;
-uint8_t kp;
+float kp;
 uint8_t kd;
-uint8_t ki;
+float ki;
 
 static volatile uint8_t currentlyTransmitting = 0;
 static volatile uint8_t updatingBuffer = 0;
@@ -228,23 +231,40 @@ void ProcessPacket(Packet pckt)
 	uint8_t len = pckt.Length;
 	SerialComm_sendData(current_pckt.Data, current_pckt.Length);
 	SerialComm_sendText("\n");
+	uint8_t reset_l = 0;
+	uint8_t reset_r = 0;
 	switch(pckt.Type)
 	{
 		case PCKTCODE_CONTROL_IN:
 		
 		if (len >= 2)
 		{
+			if (speed_l_desired != (int8_t) (*(pckt.Data)) )
+				reset_l = 1;
+			else
+				reset_l = 0;
+			if (speed_r_desired != (int8_t) (*(pckt.Data + 1)) )
+				reset_r = 1;
+			else
+				reset_r = 0;
+
 			speed_l_desired = (int8_t) (*(pckt.Data));
 			speed_r_desired = (int8_t) (*(pckt.Data+1));
+			
+			if (reset_l)
+				error_l_sum = (speed_l_desired - speed_l_measured) * MEASURE_PERIOD;
+			if (reset_r)
+				error_r_sum = (speed_r_desired - speed_r_measured) * MEASURE_PERIOD;
 		}
 		break;
 
 		case PCKTCODE_SETGAIN_IN:
 		if (len >=3)
 		{
-			kp = *pckt.Data;
+			kp = ((float) (*pckt.Data)/100);
 			kd = *(pckt.Data + 1);
-			ki = *(pckt.Data + 2);
+			ki =  ((float) (*(pckt.Data + 2))/100);
+			SerialComm_sendText("gains are set now\n");
 			
 		}
 		break;

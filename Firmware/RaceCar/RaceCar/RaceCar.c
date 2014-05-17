@@ -5,11 +5,10 @@
  *  Author: Kianoosh
  */ 
 
-#define F_CPU 1000000UL
-#include <avr/io.h>
-
-#include <util/delay.h>
 #include "MotorControl.h"
+#include <avr/io.h>
+#include <util/delay.h>
+
 #include "SerialComm.h"
 
 //#define BAUD 2400
@@ -21,8 +20,8 @@ int main(void)
 	//OCR0A = (uint8_t) (100*255/100);
 	SerialComm_initUSART(F_CPU/16/BAUD - 1);
 	MotorControl_InitMotorControl();
-	speed_l_desired = 25;
-	speed_r_desired = 25;
+	speed_l_desired = 0;
+	speed_r_desired = 0;
 	//MotorControl_SetMotorSpeed(MOTOR_L, 70);
 	//MotorControl_SetMotorSpeed(MOTOR_R, 70);
 	//uint16_t ubrr = F_CPU/16UL/BAUD-1;

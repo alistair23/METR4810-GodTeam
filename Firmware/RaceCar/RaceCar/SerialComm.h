@@ -5,20 +5,27 @@
  *  Author: Kianoosh
  */ 
 
+#ifdef F_CPU
+#undef F_CPU
+#define F_CPU 8000000UL
+#else
+#define F_CPU 8000000UL
+#endif
 
 #ifndef SERIALCOMM_H_
 #define SERIALCOMM_H_
 #include <stdint.h>
-#define BAUD 2400
+//#define BAUD 2400
+#define BAUD 9600
 #define BUFFER_SIZE 512
 #define PCKT_QUEUE_SIZE 8
 
 extern int8_t speed_l_desired;
 extern int8_t speed_r_desired;
 extern uint8_t motor_enable;
-extern uint8_t kp;
+extern float kp;
 extern uint8_t kd;
-extern uint8_t ki;
+extern float ki;
 
 //initialize USART
 extern void SerialComm_initUSART(uint16_t ubrr);
