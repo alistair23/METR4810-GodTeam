@@ -32,7 +32,7 @@ Controller::Controller() :
 
 	//while(!vision_->connectRoboRealm());
 
-	/*
+	
 
 	Thread^ carDetectionThread = gcnew Thread( gcnew ThreadStart(this, &Controller::detectCar) );
 	carDetectionThread -> Start();
@@ -44,7 +44,7 @@ Controller::Controller() :
 	commandCarThread -> Start();
 	
 	img = new cv::Mat();
-	*/
+	
 	//Console::WriteLine(L"Hello World");
 	Application::EnableVisualStyles();
     // Create the main window and run i
