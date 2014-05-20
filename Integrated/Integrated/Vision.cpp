@@ -445,7 +445,6 @@ bool Vision::update(int camera, Point car_pos_guess) {
 
 }
 
-// TODO handle camera index thing
 void Vision::getCamImg(int camera, cv::Mat& img_out) {
 
 	// Check if connected to roborealm server
@@ -726,7 +725,7 @@ void Vision::colorThresh(cv::Mat& img) {
 	// Use green threshold
 	// Green is used due to high contrast between road and "grass"
 	inRange(img_hsv, cv::Scalar(25, 0, 50),
-		cv::Scalar(40, 255, 255), img);
+		cv::Scalar(50, 255, 255), img);
 
 	img = 255 - img;	// Flip white and black
 }
@@ -1135,3 +1134,10 @@ int Vision::getTileType(cv::Mat& img_roi, int rot) {
 }
 
 bool isCarValid(cv::Point2f pos, double angle, long long time);
+
+void Vision::testColorThresh(int camera) {
+	cv::Mat img;
+	getCamImg(camera, img);
+	colorThresh(img);
+	imshow("Display", img);
+}

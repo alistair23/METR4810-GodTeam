@@ -66,6 +66,8 @@ public:
 
 	bool inImg(cv::Mat& img, int x, int y);
 
+	void testColorThresh(int camera);
+
 	cv::Mat* getDisplayImage();
 
 private:

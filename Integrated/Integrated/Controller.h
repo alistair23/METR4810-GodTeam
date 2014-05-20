@@ -23,6 +23,7 @@ public:
 	void getCameraTransform( int camera);
 	void getMidPoints(int camera);
 	void connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras);
+	void testColorThresh(int camera);
 
 	cv::Mat* img;
 	bool car_tracking_on;

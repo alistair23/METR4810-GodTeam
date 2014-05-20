@@ -188,7 +188,6 @@ void Controller::detectCar()
 			//view_->setBackground(img_bgr);
 			
 			if (0 == Interlocked::Exchange(current_path_lock_, 1)) {
-				std::cout << "Current path size: " << current_path_->size() << std::endl;
 				view_->drawNewDots(*current_path_);
 				Interlocked::Exchange(current_path_lock_, 0);
 			}
@@ -213,7 +212,6 @@ void Controller::runPlanner(){
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 			*current_path_ = planner_->getSegment(current_camera_);
 			path_index_ = 0;
-			//std::cout << "Got path " << current_path_->size() << std::endl;
 			
 			// Release the lock
 			Interlocked::Exchange(current_path_lock_, 0);
@@ -237,9 +235,9 @@ void Controller::sendCarCommand() {
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
 			my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
-			double dist_sq_thresh = 100;
+			double dist_sq_thresh = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 25;
-			double angle_thresh = 60 * M_PI / 180;
+			double angle_thresh = 135 * M_PI / 180;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
@@ -265,18 +263,28 @@ void Controller::sendCarCommand() {
 					angle += 2 * M_PI;
 
 				if (angle >= 0 && angle <= angle_thresh) {
-					my_car_->setRSpeed((1 - angle/angle_thresh) * max_speed);
-					my_car_->setLSpeed(max_speed);
+
+					// Smooth right turn
+					double k = M_PI/(angle + M_PI); // Reduce overall speed for turns
+					my_car_->setRSpeed(max_speed * (1 - 2 * angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed * (1 + 3 * angle/angle_thresh) * k);
 				}
 				else if (angle <= 0 && angle >= -angle_thresh) {
-					my_car_->setRSpeed(max_speed);
-					my_car_->setLSpeed((1 + angle/angle_thresh) * max_speed);
+
+					// Smooth left turn. Note angle is negative
+					double k = M_PI/(-angle + M_PI); // Reduce overall speed for turns
+					my_car_->setRSpeed(max_speed * (1 - 3 * angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed * (1 + 2 * angle/angle_thresh) * k);
 				}
 				else if (angle > angle_thresh) { // && angle <= 180
+
+					// On the spot right turn
 					my_car_->setRSpeed(-max_speed);
 					my_car_->setLSpeed(max_speed);
 				}
 				else {
+
+					// On the spot left turn
 					my_car_->setRSpeed(max_speed);
 					my_car_->setLSpeed(-max_speed);
 				}
@@ -298,7 +306,7 @@ void Controller::sendCarCommand() {
 		}
 		
 
-		Thread::Sleep(100);
+		Thread::Sleep(25);
 	}
 }
 
@@ -310,4 +318,8 @@ void Controller::connectToRoborealm(int port_num_1, int port_num_2, int port_num
 		port_nums.push_back(temp[i]);
 	}
 	vision_->initCameras(port_nums, msclr::interop::marshal_as<std::string>(ip_address));
+}
+
+void Controller::testColorThresh(int camera) {
+	vision_->testColorThresh(camera);
 }

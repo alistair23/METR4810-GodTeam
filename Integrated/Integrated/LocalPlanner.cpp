@@ -50,7 +50,13 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	std::vector<Point> segment;
 	// Reuse path from before (unless this is the first time)
 	if (prev_segment_.size() > 0 && prev_camera_ == camera) {
-		int closest = getClosest(my_car_.getPos(), prev_segment_, 30);
+
+		// Get closest global point index
+		int closest_global = getClosest(my_car_.getPos(), global_paths_[camera], 0);
+
+		// Get point on previous segment a set distance lookahead of closest global
+		int closest = getClosest(global_paths_[camera][closest_global],
+			prev_segment_, DEFAULT_CAR_LENGTH_PIX);
 		for (int i = closest; i < prev_segment_.size(); i++) {
 			segment.push_back(prev_segment_[i]);
 			segment.back().locked = false;
@@ -58,7 +64,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 		global_index_ += closest;
 	}
 	else {
-		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], 30);
+		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], DEFAULT_CAR_LENGTH_PIX * 0.5);
 	}
 
 	// Copy over global points to satisfy num_points
@@ -69,8 +75,8 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	}
 
 	// Shift first point to match current
-	segment[0].x = my_car_.getPos().x;
-	segment[0].y = my_car_.getPos().y;
+	segment[0].x = my_car_.getPos().x + DEFAULT_CAR_LENGTH_PIX * 0.25 * cos(my_car_.getDir());
+	segment[0].y = my_car_.getPos().y + DEFAULT_CAR_LENGTH_PIX * 0.25 * sin(my_car_.getDir());
 	segment[0].locked = true;
 
 	// Check points validity, record indices of points in collision
@@ -185,8 +191,8 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// Smooth out path through iterative process
 	int iterations = 25;
-	double change_factor = 0.04;
-	double global_path_attraction_factor = 0.5;
+	double change_factor = 0.1;
+	double global_path_attraction_factor = 0.05;
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = 1; j < segment.size(); j++) {
 			if (segment[j].locked)
