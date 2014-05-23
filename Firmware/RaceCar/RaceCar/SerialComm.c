@@ -21,6 +21,8 @@ extern volatile float error_l_sum; //integral error
 extern volatile float error_r_sum;
 extern volatile int8_t speed_l_measured;
 extern volatile int8_t speed_r_measured;
+//extern volatile int8_t previous_input_l;
+//extern volatile int8_t previous_input_r;
 int8_t speed_l_desired;
 int8_t speed_r_desired;
 uint8_t motor_enable;
@@ -252,9 +254,15 @@ void ProcessPacket(Packet pckt)
 			speed_r_desired = (int8_t) (*(pckt.Data+1));
 			
 			if (reset_l)
+			{
 				error_l_sum = (speed_l_desired - speed_l_measured) * MEASURE_PERIOD;
+				
+			}
 			if (reset_r)
+			{
 				error_r_sum = (speed_r_desired - speed_r_measured) * MEASURE_PERIOD;
+				
+			}
 		}
 		break;
 
@@ -291,7 +299,7 @@ extern void SerialComm_ProcessPackets()
 		
 		while(pckt_queue_count>0)
 		{
-			SerialComm_sendText("Setting Speed...");
+			/* SerialComm_sendText("Setting Speed..."); */
 			ProcessPacket(pckt_queue[pckt_queue_count-1]);
 			pckt_queue_count--;
 		}			
@@ -339,13 +347,13 @@ ISR(USART_RX_vect)
 	//SerialComm_sendData(d, 2);	 
 	//SerialComm_sendByte(MotorControl_GetSpeed(MOTOR_R));
 	//speed_l_desired = (int8_t) byte;
-	SerialComm_sendTextf("L : %d\n", speed_l_desired);
+	//SerialComm_sendTextf("L : %d\n", speed_l_desired);
 	
 	switch (rx_stage)
 	{
 		case 0 :
 			current_pckt.Type = byte;
-			SerialComm_sendTextf("Type: %d", current_pckt.Type);
+			//SerialComm_sendTextf("Type: %d", current_pckt.Type);
 			rx_stage++;
 			
 		break;
@@ -372,8 +380,8 @@ ISR(USART_RX_vect)
 			}
 			break;
 	}		
-	SerialComm_sendText("rx_stage:");
-	SerialComm_sendByte(rx_stage);
+	//SerialComm_sendText("rx_stage:");
+	//SerialComm_sendByte(rx_stage);
 	
 	//based on Packet type set the variables and propagate them in
 	//main loop. Variables should be extern so they can be accessed in the 
