@@ -34,12 +34,14 @@ int main(void)
 
 	DDRB = 0xff;
 	//PORTB = 0xff;
+	
 		
     while(1)
     {
        
 	   MotorControl_CountEncoder();
 	   SerialComm_ProcessPackets();
+	   
 	   //PORTD= 0xff;
 	  // _delay_ms(100);
 	   //PORTD = 0;
