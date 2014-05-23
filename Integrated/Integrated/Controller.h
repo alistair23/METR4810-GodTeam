@@ -27,6 +27,7 @@ public:
 	void getObstacles(int camera);
 	void getFinishLine(int camera);
 	void getGoSignal(int camera);
+	void launchOnGo(int camera);
 
 	cv::Mat* img;
 	bool car_tracking_on;

@@ -57,7 +57,7 @@ public:
 	bool isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3);
 
 	// Waits until go signal given, then returns true
-	bool waitForGo(int camera, std::vector<cv::Point2f> signal_pos);
+	bool waitForGo(int camera, std::vector<Point> signal_pos);
 
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(

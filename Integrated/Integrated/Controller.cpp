@@ -149,6 +149,11 @@ void Controller::getGoSignal(int camera) {
 	*go_signals_ = vision_->findGoSignal(*finish_line_pos_, camera);
 }
 
+void Controller::launchOnGo(int camera) {
+	vision_->waitForGo(camera, *go_signals_);
+	std::cout << "GO!!" << std::endl;
+}
+
 void Controller::detectCar()
 {
 	while (true)

@@ -239,4 +239,8 @@ System::Void RaceControl::MyForm::button13_Click(System::Object^  sender, System
 	controller_->getGoSignal(camera);
 }
 
+System::Void RaceControl::MyForm::button14_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->launchOnGo(camera);
+}
 

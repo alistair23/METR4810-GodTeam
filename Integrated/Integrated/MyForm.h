@@ -38,6 +38,7 @@ namespace RaceControl {
 			this->comboBox1->Items->AddRange(this->serialPort1->GetPortNames());
 		    array<Object^>^ baudArray = {"2400", "4800", "9600", "14400", "28800"};
 			this->comboBox2->Items->AddRange(baudArray);
+			this->comboBox2->SelectedIndex = 2;
 			this->intializeTrackbars();
 
 			//setup timer for continuous communication
@@ -145,6 +146,7 @@ private: System::Windows::Forms::Button^  button10;
 private: System::Windows::Forms::Button^  button13;
 private: System::Windows::Forms::Button^  button12;
 private: System::Windows::Forms::Button^  button11;
+private: System::Windows::Forms::Button^  button14;
 
 
 
@@ -286,6 +288,7 @@ private: System::Windows::Forms::Button^  button11;
 			this->textBox9 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
+			this->button14 = (gcnew System::Windows::Forms::Button());
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -305,6 +308,7 @@ private: System::Windows::Forms::Button^  button11;
 			// 
 			// tabPage1
 			// 
+			this->tabPage1->Controls->Add(this->button14);
 			this->tabPage1->Controls->Add(this->button8);
 			this->tabPage1->Controls->Add(this->button5);
 			this->tabPage1->Controls->Add(this->checkBox3);
@@ -567,7 +571,6 @@ private: System::Windows::Forms::Button^  button11;
 			this->comboBox2->Name = L"comboBox2";
 			this->comboBox2->Size = System::Drawing::Size(121, 21);
 			this->comboBox2->TabIndex = 45;
-			this->comboBox2->Text = L"9600";
 			// 
 			// label2
 			// 
@@ -865,6 +868,16 @@ private: System::Windows::Forms::Button^  button11;
 			this->textBox7->Size = System::Drawing::Size(82, 20);
 			this->textBox7->TabIndex = 0;
 			this->textBox7->Text = L"6060";
+			// 
+			// button14
+			// 
+			this->button14->Location = System::Drawing::Point(289, 460);
+			this->button14->Name = L"button14";
+			this->button14->Size = System::Drawing::Size(134, 23);
+			this->button14->TabIndex = 70;
+			this->button14->Text = L"Launch on signal";
+			this->button14->UseVisualStyleBackColor = true;
+			this->button14->Click += gcnew System::EventHandler(this, &MyForm::button14_Click);
 			// 
 			// MyForm
 			// 
@@ -1195,5 +1208,6 @@ private: System::Void button10_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button11_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button12_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button13_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button14_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

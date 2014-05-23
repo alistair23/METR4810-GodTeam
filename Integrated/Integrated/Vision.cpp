@@ -736,8 +736,8 @@ bool Vision::findFinishTile(cv::Mat& img_in, Point& pos_out) {
 			// of car travel to the left
 			float dir = angle(ellipses[i].center, ellipses[j].center);
 			if (abs(dir) < max_angle && abs(dir) > min_angle) {
-				float mid_x = ellipses[i].center.x +  0.5 * (ellipses[i].center.x + ellipses[j].center.x);
-				float mid_y = ellipses[i].center.y +  0.5 * (ellipses[i].center.y + ellipses[j].center.y);
+				float mid_x = 0.5 * (ellipses[i].center.x + ellipses[j].center.x);
+				float mid_y = 0.5 * (ellipses[i].center.y + ellipses[j].center.y);
 				pair_centres.push_back(cv::Point2f(mid_x, mid_y));
 				cv::circle(img_in, ellipses[i].center, ellipses[i].size.height, cv::Scalar(0, 0, 255), 2);
 				cv::circle(img_in, ellipses[j].center, ellipses[j].size.height, cv::Scalar(0, 0, 255), 2);
@@ -767,14 +767,15 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 	cv::Point2f finish_line_pos(finish_line_pos_in.x, finish_line_pos_in.y);
 	cv::Mat img;
 	getCamImg(camera, img);
+	applyTrans(img, transform_mats_[camera]);
 
-	// Make grayscale copy, Reduce noise with a kernel 3x3
+	// Make grayscale copy, Reduce noise with a kernel 5x5
 	cv::Mat temp;
 	cv::cvtColor(img, temp, CV_BGR2GRAY);
-	cv::blur(temp, temp, cv::Size(3,3) );
+	cv::blur(temp, temp, cv::Size(5, 5) );
 
 	// Canny edge detection
-	int threshold = 50;
+	int threshold = 35;
 	cv::Canny(temp, temp, threshold, threshold * 3, 3);
 
 	cv::imshow("Display", temp);
@@ -852,7 +853,7 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 
 // Returns true if the 3 points are collinear (within some threshold)
 bool Vision::isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3) {
-	float thresh = 4 * M_PI/180;	// Radians
+	float thresh = 20 * M_PI/180;	// Radians
 	float angle1 = angle(p1, p2);
 	float angle2 = angle(p2, p3);
 	return abs(angle1 - angle2) < thresh ||
@@ -860,7 +861,7 @@ bool Vision::isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3) {
 }
 
 // Waits until go signal given, then returns true
-bool Vision::waitForGo(int camera, std::vector<cv::Point2f> signal_pos) {
+bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 
 	// To distinguish if signal is on/off, use luminosity + saturation
 	// Take off value from average over 4 pictures
@@ -870,10 +871,10 @@ bool Vision::waitForGo(int camera, std::vector<cv::Point2f> signal_pos) {
 	for (int i = 0; i < num_off_samples; i++) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
-		//applyTrans(img_temp, transform_mats_[camera]);
+		applyTrans(img_temp, transform_mats_[camera]);
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColour(img_temp, signal_pos[j], cone_diameter);
+			cv::Scalar vals = getColour(img_temp, cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);
 			lum_sat_off[j] += vals[1] + vals[2];
 		}
 	}
@@ -888,15 +889,15 @@ bool Vision::waitForGo(int camera, std::vector<cv::Point2f> signal_pos) {
 	long long last_update_time = time_now();
 	int on_time = 0;
 	int go_time = 5000;	// 5 seconds
-	int lum_sat_thresh = 20;
+	int lum_sat_thresh = 6;
 	while (true) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
-		//applyTrans(img_temp, transform_mats_[camera]);
+		applyTrans(img_temp, transform_mats_[camera]);
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		bool on_detected = false;
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColour(img_temp, signal_pos[j], cone_diameter);			
+			cv::Scalar vals = getColour(img_temp,  cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);			
 			if (lum_sat_off[j]  + lum_sat_thresh < vals[1] + vals[2]) {
 				on_detected = true;
 				break;
