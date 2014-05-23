@@ -356,6 +356,7 @@ private: System::Windows::Forms::Button^  button10;
 			this->button5->TabIndex = 66;
 			this->button5->Text = L"Vision";
 			this->button5->UseVisualStyleBackColor = true;
+			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// checkBox3
 			// 
@@ -1144,18 +1145,7 @@ private: System::Void button4_Click(System::Object^  sender, System::EventArgs^ 
 private: System::Void radioButton3_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
 		 }
 
-private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
-
-			//controller_->startVision();
-			 camera_vision = true;
-			 if (this->vision_form->IsDisposed)
-				{
-					this->vision_form = gcnew CameraView();
-					this->vision_form->setParent(this);
-					this->vision_form->Show();
-				}
-			 drawTimer->Enabled = true;
-		 }
+private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e);
 
 private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e);

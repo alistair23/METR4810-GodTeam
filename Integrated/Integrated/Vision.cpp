@@ -4,7 +4,6 @@
 #include <math.h>
 #include <cmath>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include "Vision.h"
 #include "Globals.h"
 #include "CommonFunctions.h"
@@ -613,7 +612,68 @@ bool Vision::getCarMarkers(
 	return my_car_found;
 }
 
+void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles){
+	// Make hsv copy
+	/*cv::Mat img_hsv;
+	cv::cvtColor(img_in, img_hsv, CV_BGR2HSV);
 
+	// Use green threshold
+	// Green is used due to high contrast between road and "grass"
+	inRange(img_hsv, cv::Scalar(0, 0, 50),
+		cv::Scalar(200, 255, 255), img_in);
+
+	img_in = 255 - img_in;	// Flip white and black
+	*/
+	cv::imshow("obstacles", img_in);
+	cv::waitKey();
+	// Make grayscale copy, Reduce noise with a kernel 3x3
+	cv::Mat img_gray;
+	cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
+	cv::blur(img_gray, img_gray, cv::Size(3,3) );
+	// Canny edge detection
+
+	cv::imshow("obstacles", img_gray);
+	cv::waitKey();
+	cv::Mat img_canny;
+	int threshold = 30;
+	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
+	//cv::Canny(img_in, img_canny, threshold, threshold * 3, 3);
+	// Make color format for showing stuff
+	//cv::Mat cdst;
+	//cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
+	
+	// Find contours from Canny image
+	// Warning, findContours affects input image (img_canny)
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+	cv::imshow("obstacles", img_canny);
+	cv::waitKey();
+	std::vector<cv::RotatedRect> rectangles;
+
+	for (int i = 0; i < contours.size(); i++)
+	{
+		rectangles.push_back(cv::minAreaRect( cv::Mat(contours[i])));
+	}
+
+	/// Draw contours + rotated rects + ellipses
+	//cv::Mat drawing;
+	cv::RNG rng(12345);
+	for( int i = 0; i< contours.size(); i++ )
+		{
+		cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+		// contour
+		//drawContours( img_canny, contours, i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+		// rotated rectangle
+		cv::Point2f rect_points[4]; rectangles[i].points( rect_points );
+		for( int j = 0; j < 4; j++ )
+			line( img_canny, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
+		}
+
+
+	cv::imshow("obstacles", img_canny);
+}
 
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {

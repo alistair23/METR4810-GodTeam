@@ -192,6 +192,18 @@ System::Void RaceControl::MyForm::button3_Click(System::Object^  sender, System:
 	//if(this->aTimer->Enabled)
 		//this->aTimer->Enabled = false;
 }
+System::Void RaceControl::MyForm::button5_Click(System::Object^  sender, System::EventArgs^  e) {
+			 controller_->getObstacles(0);
+			//controller_->startVision();
+			 //camera_vision = true;
+			 /*if (this->vision_form->IsDisposed)
+				{
+					this->vision_form = gcnew CameraView();
+					this->vision_form->setParent(this);
+					this->vision_form->Show();
+				}
+			 drawTimer->Enabled = true;*/
+		 }
 
 System::Void RaceControl::MyForm::button9_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 port_num_1, port_num_2, port_num_3, port_num_4, num_cameras;

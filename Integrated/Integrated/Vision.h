@@ -46,6 +46,7 @@ public:
 	bool getCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
 		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
 
+	void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles);
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(
 		cv::Mat& img_in, cv::Mat& img_white_warped,

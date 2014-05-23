@@ -45,6 +45,7 @@ Controller::Controller() :
 	
 	img = new cv::Mat();
 	
+	
 	//Console::WriteLine(L"Hello World");
 	Application::EnableVisualStyles();
     // Create the main window and run i
@@ -122,6 +123,14 @@ void Controller::getMidPoints(int camera)
 	planner_->setGlobalPath(track, camera);
 	view_->redraw();
 	//showImage(*(view_->getDisplayImage()));
+}
+
+void Controller::getObstacles(int camera)
+{
+	cv::Mat img_bgr;
+	std::vector<cv::RotatedRect> obstacles;
+	vision_->getCamImg(camera, img_bgr);
+	vision_->getObstacles(img_bgr, obstacles);
 }
 
 void Controller::detectCar()
