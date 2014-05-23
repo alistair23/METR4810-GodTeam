@@ -23,8 +23,9 @@ Controller::Controller() :
 	current_path_(new std::vector<Point>()),
 	local_planning_on(false),
 	car_tracking_on(false),
-	go_signal_found(true)
-
+	go_signal_found(true),
+	finish_line_pos_(new Point()),
+	go_signals_(new std::vector<Point>())
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -64,6 +65,8 @@ Controller::!Controller() {
 	delete view_;
 	delete img;
 	delete current_path_;
+	delete finish_line_pos_;
+	delete go_signals_;
 }
 
 void Controller::showImage(cv::Mat im) {
@@ -128,9 +131,22 @@ void Controller::getMidPoints(int camera)
 void Controller::getObstacles(int camera)
 {
 	cv::Mat img_bgr;
-	std::vector<cv::RotatedRect> obstacles;
+	vision_->update(camera);
 	vision_->getCamImg(camera, img_bgr);
-	vision_->getObstacles(img_bgr, obstacles);
+	vision_->applyTrans(img_bgr, vision_->transform_mats_[camera]);
+	planner_->obstacles[camera].clear();
+	vision_->getObstacles(img_bgr, planner_->obstacles[camera]);
+}
+
+void Controller::getFinishLine(int camera) {
+	cv::Mat img;
+	vision_->getCamImg(camera, img);
+	vision_->applyTrans(img, vision_->transform_mats_[camera]);
+	vision_->findFinishTile(img, *finish_line_pos_);
+}
+
+void Controller::getGoSignal(int camera) {
+	*go_signals_ = vision_->findGoSignal(*finish_line_pos_, camera);
 }
 
 void Controller::detectCar()

@@ -10,8 +10,10 @@ using namespace RaceControl;
 
 LocalPlanner::LocalPlanner(int num_cameras) 
 {
-	for (int i = 0; i < num_cameras; i++)
+	for (int i = 0; i < num_cameras; i++) {
 		global_paths_.push_back(std::vector<Point>());
+		obstacles.push_back(std::vector<cv::RotatedRect>());
+	}
 }
 
 LocalPlanner::LocalPlanner(std::vector<std::vector<Point>> global_path):
@@ -85,10 +87,12 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// First point needs to be checked specially, as 
 	// there is no previous point to get angle from
-	if (carInCollision(segment[0], my_car_.getDir(), timetodo) != -1)
+	if (carInCollision(segment[0], my_car_.getDir(), timetodo) != -1 ||
+		obstacleCollision(segment[0], my_car_.getDir(), camera))
 		invalidPoints.push_back(0);
 	for (int i = 1; i < num_points; i++) {
- 		if (carInCollision(segment[i], segment[i-1].angle(segment[i]), timetodo) != -1) {
+ 		if (carInCollision(segment[i], segment[i-1].angle(segment[i]), timetodo) != -1 ||
+			obstacleCollision(segment[i], segment[i-1].angle(segment[i]), camera)) {
 			invalidPoints.push_back(i);
 		}
 	}
@@ -304,6 +308,47 @@ int LocalPlanner::carInCollision(Point pos, double dir, long long time) {
 
 	// No collision detected
 	return -1;
+}
+
+bool LocalPlanner::obstacleCollision(Point pos, double dir, int camera) {
+	cv::RotatedRect my_rect(cv::Point2f(pos.x, pos.y),
+		cv::Size(my_car_.getLength(), my_car_.getWidth()), dir);
+	cv::Point2f my_vertices[4];
+	my_rect.points(my_vertices);
+
+	double check_dist_sq = pow(DEFAULT_CAR_LENGTH_PIX + FRONT_CLEARANCE_PIX, 2);
+
+	for (std::size_t i = 0; i < obstacles[camera].size(); i++) {
+		
+		// If obstacle is very far, no need to do further collision checks
+		Point center(obstacles[camera][i].center.x, obstacles[camera][i].center.y);
+		float longer_length = std::max(obstacles[camera][i].size.height,
+			obstacles[camera][i].size.width);
+		if (pos.distSquared(center) > my_car_.getLength() + longer_length);
+			continue;
+
+		cv::Point2f other_vertices[4];
+		obstacles[camera][i].points(other_vertices);
+
+		// Check for collision between all the lines defining the rectangles
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				if (lineIntersects(my_vertices[j], my_vertices[(j+1)%4],
+					other_vertices[k], other_vertices[(k+1)%4]))
+					return true;
+			}
+		}
+
+		// Check for case where one rectangle is inside the other
+		// Define mid line
+		cv::Point2f mid1 = (other_vertices[0] + other_vertices[1]) * 0.5;
+		cv::Point2f mid2 = (other_vertices[2] + other_vertices[3]) * 0.5;
+		if (lineIntersects(my_vertices[0], my_vertices[1], mid1, mid2))
+			return true;
+	}
+
+	// No collision detected
+	return false;
 }
 
 // Returns true if the two lines intersect

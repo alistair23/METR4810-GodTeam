@@ -25,6 +25,8 @@ public:
 	void connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras);
 	void testColorThresh(int camera);
 	void getObstacles(int camera);
+	void getFinishLine(int camera);
+	void getGoSignal(int camera);
 
 	cv::Mat* img;
 	bool car_tracking_on;
@@ -44,6 +46,11 @@ private:
 	int my_car_lock_;
 	long long old_time_;
 	int path_index_;
+
+	Point* finish_line_pos_;
+	float finish_line_dir_;
+	std::vector<Point>* go_signals_;
+
 	void updateView(Object^ stateInfo);
 	void detectCar();
 	void runPlanner();

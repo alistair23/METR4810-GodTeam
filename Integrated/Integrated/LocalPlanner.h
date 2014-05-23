@@ -24,6 +24,8 @@ public:
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
 
+	std::vector<std::vector<cv::RotatedRect>> obstacles;
+
 private:
 	
 	int getClosest(Point& pos, std::vector<Point>& path, double look_ahead);
@@ -32,6 +34,10 @@ private:
 	// Returns id of car in collision given position of my car
 	// Returns -1 if no collision detected
 	int carInCollision(Point pos, double angle, long long time);
+
+	// Returns true if there is collision for my car with obstacle
+	bool obstacleCollision(Point pos, double angle, int camera);
+
 	bool lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1, cv::Point2f b2);
 
 	std::vector<std::vector<Point>> global_paths_;

@@ -224,3 +224,19 @@ System::Void RaceControl::MyForm::button10_Click(System::Object^  sender, System
 	controller_->testColorThresh(camera);
 }
 
+System::Void RaceControl::MyForm::button11_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->getObstacles(camera);
+}
+
+System::Void RaceControl::MyForm::button12_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->getFinishLine(camera);
+}
+
+System::Void RaceControl::MyForm::button13_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->getGoSignal(camera);
+}
+
+

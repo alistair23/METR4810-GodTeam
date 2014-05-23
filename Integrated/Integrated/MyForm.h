@@ -142,6 +142,9 @@ private: System::Windows::Forms::Button^  button6;
 
 		} */             
 private: System::Windows::Forms::Button^  button10;
+private: System::Windows::Forms::Button^  button13;
+private: System::Windows::Forms::Button^  button12;
+private: System::Windows::Forms::Button^  button11;
 
 
 
@@ -261,6 +264,9 @@ private: System::Windows::Forms::Button^  button10;
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->button13 = (gcnew System::Windows::Forms::Button());
+			this->button12 = (gcnew System::Windows::Forms::Button());
+			this->button11 = (gcnew System::Windows::Forms::Button());
 			this->button10 = (gcnew System::Windows::Forms::Button());
 			this->comboBox4 = (gcnew System::Windows::Forms::ComboBox());
 			this->label17 = (gcnew System::Windows::Forms::Label());
@@ -561,6 +567,7 @@ private: System::Windows::Forms::Button^  button10;
 			this->comboBox2->Name = L"comboBox2";
 			this->comboBox2->Size = System::Drawing::Size(121, 21);
 			this->comboBox2->TabIndex = 45;
+			this->comboBox2->Text = L"9600";
 			// 
 			// label2
 			// 
@@ -578,7 +585,7 @@ private: System::Windows::Forms::Button^  button10;
 			this->label4->Name = L"label4";
 			this->label4->Size = System::Drawing::Size(58, 13);
 			this->label4->TabIndex = 46;
-			this->label4->Text = L"Buad Rate";
+			this->label4->Text = L"Baud Rate";
 			// 
 			// label3
 			// 
@@ -625,6 +632,9 @@ private: System::Windows::Forms::Button^  button10;
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->button13);
+			this->tabPage2->Controls->Add(this->button12);
+			this->tabPage2->Controls->Add(this->button11);
 			this->tabPage2->Controls->Add(this->button10);
 			this->tabPage2->Controls->Add(this->comboBox4);
 			this->tabPage2->Controls->Add(this->label17);
@@ -651,6 +661,36 @@ private: System::Windows::Forms::Button^  button10;
 			this->tabPage2->TabIndex = 1;
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
+			// 
+			// button13
+			// 
+			this->button13->Location = System::Drawing::Point(349, 438);
+			this->button13->Name = L"button13";
+			this->button13->Size = System::Drawing::Size(121, 23);
+			this->button13->TabIndex = 76;
+			this->button13->Text = L"Get Go Signal";
+			this->button13->UseVisualStyleBackColor = true;
+			this->button13->Click += gcnew System::EventHandler(this, &MyForm::button13_Click);
+			// 
+			// button12
+			// 
+			this->button12->Location = System::Drawing::Point(178, 438);
+			this->button12->Name = L"button12";
+			this->button12->Size = System::Drawing::Size(132, 23);
+			this->button12->TabIndex = 75;
+			this->button12->Text = L"Get Finish Line";
+			this->button12->UseVisualStyleBackColor = true;
+			this->button12->Click += gcnew System::EventHandler(this, &MyForm::button12_Click);
+			// 
+			// button11
+			// 
+			this->button11->Location = System::Drawing::Point(349, 390);
+			this->button11->Name = L"button11";
+			this->button11->Size = System::Drawing::Size(121, 23);
+			this->button11->TabIndex = 74;
+			this->button11->Text = L"Get Obstacles";
+			this->button11->UseVisualStyleBackColor = true;
+			this->button11->Click += gcnew System::EventHandler(this, &MyForm::button11_Click);
 			// 
 			// button10
 			// 
@@ -1152,5 +1192,8 @@ private: System::Void button7_Click(System::Object^  sender, System::EventArgs^ 
 private: System::Void button8_Click_1(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button9_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button10_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button11_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button12_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button13_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

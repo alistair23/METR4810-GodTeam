@@ -47,6 +47,18 @@ public:
 		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
 
 	void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles);
+	bool findFinishTile(cv::Mat& img, Point& pos_out);
+
+	// Returns vector of 3 points, which are locations of 
+	// go signals. Returns empty vector if failure
+	std::vector<Point> findGoSignal(Point finish_line_pos, int camera);
+
+	// Returns true if the 3 points are collinear (within some threshold)
+	bool isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3);
+
+	// Waits until go signal given, then returns true
+	bool waitForGo(int camera, std::vector<cv::Point2f> signal_pos);
+
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(
 		cv::Mat& img_in, cv::Mat& img_white_warped,

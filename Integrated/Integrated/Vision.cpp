@@ -612,69 +612,305 @@ bool Vision::getCarMarkers(
 	return my_car_found;
 }
 
-void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles){
-	// Make hsv copy
-	/*cv::Mat img_hsv;
-	cv::cvtColor(img_in, img_hsv, CV_BGR2HSV);
+void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles) {
 
-	// Use green threshold
-	// Green is used due to high contrast between road and "grass"
-	inRange(img_hsv, cv::Scalar(0, 0, 50),
-		cv::Scalar(200, 255, 255), img_in);
+	// Make grayscale copy, Reduce noise with a kernel 5x5
+	cv::Mat img_temp;
+	cv::cvtColor(img_in, img_temp, CV_BGR2GRAY);
+	cv::blur(img_temp, img_temp, cv::Size(5, 5));
 
-	img_in = 255 - img_in;	// Flip white and black
-	*/
-	cv::imshow("obstacles", img_in);
-	cv::waitKey();
-	// Make grayscale copy, Reduce noise with a kernel 3x3
-	cv::Mat img_gray;
-	cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
-	cv::blur(img_gray, img_gray, cv::Size(3,3) );
 	// Canny edge detection
+	int threshold = 55;
+	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
 
-	cv::imshow("obstacles", img_gray);
-	cv::waitKey();
-	cv::Mat img_canny;
-	int threshold = 30;
-	cv::Canny(img_gray, img_canny, threshold, threshold * 3, 3);
-	//cv::Canny(img_in, img_canny, threshold, threshold * 3, 3);
-	// Make color format for showing stuff
-	//cv::Mat cdst;
-	//cv::cvtColor(img_canny, cdst, CV_GRAY2BGR);
-	
 	// Find contours from Canny image
 	// Warning, findContours affects input image (img_canny)
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours( img_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-
-	cv::imshow("obstacles", img_canny);
-	cv::waitKey();
-	std::vector<cv::RotatedRect> rectangles;
-
+	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+	float max_side = 0.1 / M_PER_PIX;
+	float min_side = 0.01 / M_PER_PIX;
+	float car_check_thresh = 0.05 / M_PER_PIX;
 	for (int i = 0; i < contours.size(); i++)
 	{
-		rectangles.push_back(cv::minAreaRect( cv::Mat(contours[i])));
+		cv::RotatedRect rect = cv::minAreaRect( cv::Mat(contours[i]));
+
+		// Check size is reasonable
+		if (rect.size.height > max_side || rect.size.width > max_side || 
+			rect.size.height < min_side || rect.size.width < min_side)
+			continue;
+
+		// TODO getPos(timeNow())
+		// Make sure we didn't detect a car as obstacle
+		if (my_car_.getPos().dist(Point(rect.center.x, rect.center.y)) <
+			car_check_thresh)
+			continue;
+
+		bool is_other_car = false;
+		for (int j = 0; j < other_cars_.size(); j++) {
+			if (other_cars_[j].getPos().dist(Point(rect.center.x, rect.center.y)) < car_check_thresh) {
+				is_other_car = true;
+				break;
+			}
+		}
+		if (is_other_car)
+			continue;
+
+		// Checks have passed
+		obstacles.push_back(rect);
 	}
 
 	/// Draw contours + rotated rects + ellipses
 	//cv::Mat drawing;
 	cv::RNG rng(12345);
-	for( int i = 0; i< contours.size(); i++ )
-		{
+	for( int i = 0; i< obstacles.size(); i++ )
+	{
 		cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
 		// contour
 		//drawContours( img_canny, contours, i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
 		// rotated rectangle
-		cv::Point2f rect_points[4]; rectangles[i].points( rect_points );
+		cv::Point2f rect_points[4]; obstacles[i].points( rect_points );
 		for( int j = 0; j < 4; j++ )
-			line( img_canny, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
-		}
-
-
-	cv::imshow("obstacles", img_canny);
+			line(img_temp, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
+	}
+	cv::imshow("Display", img_temp);
+	//cv::waitKey();
 }
 
+bool Vision::findFinishTile(cv::Mat& img_in, Point& pos_out) {
+
+	// Make grayscale copy, Reduce noise with a kernel 5x5
+	cv::Mat img_temp;
+	cv::cvtColor(img_in, img_temp, CV_BGR2GRAY);
+	cv::blur(img_temp, img_temp, cv::Size(5, 5) );
+
+	// Canny edge detection
+	int threshold = 35;
+	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
+
+	// Make color format for showing stuff
+	//cv::Mat cdst;
+	//cv::cvtColor(img_temp, cdst, CV_GRAY2BGR);
+	
+	// Find contours from Canny image
+	// Warning, findContours affects input image (img_canny)
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+	// Fit ellipses to contours 
+	std::vector<cv::RotatedRect> ellipses;
+	for (std::size_t i = 0; i < contours.size(); i++) {
+
+		if (contours[i].size() < 5)
+			continue;
+		cv::RotatedRect r = cv::fitEllipse(contours[i]);
+
+		// Check circularity and size
+		float max_diameter = CIRCLE_MARK_DIAMETER * 1.2 / M_PER_PIX;
+		float min_diameter = CIRCLE_MARK_DIAMETER * 0.8 / M_PER_PIX;
+		if (r.size.height/r.size.width < 1.2 && 
+			r.size.height < max_diameter &&
+			r.size.height > min_diameter) {
+			//cv::ellipse(cdst, r, cv::Scalar(255, 0, 0));
+			ellipses.push_back(r);
+		}
+	}
+
+	//cv::imshow("Display", cdst);
+	//cv::waitKey();
+
+	// Go through ellipse and find circle pairs indicating starting line
+	std::vector<cv::Point2f> pair_centres;
+	float dist_thresh = 40;			// Pixels
+	float max_angle = M_PI_2 * 1.2;	// Radians
+	float min_angle = M_PI_2 * 0.8;
+	float marker_dist_pix = CIRCLE_MARK_DIST / M_PER_PIX;
+	for (std::size_t i = 0; i < ellipses.size() - 1; i++) {
+		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
+			if (abs(dist(ellipses[i].center, ellipses[j].center) - marker_dist_pix) > dist_thresh)
+				continue;
+
+			// TODO image rotation, pixel comparison to source tile
+			// Currently assumes finish line is orientated with direction
+			// of car travel to the left
+			float dir = angle(ellipses[i].center, ellipses[j].center);
+			if (abs(dir) < max_angle && abs(dir) > min_angle) {
+				float mid_x = ellipses[i].center.x +  0.5 * (ellipses[i].center.x + ellipses[j].center.x);
+				float mid_y = ellipses[i].center.y +  0.5 * (ellipses[i].center.y + ellipses[j].center.y);
+				pair_centres.push_back(cv::Point2f(mid_x, mid_y));
+				cv::circle(img_in, ellipses[i].center, ellipses[i].size.height, cv::Scalar(0, 0, 255), 2);
+				cv::circle(img_in, ellipses[j].center, ellipses[j].size.height, cv::Scalar(0, 0, 255), 2);
+				cv::circle(img_in, pair_centres.back(), 3, cv::Scalar(255, 0, 0), 2);
+			}
+		}
+	}
+
+	if (pair_centres.size() == 0) {
+		std::cout << "Could not find finish line" << std::endl;
+		return false;
+	}
+
+	
+	cv::imshow("Display", img_in);
+
+	pos_out.x = pair_centres[0].x;
+	pos_out.y = pair_centres[0].y;
+	pos_out.track_angle = M_PI;	// TODO
+}
+
+
+// Returns vector of 3 points, which are locations of 
+// go signals. Returns empty vector if failure
+std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
+
+	cv::Point2f finish_line_pos(finish_line_pos_in.x, finish_line_pos_in.y);
+	cv::Mat img;
+	getCamImg(camera, img);
+
+	// Make grayscale copy, Reduce noise with a kernel 3x3
+	cv::Mat temp;
+	cv::cvtColor(img, temp, CV_BGR2GRAY);
+	cv::blur(temp, temp, cv::Size(3,3) );
+
+	// Canny edge detection
+	int threshold = 50;
+	cv::Canny(temp, temp, threshold, threshold * 3, 3);
+
+	cv::imshow("Display", temp);
+	cv::waitKey();
+		
+	// Find contours from Canny image
+	// Warning, findContours affects input image
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+	
+	// Fit ellipses to contours
+	std::vector<cv::RotatedRect> ellipses;
+	for (std::size_t i = 0; i < contours.size(); i++) {
+
+		if (contours[i].size() < 25)
+			continue;
+		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
+
+		// Check circularity and size
+		float max_diameter = GO_SIGNAL_DIAMETER_PIX * 1.2;
+		float min_diameter = GO_SIGNAL_DIAMETER_PIX * 0.8;
+		if (r.size.height/r.size.width > 1.2 || 
+			r.size.height > max_diameter ||
+			r.size.height < min_diameter)
+			continue;
+
+		// Check distance to finish line is below threshold
+		if (dist(finish_line_pos, r.center) < GO_SIGNAL_MAX_DIST_TO_FINISH_LINE_PIX)
+		{
+			ellipses.push_back(r);
+			cv::ellipse(img, r, cv::Scalar(100,200,100), 3);
+		}
+	}
+	
+	for (std::size_t i = 0; i < ellipses.size() - 2; i++) {
+		for (std::size_t j = i + 1; j < ellipses.size() - 1; j++) {
+			for (std::size_t k = j + 1; k < ellipses.size(); k++) {
+
+				// First check they are collinear
+				if (isCollinear(ellipses[i].center, ellipses[j].center, ellipses[k].center)) {
+					
+					float dist_thresh = 20;	// Pixels
+					float dist1 = dist(ellipses[i].center, ellipses[j].center);
+					float dist2 = dist(ellipses[j].center, ellipses[k].center);
+					float dist3 = dist(ellipses[i].center, ellipses[k].center);
+
+					// Check that they are somewhat equidistant
+					if (dist1 < dist_thresh || dist2 < dist_thresh || dist3 < dist_thresh)
+						continue;
+					if (!(abs(dist1 - dist2) < dist_thresh ||
+						abs(dist1 - dist3) < dist_thresh ||
+						abs(dist2 - dist3) < dist_thresh))
+						continue;
+					
+					int b = rand() % 255;
+					int g = rand() % 255;
+					int r = rand() % 255;
+					cv::line(img, ellipses[i].center, ellipses[j].center, cv::Scalar(b, g, r), 2);
+					cv::line(img, ellipses[j].center, ellipses[k].center, cv::Scalar(b, g, r), 2);
+					cv::imshow("Display", img);
+
+					std::vector<Point> result;
+					result.push_back(Point(ellipses[i].center.x, ellipses[i].center.y));
+					result.push_back(Point(ellipses[j].center.x, ellipses[j].center.y));
+					result.push_back(Point(ellipses[k].center.x, ellipses[k].center.y));
+					return result;
+				}
+			}
+		}
+	}
+
+	return std::vector<Point>();
+}
+
+// Returns true if the 3 points are collinear (within some threshold)
+bool Vision::isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3) {
+	float thresh = 4 * M_PI/180;	// Radians
+	float angle1 = angle(p1, p2);
+	float angle2 = angle(p2, p3);
+	return abs(angle1 - angle2) < thresh ||
+		abs(abs(angle1 - angle2) - M_PI) < thresh;
+}
+
+// Waits until go signal given, then returns true
+bool Vision::waitForGo(int camera, std::vector<cv::Point2f> signal_pos) {
+
+	// To distinguish if signal is on/off, use luminosity + saturation
+	// Take off value from average over 4 pictures
+	int lum_sat_off[3] = {0, 0, 0};
+	int num_off_samples = 4;
+	float cone_diameter = 180;// 0.1 / M_PER_PIX;
+	for (int i = 0; i < num_off_samples; i++) {
+		cv::Mat img_temp;
+		getCamImg(camera, img_temp);
+		//applyTrans(img_temp, transform_mats_[camera]);
+		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
+		for (int j = 0; j < 3; j++) {
+			cv::Scalar vals = getColour(img_temp, signal_pos[j], cone_diameter);
+			lum_sat_off[j] += vals[1] + vals[2];
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		lum_sat_off[i] = lum_sat_off[i] / num_off_samples;
+	}
+	std::cout << "Off lum sat sums: " << lum_sat_off[0] << 
+		" " << lum_sat_off[1] << " " << lum_sat_off[2] << std::endl;
+	std::cout << "Waiting ..." << std::endl;
+	
+	// Start monitoring
+	long long last_update_time = time_now();
+	int on_time = 0;
+	int go_time = 5000;	// 5 seconds
+	int lum_sat_thresh = 20;
+	while (true) {
+		cv::Mat img_temp;
+		getCamImg(camera, img_temp);
+		//applyTrans(img_temp, transform_mats_[camera]);
+		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
+		bool on_detected = false;
+		for (int j = 0; j < 3; j++) {
+			cv::Scalar vals = getColour(img_temp, signal_pos[j], cone_diameter);			
+			if (lum_sat_off[j]  + lum_sat_thresh < vals[1] + vals[2]) {
+				on_detected = true;
+				break;
+			}
+		}
+		if (on_detected) {
+			on_time += time_now() - last_update_time;
+			std::cout << "Time before go: " << go_time - on_time << std::endl;
+		}
+		if (on_time > go_time)
+			return true;
+		last_update_time = time_now();
+	}
+}
 
 cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
 
