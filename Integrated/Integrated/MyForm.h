@@ -384,7 +384,7 @@ private: System::Windows::Forms::Button^  button5;
 			this->button5->TabIndex = 72;
 			this->button5->Text = L"Exit pitstop";
 			this->button5->UseVisualStyleBackColor = true;
-			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click_1);
+			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// button16
 			// 
@@ -1363,6 +1363,5 @@ private: System::Void button13_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button14_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button15_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button16_Click(System::Object^  sender, System::EventArgs^  e);
-private: System::Void button5_Click_1(System::Object^  sender, System::EventArgs^  e);
 };
 }

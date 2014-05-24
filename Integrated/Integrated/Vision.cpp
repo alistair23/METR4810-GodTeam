@@ -144,7 +144,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
 		
 		// Check circularity and that it isn't too small
-		if (r.size.height/r.size.width < 1.5 && r.size.area() > 20) {
+		if (r.size.height/r.size.width < 3.5 && r.size.area() > 20) {
 			ellipses.push_back(r);
 			cv::ellipse(cdst, r, cv::Scalar(100,200,100), 1);
 		}

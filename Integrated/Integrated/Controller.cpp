@@ -182,38 +182,52 @@ void Controller::detectCar()
 
 			// If near end of current global path, preferentially 
 			// use next camera
+			int temp_camera;
 			if (num_cameras_ > 1) {
 				Point next_camera_guess;
 				bool prefer_next_camera = false;
 				double thresh = 0.2 / M_PER_PIX;
-				int next_camera = (current_camera_ + 1) % num_cameras_;
+				temp_camera = (current_camera_ + 1) % num_cameras_;
 				while (0 != Interlocked::Exchange(current_path_lock_, 1));
 				if (guess.dist(planner_->getGlobalPathEnd(current_camera_)) < thresh) {
-					next_camera_guess = planner_->getGlobalPathStart(next_camera);
+					next_camera_guess = planner_->getGlobalPathStart(temp_camera);
 					prefer_next_camera = true;
 				}
 				Interlocked::Exchange(current_path_lock_, 0);
 				if (prefer_next_camera)
-					found_my_car = vision_->update(next_camera, next_camera_guess);
+					found_my_car = vision_->update(temp_camera, next_camera_guess);
 			}
-			int temp_camera = current_camera_;
+			if (!found_my_car)
+				temp_camera = num_cameras_ - 1;
 			while (!found_my_car) {				
-				if (current_camera_ == temp_camera) {
+				if (temp_camera == current_camera_) {
 					while (0 != Interlocked::Exchange(my_car_lock_, 1));
 					guess = my_car_->getPos();
 					Interlocked::Exchange(my_car_lock_, 0);
-					found_my_car = vision_->update(current_camera_, guess);
+					found_my_car = vision_->update(temp_camera, guess);
 				}
 				else {
-					found_my_car = vision_->update(current_camera_);
+					found_my_car = vision_->update(temp_camera);
 				}
 
 				// If we didn't find car in current camera, step through 
 				// other cameras until car is found.
-				if (!found_my_car)
-					current_camera_ = (current_camera_ + 1) % num_cameras_;
+				if (!found_my_car) {
+					temp_camera -= 1;
+					if (temp_camera == -1)
+						temp_camera = num_cameras_ - 1;
+				}
 			}
 			
+			if (temp_camera != current_camera_) {
+
+				// We have changed cameras
+				cv::Mat img_bgr;
+				vision_->getCamImg(temp_camera, img_bgr);
+				vision_->applyTrans(img_bgr, vision_->transform_mats_[temp_camera]);
+				view_->setBackground(img_bgr);
+				current_camera_ = temp_camera;
+			}
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
@@ -273,8 +287,8 @@ void Controller::sendCarCommand() {
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
 			my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
-			double dist_sq_thresh = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
-			double max_speed = 25;
+			double lookahead_sq = pow(DEFAULT_CAR_LENGTH_PIX, 2);
+			double max_speed = 10;
 			double angle_thresh = 135 * M_PI / 180;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -282,7 +296,7 @@ void Controller::sendCarCommand() {
 			Point* goal = &(*current_path_)[path_index_];
 			double dist_sq = my_car_->getPos().distSquared(*goal);
 
-			while (dist_sq < dist_sq_thresh && path_index_ < current_path_->size() - 1) {
+			while (dist_sq < lookahead_sq && path_index_ < current_path_->size() - 1) {
 				path_index_++;
 				goal = &(*current_path_)[path_index_];
 				dist_sq = my_car_->getPos().distSquared(*goal);
@@ -304,15 +318,15 @@ void Controller::sendCarCommand() {
 
 					// Smooth right turn
 					double k = M_PI/(angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed * (1 - 2 * angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed * (1 + 3 * angle/angle_thresh) * k);
+					my_car_->setRSpeed(max_speed * (1 - angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed * (1 + angle/angle_thresh) * k);
 				}
 				else if (angle <= 0 && angle >= -angle_thresh) {
 
 					// Smooth left turn. Note angle is negative
 					double k = M_PI/(-angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed * (1 - 3 * angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed * (1 + 2 * angle/angle_thresh) * k);
+					my_car_->setRSpeed(max_speed * (1 - angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed * (1 + angle/angle_thresh) * k);
 				}
 				else if (angle > angle_thresh) { // && angle <= 180
 
