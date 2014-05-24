@@ -44,10 +44,14 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 	transform_mats_.clear();
 	inv_transform_mats_.clear();
 	approx_cam_m_per_pix_.clear();
+	lower_color_thresh_.clear();
+	upper_color_thresh_.clear();
 	for (std::size_t i = 0; i < port_nums.size(); i++) {
 		transform_mats_.push_back(cv::Mat());
 		inv_transform_mats_.push_back(cv::Mat());
 		approx_cam_m_per_pix_.push_back(0);
+		lower_color_thresh_.push_back(cv::Scalar(40, 0, 0));
+		upper_color_thresh_.push_back(cv::Scalar(80, 255, 255));
 		//connectRoboRealm(i);
 	}
 }
@@ -189,7 +193,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 				std::vector<std::pair<int, int>> blacks, blues, greens, reds;
 				for (std::size_t k = 0; k < ellipses.size(); k++) {
 					if (distSq(ellipses[k].center, ellipses[i].center) < thresh_distSq) {
-						cv::Scalar values = getColour(img_hls, ellipses[k].center, ellipses[k].size.height * 0.25);
+						cv::Scalar values = getColor(img_hls, ellipses[k].center, ellipses[k].size.height * 0.25);
 
 						// Ignore circles which are too large/small
 						if (ellipses[k].size.height > large_circle_pix ||
@@ -904,7 +908,7 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 		applyTrans(img_temp, transform_mats_[camera]);
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColour(img_temp, cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);
+			cv::Scalar vals = getColor(img_temp, cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);
 			lum_sat_off[j] += vals[1] + vals[2];
 		}
 	}
@@ -927,7 +931,7 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		bool on_detected = false;
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColour(img_temp,  cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);			
+			cv::Scalar vals = getColor(img_temp,  cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);			
 			if (lum_sat_off[j]  + lum_sat_thresh < vals[1] + vals[2]) {
 				on_detected = true;
 				break;
@@ -943,7 +947,7 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 	}
 }
 
-cv::Scalar Vision::getColour(cv::Mat& img, cv::Point2f p, int pix_length) {
+cv::Scalar Vision::getColor(cv::Mat& img, cv::Point2f p, int pix_length) {
 
 	// Define region of interest
 	cv::Rect roi(p.x - pix_length, p.y - pix_length, 2 * pix_length, 2 * pix_length);
@@ -981,14 +985,14 @@ cv::Point getCentre(std::vector<cv::Point> corners)
 }
 
 std::vector<Point> Vision::getMidpoints(cv::Mat& img_in,
-cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir) {
+cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 		
 	cv::Mat img_thresh, img_dist, img_blur, img_grad_x, img_grad_y;
 
-	// Apply colour threshold to get road as white (255), everything 
+	// Apply color threshold to get road as white (255), everything 
 	// else black (0)
 	img_thresh = img_in.clone();
-	colorThresh(img_thresh);
+	colorThresh(img_thresh, camera);
 
 	// Dilate to remove noise
 	cv::Mat dilate_element = cv::getStructuringElement(
@@ -1043,17 +1047,16 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir) {
 
 // Color threshold on img to get binary image with
 // road white and everything else black
-void Vision::colorThresh(cv::Mat& img) {
+void Vision::colorThresh(cv::Mat& img, int camera) {
 
-	// Make hsv copy
-	cv::Mat img_hsv;
-	cv::cvtColor(img, img_hsv, CV_BGR2HSV);
+	// Make hls copy
+	cv::Mat img_hls;
+	cv::cvtColor(img, img_hls, CV_BGR2HLS_FULL);
 
 	// Use green threshold
 	// Green is used due to high contrast between road and "grass"
-	inRange(img_hsv, cv::Scalar(25, 0, 50),
-		cv::Scalar(50, 255, 255), img);
-
+	inRange(img_hls, lower_color_thresh_[camera],
+		upper_color_thresh_[camera], img);
 	img = 255 - img;	// Flip white and black
 }
 
@@ -1406,7 +1409,7 @@ std::vector<cv::Point2f> Vision::sortVertices(cv::RotatedRect& rect) {
 // TODO make more efficient & precise. Bisection method?
 // Point returned guaranteed to be within boundary
 cv::Point2f Vision::getBoundary(cv::Mat& img_thresh, cv::Point2f start, float dir,
-								bool& at_img_edge, uchar road_colour){
+								bool& at_img_edge, uchar road_color){
 	float step_size = 1;	
 	float dy = step_size * sin(dir);
 	float dx = step_size * cos(dir);
@@ -1424,7 +1427,7 @@ cv::Point2f Vision::getBoundary(cv::Mat& img_thresh, cv::Point2f start, float di
 
 	uchar next_value = img_thresh.at<uchar>((int) (y + dy), (int) (x + dx));
 
-	while (next_value == road_colour) {
+	while (next_value == road_color) {
 		x += dx;
 		y += dy;
 		if (!inImg(img_thresh, x + dx, y + dy)) {
@@ -1465,6 +1468,11 @@ bool isCarValid(cv::Point2f pos, double angle, long long time);
 void Vision::testColorThresh(int camera) {
 	cv::Mat img;
 	getCamImg(camera, img);
-	colorThresh(img);
+	colorThresh(img, camera);
 	imshow("Display", img);
+}
+
+void Vision::setColorThresh(int camera, cv::Scalar lower, cv::Scalar upper) {
+	lower_color_thresh_[camera] = lower;
+	upper_color_thresh_[camera] = upper;
 }

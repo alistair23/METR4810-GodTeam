@@ -120,7 +120,7 @@ void Controller::getMidPoints(int camera)
 	vision_->applyTrans(img_white, vision_->transform_mats_[camera]);
 	view_->setBackground(img_bgr);
 	std::vector<Point> track = vision_->getMidpoints(img_bgr, img_white,
-		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir());
+		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir(), camera);
 	view_->drawNewDots(track);
 	view_->updateMyCar(*my_car_);
 	planner_->setGlobalPath(track, camera);
@@ -152,6 +152,14 @@ void Controller::getGoSignal(int camera) {
 void Controller::launchOnGo(int camera) {
 	vision_->waitForGo(camera, *go_signals_);
 	std::cout << "GO!!" << std::endl;
+}
+
+void Controller::enterPitstop() {
+
+}
+
+void Controller::exitPitstop() {
+
 }
 
 void Controller::detectCar()
@@ -352,4 +360,10 @@ void Controller::connectToRoborealm(int port_num_1, int port_num_2, int port_num
 
 void Controller::testColorThresh(int camera) {
 	vision_->testColorThresh(camera);
+}
+
+void Controller::setColorThresh(int camera, int lower_hue, int lower_lum, int lower_sat, int upper_hue, int upper_lum, int upper_sat) {
+	cv::Scalar lower(lower_hue, lower_lum, lower_sat);
+	cv::Scalar upper(upper_hue, upper_lum, upper_sat);
+	vision_->setColorThresh(camera, lower, upper);
 }

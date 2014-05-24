@@ -87,7 +87,7 @@ namespace RaceControl {
 	private: System::Windows::Forms::Button^  button8;
 
 
-	private: System::Windows::Forms::Button^  button5;
+
 	private: System::Windows::Forms::CheckBox^  checkBox3;
 	private: System::Windows::Forms::CheckBox^  checkBox2;
 	private: System::Windows::Forms::Label^  label9;
@@ -147,6 +147,20 @@ private: System::Windows::Forms::Button^  button13;
 private: System::Windows::Forms::Button^  button12;
 private: System::Windows::Forms::Button^  button11;
 private: System::Windows::Forms::Button^  button14;
+private: System::Windows::Forms::TextBox^  textBox17;
+private: System::Windows::Forms::TextBox^  textBox16;
+private: System::Windows::Forms::TextBox^  textBox15;
+private: System::Windows::Forms::TextBox^  textBox14;
+private: System::Windows::Forms::TextBox^  textBox13;
+private: System::Windows::Forms::Label^  label22;
+private: System::Windows::Forms::Label^  label21;
+private: System::Windows::Forms::Label^  label20;
+private: System::Windows::Forms::TextBox^  textBox12;
+private: System::Windows::Forms::Label^  label19;
+private: System::Windows::Forms::Label^  label18;
+private: System::Windows::Forms::Button^  button15;
+private: System::Windows::Forms::Button^  button16;
+private: System::Windows::Forms::Button^  button5;
 
 
 
@@ -234,8 +248,10 @@ private: System::Windows::Forms::Button^  button14;
 			this->serialPort1 = (gcnew System::IO::Ports::SerialPort(this->components));
 			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
 			this->tabPage1 = (gcnew System::Windows::Forms::TabPage());
-			this->button8 = (gcnew System::Windows::Forms::Button());
 			this->button5 = (gcnew System::Windows::Forms::Button());
+			this->button16 = (gcnew System::Windows::Forms::Button());
+			this->button14 = (gcnew System::Windows::Forms::Button());
+			this->button8 = (gcnew System::Windows::Forms::Button());
 			this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
 			this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
 			this->label9 = (gcnew System::Windows::Forms::Label());
@@ -266,6 +282,18 @@ private: System::Windows::Forms::Button^  button14;
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->textBox17 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox16 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox15 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox14 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox13 = (gcnew System::Windows::Forms::TextBox());
+			this->label22 = (gcnew System::Windows::Forms::Label());
+			this->label21 = (gcnew System::Windows::Forms::Label());
+			this->label20 = (gcnew System::Windows::Forms::Label());
+			this->textBox12 = (gcnew System::Windows::Forms::TextBox());
+			this->label19 = (gcnew System::Windows::Forms::Label());
+			this->label18 = (gcnew System::Windows::Forms::Label());
+			this->button15 = (gcnew System::Windows::Forms::Button());
 			this->button13 = (gcnew System::Windows::Forms::Button());
 			this->button12 = (gcnew System::Windows::Forms::Button());
 			this->button11 = (gcnew System::Windows::Forms::Button());
@@ -288,7 +316,6 @@ private: System::Windows::Forms::Button^  button14;
 			this->textBox9 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
-			this->button14 = (gcnew System::Windows::Forms::Button());
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -308,9 +335,10 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// tabPage1
 			// 
+			this->tabPage1->Controls->Add(this->button5);
+			this->tabPage1->Controls->Add(this->button16);
 			this->tabPage1->Controls->Add(this->button14);
 			this->tabPage1->Controls->Add(this->button8);
-			this->tabPage1->Controls->Add(this->button5);
 			this->tabPage1->Controls->Add(this->checkBox3);
 			this->tabPage1->Controls->Add(this->checkBox2);
 			this->tabPage1->Controls->Add(this->label9);
@@ -348,25 +376,45 @@ private: System::Windows::Forms::Button^  button14;
 			this->tabPage1->Text = L"Main";
 			this->tabPage1->UseVisualStyleBackColor = true;
 			// 
+			// button5
+			// 
+			this->button5->Location = System::Drawing::Point(289, 439);
+			this->button5->Name = L"button5";
+			this->button5->Size = System::Drawing::Size(92, 23);
+			this->button5->TabIndex = 72;
+			this->button5->Text = L"Exit pitstop";
+			this->button5->UseVisualStyleBackColor = true;
+			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click_1);
+			// 
+			// button16
+			// 
+			this->button16->Location = System::Drawing::Point(188, 439);
+			this->button16->Name = L"button16";
+			this->button16->Size = System::Drawing::Size(97, 23);
+			this->button16->TabIndex = 71;
+			this->button16->Text = L"Enter pitstop";
+			this->button16->UseVisualStyleBackColor = true;
+			this->button16->Click += gcnew System::EventHandler(this, &MyForm::button16_Click);
+			// 
+			// button14
+			// 
+			this->button14->Location = System::Drawing::Point(289, 401);
+			this->button14->Name = L"button14";
+			this->button14->Size = System::Drawing::Size(134, 23);
+			this->button14->TabIndex = 70;
+			this->button14->Text = L"Launch on signal";
+			this->button14->UseVisualStyleBackColor = true;
+			this->button14->Click += gcnew System::EventHandler(this, &MyForm::button14_Click);
+			// 
 			// button8
 			// 
-			this->button8->Location = System::Drawing::Point(185, 460);
+			this->button8->Location = System::Drawing::Point(188, 401);
 			this->button8->Name = L"button8";
 			this->button8->Size = System::Drawing::Size(97, 23);
 			this->button8->TabIndex = 69;
 			this->button8->Text = L"Launch ";
 			this->button8->UseVisualStyleBackColor = true;
 			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click_1);
-			// 
-			// button5
-			// 
-			this->button5->Location = System::Drawing::Point(185, 420);
-			this->button5->Name = L"button5";
-			this->button5->Size = System::Drawing::Size(98, 23);
-			this->button5->TabIndex = 66;
-			this->button5->Text = L"Vision";
-			this->button5->UseVisualStyleBackColor = true;
-			this->button5->Click += gcnew System::EventHandler(this, &MyForm::button5_Click);
 			// 
 			// checkBox3
 			// 
@@ -453,11 +501,11 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button3
 			// 
-			this->button3->Location = System::Drawing::Point(389, 376);
+			this->button3->Location = System::Drawing::Point(387, 360);
 			this->button3->Name = L"button3";
 			this->button3->Size = System::Drawing::Size(103, 23);
 			this->button3->TabIndex = 58;
-			this->button3->Text = L"Stop Command";
+			this->button3->Text = L"Stop command";
 			this->button3->UseVisualStyleBackColor = true;
 			this->button3->Click += gcnew System::EventHandler(this, &MyForm::button3_Click);
 			// 
@@ -466,18 +514,18 @@ private: System::Windows::Forms::Button^  button14;
 			this->label8->AutoSize = true;
 			this->label8->Location = System::Drawing::Point(180, 50);
 			this->label8->Name = L"label8";
-			this->label8->Size = System::Drawing::Size(88, 13);
+			this->label8->Size = System::Drawing::Size(93, 13);
 			this->label8->TabIndex = 56;
-			this->label8->Text = L"right motor speed";
+			this->label8->Text = L"Right motor speed";
 			// 
 			// label7
 			// 
 			this->label7->AutoSize = true;
 			this->label7->Location = System::Drawing::Point(179, 0);
 			this->label7->Name = L"label7";
-			this->label7->Size = System::Drawing::Size(82, 13);
+			this->label7->Size = System::Drawing::Size(86, 13);
 			this->label7->TabIndex = 55;
-			this->label7->Text = L"left motor speed";
+			this->label7->Text = L"Left motor speed";
 			// 
 			// textBox6
 			// 
@@ -518,7 +566,7 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button2
 			// 
-			this->button2->Location = System::Drawing::Point(289, 376);
+			this->button2->Location = System::Drawing::Point(289, 360);
 			this->button2->Name = L"button2";
 			this->button2->Size = System::Drawing::Size(92, 23);
 			this->button2->TabIndex = 38;
@@ -537,7 +585,7 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button1
 			// 
-			this->button1->Location = System::Drawing::Point(185, 376);
+			this->button1->Location = System::Drawing::Point(188, 360);
 			this->button1->Name = L"button1";
 			this->button1->Size = System::Drawing::Size(98, 23);
 			this->button1->TabIndex = 37;
@@ -577,18 +625,18 @@ private: System::Windows::Forms::Button^  button14;
 			this->label2->AutoSize = true;
 			this->label2->Location = System::Drawing::Point(406, 0);
 			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(86, 13);
+			this->label2->Size = System::Drawing::Size(85, 13);
 			this->label2->TabIndex = 42;
-			this->label2->Text = L"Select COM Port";
+			this->label2->Text = L"Select COM port";
 			// 
 			// label4
 			// 
 			this->label4->AutoSize = true;
 			this->label4->Location = System::Drawing::Point(406, 53);
 			this->label4->Name = L"label4";
-			this->label4->Size = System::Drawing::Size(58, 13);
+			this->label4->Size = System::Drawing::Size(53, 13);
 			this->label4->TabIndex = 46;
-			this->label4->Text = L"Baud Rate";
+			this->label4->Text = L"Baud rate";
 			// 
 			// label3
 			// 
@@ -622,9 +670,9 @@ private: System::Windows::Forms::Button^  button14;
 			this->label1->AutoSize = true;
 			this->label1->Location = System::Drawing::Point(182, 106);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(118, 13);
+			this->label1->Size = System::Drawing::Size(117, 13);
 			this->label1->TabIndex = 40;
-			this->label1->Text = L"Hexadecimal Command";
+			this->label1->Text = L"Hexadecimal command";
 			// 
 			// textBox1
 			// 
@@ -635,6 +683,18 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->textBox17);
+			this->tabPage2->Controls->Add(this->textBox16);
+			this->tabPage2->Controls->Add(this->textBox15);
+			this->tabPage2->Controls->Add(this->textBox14);
+			this->tabPage2->Controls->Add(this->textBox13);
+			this->tabPage2->Controls->Add(this->label22);
+			this->tabPage2->Controls->Add(this->label21);
+			this->tabPage2->Controls->Add(this->label20);
+			this->tabPage2->Controls->Add(this->textBox12);
+			this->tabPage2->Controls->Add(this->label19);
+			this->tabPage2->Controls->Add(this->label18);
+			this->tabPage2->Controls->Add(this->button15);
 			this->tabPage2->Controls->Add(this->button13);
 			this->tabPage2->Controls->Add(this->button12);
 			this->tabPage2->Controls->Add(this->button11);
@@ -665,9 +725,108 @@ private: System::Windows::Forms::Button^  button14;
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
 			// 
+			// textBox17
+			// 
+			this->textBox17->Location = System::Drawing::Point(382, 480);
+			this->textBox17->Name = L"textBox17";
+			this->textBox17->Size = System::Drawing::Size(55, 20);
+			this->textBox17->TabIndex = 88;
+			// 
+			// textBox16
+			// 
+			this->textBox16->Location = System::Drawing::Point(305, 481);
+			this->textBox16->Name = L"textBox16";
+			this->textBox16->Size = System::Drawing::Size(55, 20);
+			this->textBox16->TabIndex = 87;
+			// 
+			// textBox15
+			// 
+			this->textBox15->Location = System::Drawing::Point(229, 481);
+			this->textBox15->Name = L"textBox15";
+			this->textBox15->Size = System::Drawing::Size(55, 20);
+			this->textBox15->TabIndex = 86;
+			// 
+			// textBox14
+			// 
+			this->textBox14->Location = System::Drawing::Point(382, 457);
+			this->textBox14->Name = L"textBox14";
+			this->textBox14->Size = System::Drawing::Size(55, 20);
+			this->textBox14->TabIndex = 85;
+			// 
+			// textBox13
+			// 
+			this->textBox13->Location = System::Drawing::Point(305, 457);
+			this->textBox13->Name = L"textBox13";
+			this->textBox13->Size = System::Drawing::Size(55, 20);
+			this->textBox13->TabIndex = 84;
+			// 
+			// label22
+			// 
+			this->label22->AutoSize = true;
+			this->label22->Location = System::Drawing::Point(379, 434);
+			this->label22->Name = L"label22";
+			this->label22->Size = System::Drawing::Size(55, 13);
+			this->label22->TabIndex = 83;
+			this->label22->Text = L"Saturation";
+			// 
+			// label21
+			// 
+			this->label21->AutoSize = true;
+			this->label21->Location = System::Drawing::Point(304, 434);
+			this->label21->Name = L"label21";
+			this->label21->Size = System::Drawing::Size(56, 13);
+			this->label21->TabIndex = 82;
+			this->label21->Text = L"Luminosity";
+			// 
+			// label20
+			// 
+			this->label20->AutoSize = true;
+			this->label20->Location = System::Drawing::Point(226, 434);
+			this->label20->Name = L"label20";
+			this->label20->Size = System::Drawing::Size(27, 13);
+			this->label20->TabIndex = 81;
+			this->label20->Text = L"Hue";
+			// 
+			// textBox12
+			// 
+			this->textBox12->Location = System::Drawing::Point(229, 457);
+			this->textBox12->Name = L"textBox12";
+			this->textBox12->Size = System::Drawing::Size(55, 20);
+			this->textBox12->TabIndex = 80;
+			// 
+			// label19
+			// 
+			this->label19->AutoSize = true;
+			this->label19->Location = System::Drawing::Point(175, 484);
+			this->label19->Name = L"label19";
+			this->label19->Size = System::Drawing::Size(39, 13);
+			this->label19->TabIndex = 79;
+			this->label19->Text = L"Upper:";
+			// 
+			// label18
+			// 
+			this->label18->AutoSize = true;
+			this->label18->Location = System::Drawing::Point(175, 464);
+			this->label18->Name = L"label18";
+			this->label18->Size = System::Drawing::Size(39, 13);
+			this->label18->TabIndex = 78;
+			this->label18->Text = L"Lower:";
+			// 
+			// button15
+			// 
+			this->button15->Enabled = false;
+			this->button15->Location = System::Drawing::Point(23, 474);
+			this->button15->Name = L"button15";
+			this->button15->Size = System::Drawing::Size(132, 23);
+			this->button15->TabIndex = 77;
+			this->button15->Text = L"Set Color Thresh";
+			this->button15->UseVisualStyleBackColor = true;
+			this->button15->Click += gcnew System::EventHandler(this, &MyForm::button15_Click);
+			// 
 			// button13
 			// 
-			this->button13->Location = System::Drawing::Point(349, 438);
+			this->button13->Enabled = false;
+			this->button13->Location = System::Drawing::Point(429, 385);
 			this->button13->Name = L"button13";
 			this->button13->Size = System::Drawing::Size(121, 23);
 			this->button13->TabIndex = 76;
@@ -677,7 +836,8 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button12
 			// 
-			this->button12->Location = System::Drawing::Point(178, 438);
+			this->button12->Enabled = false;
+			this->button12->Location = System::Drawing::Point(276, 385);
 			this->button12->Name = L"button12";
 			this->button12->Size = System::Drawing::Size(132, 23);
 			this->button12->TabIndex = 75;
@@ -687,7 +847,8 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button11
 			// 
-			this->button11->Location = System::Drawing::Point(349, 390);
+			this->button11->Enabled = false;
+			this->button11->Location = System::Drawing::Point(149, 384);
 			this->button11->Name = L"button11";
 			this->button11->Size = System::Drawing::Size(121, 23);
 			this->button11->TabIndex = 74;
@@ -697,7 +858,8 @@ private: System::Windows::Forms::Button^  button14;
 			// 
 			// button10
 			// 
-			this->button10->Location = System::Drawing::Point(178, 390);
+			this->button10->Enabled = false;
+			this->button10->Location = System::Drawing::Point(23, 445);
 			this->button10->Name = L"button10";
 			this->button10->Size = System::Drawing::Size(132, 23);
 			this->button10->TabIndex = 73;
@@ -727,7 +889,7 @@ private: System::Windows::Forms::Button^  button14;
 			// button7
 			// 
 			this->button7->Enabled = false;
-			this->button7->Location = System::Drawing::Point(291, 343);
+			this->button7->Location = System::Drawing::Point(23, 385);
 			this->button7->Name = L"button7";
 			this->button7->Size = System::Drawing::Size(105, 22);
 			this->button7->TabIndex = 70;
@@ -868,16 +1030,6 @@ private: System::Windows::Forms::Button^  button14;
 			this->textBox7->Size = System::Drawing::Size(82, 20);
 			this->textBox7->TabIndex = 0;
 			this->textBox7->Text = L"6060";
-			// 
-			// button14
-			// 
-			this->button14->Location = System::Drawing::Point(289, 460);
-			this->button14->Name = L"button14";
-			this->button14->Size = System::Drawing::Size(134, 23);
-			this->button14->TabIndex = 70;
-			this->button14->Text = L"Launch on signal";
-			this->button14->UseVisualStyleBackColor = true;
-			this->button14->Click += gcnew System::EventHandler(this, &MyForm::button14_Click);
 			// 
 			// MyForm
 			// 
@@ -1209,5 +1361,8 @@ private: System::Void button11_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button12_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button13_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button14_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button15_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button16_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button5_Click_1(System::Object^  sender, System::EventArgs^  e);
 };
 }

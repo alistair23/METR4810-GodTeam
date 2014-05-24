@@ -24,10 +24,14 @@ public:
 	void getMidPoints(int camera);
 	void connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras);
 	void testColorThresh(int camera);
+	void setColorThresh(int camera, int lower_hue, int lower_lum, int lower_sat,
+		int upper_hue, int upper_lum, int upper_sat);
 	void getObstacles(int camera);
 	void getFinishLine(int camera);
 	void getGoSignal(int camera);
 	void launchOnGo(int camera);
+	void enterPitstop();
+	void exitPitstop();
 
 	cv::Mat* img;
 	bool car_tracking_on;

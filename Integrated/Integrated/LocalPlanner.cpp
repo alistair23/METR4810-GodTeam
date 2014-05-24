@@ -14,6 +14,12 @@ LocalPlanner::LocalPlanner(int num_cameras)
 		global_paths_.push_back(std::vector<Point>());
 		obstacles.push_back(std::vector<cv::RotatedRect>());
 	}
+
+	pitstop_points_.push_back(Point(880, 30));
+	pitstop_points_.push_back(Point(775, 185));
+	pitstop_points_.push_back(Point(475, 185));
+	pitstop_points_.push_back(Point(250, 185));
+	pitstop_points_.push_back(Point(130, 30));
 }
 
 LocalPlanner::LocalPlanner(std::vector<std::vector<Point>> global_path):

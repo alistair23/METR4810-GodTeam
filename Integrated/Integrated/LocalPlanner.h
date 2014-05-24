@@ -45,6 +45,9 @@ private:
 	int prev_camera_;
 	int global_index_;
 
+	// Pitstop path relative to midpoint between finish line circle markers
+	std::vector<Point> pitstop_points_;
+
 	MyCar my_car_;
 	std::vector<Car> other_cars_;
 

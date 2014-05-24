@@ -62,11 +62,11 @@ public:
 	// WORK IN PROGRESS
 	std::vector<Point> getMidpoints(
 		cv::Mat& img_in, cv::Mat& img_white_warped,
-		cv::Point2f start_pos, float start_dir);
+		cv::Point2f start_pos, float start_dir, int camera);
 
 	// Color threshold on img to get binary image with
 	// road white and everything else black
-	void colorThresh(cv::Mat& img);
+	void colorThresh(cv::Mat& img, int camera);
 
 	// Applies perspective transform to an image
 	void applyTrans(cv::Mat& img, cv::Mat& transform);
@@ -80,6 +80,7 @@ public:
 	bool inImg(cv::Mat& img, int x, int y);
 
 	void testColorThresh(int camera);
+	void setColorThresh(int camera, cv::Scalar lower, cv::Scalar upper);
 
 	cv::Mat* getDisplayImage();
 
@@ -105,11 +106,11 @@ private:
 	// starting from top left
 	std::vector<cv::Point2f> sortVertices(cv::RotatedRect& rect);
 
-	// Get average colour around point in image
-	cv::Scalar getColour(cv::Mat& img, cv::Point2f p, int pix_length = 5);
+	// Get average color around point in image
+	cv::Scalar getColor(cv::Mat& img, cv::Point2f p, int pix_length = 5);
 
 	cv::Point2f getBoundary(cv::Mat& img, cv::Point2f start, float dir,
-		bool& at_img_edge, uchar road_colour = 0);
+		bool& at_img_edge, uchar road_color = 0);
 
 	int getTileType(cv::Mat& img_roi, int rot);
 
@@ -122,6 +123,8 @@ private:
 	int current_camera_;
 	std::string ip_address_;
 	std::vector<int> port_nums_;
+	std::vector<cv::Scalar> lower_color_thresh_;
+	std::vector<cv::Scalar> upper_color_thresh_;
 	
 	// Approximate metres per pixel for camera before any transform
 	std::vector<float> approx_cam_m_per_pix_;

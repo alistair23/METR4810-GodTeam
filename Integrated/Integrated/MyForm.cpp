@@ -171,6 +171,9 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	this->controller_->getCameraTransform(camera);
+	this->button7->Enabled = true;
+	this->button11->Enabled = true;
+	this->button12->Enabled = true;
 }
 
 System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -216,7 +219,8 @@ System::Void RaceControl::MyForm::button9_Click(System::Object^  sender, System:
 	num_cameras = System::Convert::ToInt16(this->comboBox3->Text);
 	controller_->connectToRoborealm(port_num_1, port_num_2, port_num_3, port_num_4, ip_address, num_cameras);
 	this->button6->Enabled = true;
-	this->button7->Enabled = true;
+	this->button10->Enabled = true;
+	this->button15->Enabled = true;
 }
  
 System::Void RaceControl::MyForm::button10_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -232,6 +236,7 @@ System::Void RaceControl::MyForm::button11_Click(System::Object^  sender, System
 System::Void RaceControl::MyForm::button12_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->getFinishLine(camera);
+	this->button13->Enabled = true;
 }
 
 System::Void RaceControl::MyForm::button13_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -244,3 +249,22 @@ System::Void RaceControl::MyForm::button14_Click(System::Object^  sender, System
 	controller_->launchOnGo(camera);
 }
 
+System::Void RaceControl::MyForm::button15_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	System::Int16 lower_hue = System::Convert::ToInt16(this->textBox12->Text);	
+	System::Int16 lower_lum = System::Convert::ToInt16(this->textBox13->Text);	
+	System::Int16 lower_sat = System::Convert::ToInt16(this->textBox14->Text);
+	System::Int16 upper_hue = System::Convert::ToInt16(this->textBox15->Text);
+	System::Int16 upper_lum = System::Convert::ToInt16(this->textBox16->Text);
+	System::Int16 upper_sat = System::Convert::ToInt16(this->textBox17->Text);
+	controller_->setColorThresh(camera, lower_hue, lower_lum, lower_sat,
+		upper_hue, upper_lum, upper_sat);
+}
+
+System::Void RaceControl::MyForm::button16_Click(System::Object^  sender, System::EventArgs^  e) {
+	controller_->enterPitstop();
+}
+
+System::Void RaceControl::MyForm::button16_Click(System::Object^  sender, System::EventArgs^  e) {
+	controller_->exitPitstop();
+}
