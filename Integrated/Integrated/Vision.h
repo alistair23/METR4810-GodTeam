@@ -118,7 +118,8 @@ private:
 
 	std::vector<Tile> tiles;
 
-	std::vector<RR_API> roborealms_;
+	RR_API roborealm_;
+	int current_camera_;
 	std::string ip_address_;
 	std::vector<int> port_nums_;
 	

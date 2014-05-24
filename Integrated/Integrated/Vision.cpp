@@ -40,7 +40,7 @@ Vision::Vision():
 void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 	port_nums_ = port_nums;
 	ip_address_ = ip_address;
-	roborealms_.clear();
+	current_camera_ = -1;
 	transform_mats_.clear();
 	inv_transform_mats_.clear();
 	approx_cam_m_per_pix_.clear();
@@ -48,8 +48,7 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 		transform_mats_.push_back(cv::Mat());
 		inv_transform_mats_.push_back(cv::Mat());
 		approx_cam_m_per_pix_.push_back(0);
-		roborealms_.push_back(RR_API());
-		connectRoboRealm(i);
+		//connectRoboRealm(i);
 	}
 }
 
@@ -61,15 +60,18 @@ bool Vision::connectRoboRealm(int camera) {
 	std::strcpy(writable, ip_address_.c_str());
 	writable[ip_address_.size()] = '\0'; 
 
-	bool result = roborealms_[camera].connect(writable, port_nums_[camera]);
+	roborealm_.disconnect();
+	bool result = roborealm_.connect(writable, port_nums_[camera]);
 	delete[] writable;
 
 	if (result == 1) {
-		std::cout << "Successfully connected to RoboRealm server " << camera << std::endl;
+		std::cout << "Successfully connected to RoboRealm server " << port_nums_[camera] << std::endl;
+		current_camera_ = camera;
 		return true;
 	}
 	else {
-		std::cout << "Failed to connect to RoboRealm server " << camera << std::endl;
+		std::cout << "Failed to connect to RoboRealm server " << port_nums_[camera] << std::endl;
+		current_camera_ = -1;
 		return false;
 	}
 }
@@ -447,16 +449,16 @@ bool Vision::update(int camera, Point car_pos_guess) {
 void Vision::getCamImg(int camera, cv::Mat& img_out) {
 
 	// Check if connected to roborealm server
-	if (!roborealms_[camera].connected)
+	if (!roborealm_.connected || current_camera_ != camera)
 		if (!connectRoboRealm(camera))	// Attempt connection
 			return;					// Failed to connect
 
 	// Wait for latest image
-	roborealms_[camera].waitImage();
+	roborealm_.waitImage();
 	int width, height;
-	roborealms_[camera].getDimension(&width, &height);
+	roborealm_.getDimension(&width, &height);
 	uchar *data = new uchar[width * height * 3];
-	roborealms_[camera].getImage(data, &width, &height, width * height * 3);
+	roborealm_.getImage(data, &width, &height, width * height * 3);
 	cv::Mat img(height, width, CV_8UC3, data);
 	cv::cvtColor(img, img_out, CV_RGB2BGR);
 	delete [] data;
