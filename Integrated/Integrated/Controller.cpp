@@ -122,6 +122,8 @@ void Controller::getMidPoints(int camera)
 	std::vector<Point> track = vision_->getMidpoints(img_bgr, img_white,
 		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir(), camera);
 	view_->drawNewDots(track);
+
+
 	view_->updateMyCar(*my_car_);
 	planner_->setGlobalPath(track, camera);
 	view_->redraw();
@@ -251,7 +253,7 @@ void Controller::detectCar()
 void Controller::runPlanner(){
 
 	while (true) {
-		if (!this->local_planning_on)
+		if (!this->local_planning_on || (my_car_->getPos().x == 0 && my_car_->getPos().y == 0))
 		{
 			Thread::Sleep(50);
 		}
@@ -273,7 +275,7 @@ void Controller::runPlanner(){
 }
 
 void Controller::sendCarCommand() {
-
+	double angle;
 	while(true)
 	{
 		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
@@ -287,24 +289,30 @@ void Controller::sendCarCommand() {
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
 			my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
-			double lookahead_sq = pow(DEFAULT_CAR_LENGTH_PIX, 2);
-			double max_speed = 10;
+			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
+			double max_speed = 1.55;	// metres/second
+			double max_speed_allowed = max_speed * 0.1;
 			double angle_thresh = 135 * M_PI / 180;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
-			Point* goal = &(*current_path_)[path_index_];
-			double dist_sq = my_car_->getPos().distSquared(*goal);
+			Point* current_point = &(*current_path_)[path_index_];
+			double dist_sq = my_car_->getPos().distSquared(*current_point);
 
-			while (dist_sq < lookahead_sq && path_index_ < current_path_->size() - 1) {
+			while (dist_sq < dist_thresh_sq && path_index_ < current_path_->size() - 1) {
 				path_index_++;
-				goal = &(*current_path_)[path_index_];
-				dist_sq = my_car_->getPos().distSquared(*goal);
+				current_point = &(*current_path_)[path_index_];
+				dist_sq = my_car_->getPos().distSquared(*current_point);
 			}
+
+			int goal_index = path_index_ + 10;	// Lookahead by 10 points
+			if (goal_index > current_path_->size())
+				goal_index = current_path_->size() - 1;
 
 			if (path_index_ < current_path_->size()) {
 
-				double angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
+				Point* goal = &(*current_path_)[goal_index];
+				angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
 
 				// A simple control algorithm: just head 
 				// straight to waypoints. Will be
@@ -318,27 +326,27 @@ void Controller::sendCarCommand() {
 
 					// Smooth right turn
 					double k = M_PI/(angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed * (1 - angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed * (1 + angle/angle_thresh) * k);
+					my_car_->setRSpeed(max_speed_allowed * (1 - angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed_allowed * (1 + angle/angle_thresh) * k);
 				}
 				else if (angle <= 0 && angle >= -angle_thresh) {
 
 					// Smooth left turn. Note angle is negative
 					double k = M_PI/(-angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed * (1 - angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed * (1 + angle/angle_thresh) * k);
+					my_car_->setRSpeed(max_speed_allowed * (1 - angle/angle_thresh) * k);
+					my_car_->setLSpeed(max_speed_allowed * (1 + angle/angle_thresh) * k);
 				}
 				else if (angle > angle_thresh) { // && angle <= 180
 
 					// On the spot right turn
-					my_car_->setRSpeed(-max_speed);
-					my_car_->setLSpeed(max_speed);
+					my_car_->setRSpeed(-max_speed_allowed);
+					my_car_->setLSpeed(max_speed_allowed);
 				}
 				else {
 
 					// On the spot left turn
-					my_car_->setRSpeed(max_speed);
-					my_car_->setLSpeed(-max_speed);
+					my_car_->setRSpeed(max_speed_allowed);
+					my_car_->setLSpeed(-max_speed_allowed);
 				}
 			}
 			else {
@@ -348,9 +356,11 @@ void Controller::sendCarCommand() {
 			Interlocked::Exchange(my_car_lock_, 0);
 
 			// Send commands over bluetooth
-			std::cout <<"Right speed: " << my_car_->getRSpeed()<<std::endl;
-			std::cout << "Left speed: " << my_car_->getLSpeed() << std::endl; 
-			form_ ->setMotorSpeeds((int)(my_car_->getLSpeed()), (int)(my_car_->getRSpeed()));		
+			int r_motor = my_car_->getRSpeed() * 100 / max_speed; 
+			int l_motor = my_car_->getLSpeed() * 100 / max_speed; 
+			std::cout << "Right speed: " << r_motor << "Left speed: " << l_motor <<"angle : " <<angle << std::endl; 
+			std::cout <<  std::endl; 
+			form_ ->setMotorSpeeds(l_motor, r_motor);		
 
 			// Release the lock
 			Interlocked::Exchange(current_path_lock_, 0);

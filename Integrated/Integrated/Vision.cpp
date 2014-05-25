@@ -603,9 +603,9 @@ bool Vision::getCarMarkers(
 						this_is_my_car = true;
 						my_car_found = true;
 
-						cv::ellipse(cdst, ellipses[i], cv::Scalar(rand()%255,rand()%255,rand()%255), 1);
-						cv::ellipse(cdst, ellipses[j], cv::Scalar(rand()%255,rand()%255,rand()%255), 1);
-						cv::ellipse(cdst, ellipses[k], cv::Scalar(rand()%255,rand()%255,rand()%255), 1);
+						cv::ellipse(cdst, ellipses[i], cv::Scalar(255,0,0), 1);
+						cv::ellipse(cdst, ellipses[j], cv::Scalar(0,0,255), 1);
+						cv::ellipse(cdst, ellipses[k], cv::Scalar(0,100,200), 1.5);
 						
 						
 						
