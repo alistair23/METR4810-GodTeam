@@ -86,6 +86,14 @@ void RaceControl::MyForm::setMotorSpeeds(int speed_L, int speed_R)
 {
 	array<System::Byte>^ packet = gcnew array<System::Byte>(4);
 	//set packet code
+	if (speed_L > 100)
+		speed_L = 100;
+	if (speed_L <-100)
+		speed_L = -100;
+	if (speed_R > 100)
+		speed_R = 100;
+	if (speed_R < -100)
+		speed_R = -100;
 	packet[0] = (Byte)PCKTCODE::PCKTCODE_CONTROL_IN;
 	//set data length
 	packet[1] = 2;

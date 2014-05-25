@@ -23,12 +23,12 @@ public:
 	std::vector<Point> getSegment(int curr_camera, int num_points = 20);
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
+	int getClosest(Point& pos, std::vector<Point>& path, double look_ahead);
 
 	std::vector<std::vector<cv::RotatedRect>> obstacles;
 
 private:
 	
-	int getClosest(Point& pos, std::vector<Point>& path, double look_ahead);
 	bool isValid(Point pos, long long time);
 
 	// Returns id of car in collision given position of my car
@@ -39,6 +39,7 @@ private:
 	bool obstacleCollision(Point pos, double angle, int camera);
 
 	bool lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1, cv::Point2f b2);
+	
 
 	std::vector<std::vector<Point>> global_paths_;
 	std::vector<Point> prev_segment_;

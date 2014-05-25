@@ -5,6 +5,7 @@
 #include <msclr\marshal_cppstd.h>	// For converting System::String^ to std::string
 
 #include "Controller.h"
+#include "Vector2D.h"
 #include "CommonFunctions.h"
 #include "math.h"
 
@@ -287,83 +288,35 @@ void Controller::sendCarCommand() {
 			long long update_time = time_now();
 
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
-			my_car_->step(0.001 * (update_time - old_time_));
+			//my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
-			double max_speed = 1.55;	// metres/second
+			double max_speed = 1.55 / M_PER_PIX;	// pixels/second
 			double max_speed_allowed = max_speed * 0.1;
-			double angle_thresh = 135 * M_PI / 180;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
-			Point* current_point = &(*current_path_)[path_index_];
-			double dist_sq = my_car_->getPos().distSquared(*current_point);
-
-			while (dist_sq < dist_thresh_sq && path_index_ < current_path_->size() - 1) {
-				path_index_++;
-				current_point = &(*current_path_)[path_index_];
-				dist_sq = my_car_->getPos().distSquared(*current_point);
+			float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
+			std::cout << "turn radius : " << turn_radius << std::endl;
+			float speed_ratio = 1.25 * (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
+			if (turn_radius > 0) {
+				my_car_->setLSpeed(max_speed_allowed);
+				my_car_->setRSpeed(max_speed_allowed * speed_ratio);
+			} else {
+				my_car_->setLSpeed(max_speed_allowed * speed_ratio);
+				my_car_->setRSpeed(max_speed_allowed);
 			}
-
-			int goal_index = path_index_ + 10;	// Lookahead by 10 points
-			if (goal_index > current_path_->size())
-				goal_index = current_path_->size() - 1;
-
-			if (path_index_ < current_path_->size()) {
-
-				Point* goal = &(*current_path_)[goal_index];
-				angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
-
-				// A simple control algorithm: just head 
-				// straight to waypoints. Will be
-				// replaced later.
-				while (angle > M_PI)
-					angle -= 2 * M_PI;
-				while (angle <= -M_PI)
-					angle += 2 * M_PI;
-
-				if (angle >= 0 && angle <= angle_thresh) {
-
-					// Smooth right turn
-					double k = M_PI/(angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed_allowed * (1 - angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed_allowed * (1 + angle/angle_thresh) * k);
-				}
-				else if (angle <= 0 && angle >= -angle_thresh) {
-
-					// Smooth left turn. Note angle is negative
-					double k = M_PI/(-angle + M_PI); // Reduce overall speed for turns
-					my_car_->setRSpeed(max_speed_allowed * (1 - angle/angle_thresh) * k);
-					my_car_->setLSpeed(max_speed_allowed * (1 + angle/angle_thresh) * k);
-				}
-				else if (angle > angle_thresh) { // && angle <= 180
-
-					// On the spot right turn
-					my_car_->setRSpeed(-max_speed_allowed);
-					my_car_->setLSpeed(max_speed_allowed);
-				}
-				else {
-
-					// On the spot left turn
-					my_car_->setRSpeed(max_speed_allowed);
-					my_car_->setLSpeed(-max_speed_allowed);
-				}
-			}
-			else {
-				my_car_->setRSpeed(0);
-				my_car_->setLSpeed(0);
-			}
+			
+			Interlocked::Exchange(current_path_lock_, 0);
 			Interlocked::Exchange(my_car_lock_, 0);
 
 			// Send commands over bluetooth
 			int r_motor = my_car_->getRSpeed() * 100 / max_speed; 
 			int l_motor = my_car_->getLSpeed() * 100 / max_speed; 
-			std::cout << "Right speed: " << r_motor << "Left speed: " << l_motor <<"angle : " <<angle << std::endl; 
+			std::cout << "Right speed: " << r_motor << "Left speed: " << l_motor<< std::endl; 
 			std::cout <<  std::endl; 
 			form_ ->setMotorSpeeds(l_motor, r_motor);		
 
-			// Release the lock
-			Interlocked::Exchange(current_path_lock_, 0);
 
 		}
 		
@@ -390,4 +343,54 @@ void Controller::setColorThresh(int camera, int lower_hue, int lower_lum, int lo
 	cv::Scalar lower(lower_hue, lower_lum, lower_sat);
 	cv::Scalar upper(upper_hue, upper_lum, upper_sat);
 	vision_->setColorThresh(camera, lower, upper);
+}
+
+
+float Controller::getCurveRadius(RaceControl::Point &p0, RaceControl::Point &p1, RaceControl::Point &p2){
+
+	float dx1 = p1.x - p0.x;
+	float dx2 = p2.x - p1.x;
+	float dy1 = p1.y - p0.y;
+	float dy2 = p2.y - p1.y;
+	float dx02 = p2.x - p0.x;
+	float dy2dx2 = dy2/(dx2 * 0.5 * dx02) - dy1/(dx1 * 0.5 * dx02);
+	float dydx = dy1/dx1;
+	std::cout << "dy2dx2 :" <<  dy2dx2 << "dydx : " << dydx << std::endl; 
+	return pow((1 + dydx * dydx), 1.5)/dy2dx2;
+}
+
+bool Controller::pointsOnStraightLine(RaceControl::Point &p0, RaceControl::Point &p1, RaceControl::Point &p2)
+{
+	float thresh = 2 * M_PI/180;	// Radians
+	float angle1 = p0.angle(p2);
+	float angle2 = p1.angle(p2);
+	return abs(angle1 - angle2) < thresh ||
+		abs(abs(angle1 - angle2) - M_PI) < thresh;
+}
+
+// Get turning radius based on pure pursuit algorithm
+// See http://www.ri.cmu.edu/pub_files/pub3/coulter_r_craig_1992_1/coulter_r_craig_1992_1.pdf
+float Controller::getPursuitRadius() {
+
+	// Get goal point, which is point on path ahead by a certain distance
+	float lookahead = 0.3 / M_PER_PIX;
+	int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
+	Point* goal = &(*current_path_)[goal_index];
+	float l = my_car_->getPos().dist(*goal);
+	
+	// Get unit vector defining car's x axis
+	float angle = my_car_->getDir() + (M_PI * 0.5);
+	std::cout << "car direction: " << my_car_->getDir() << std::endl;
+	Vector2D car_x_axis(cos(angle), sin(angle));
+
+	// Get vector from car to goal
+	float dx = goal->x - my_car_->getPos().x;
+	float dy = goal->y - my_car_->getPos().y;
+	Vector2D l_vector(dx, dy);
+
+	// Get length of projection of l_vector on car_x_axis
+	float x = l_vector.dot(car_x_axis);
+
+	// Return radius of turn
+	return l * l / (2 * (-x));
 }

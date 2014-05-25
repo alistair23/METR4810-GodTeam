@@ -60,19 +60,19 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// Reuse path from before (unless this is the first time)
 	bool reuse_prev = false;
+	/*
 	if (prev_segment_.size() > 0 && prev_camera_ == camera) {
 
 		// Get closest global point index
 		int closest_global = getClosest(my_car_.getPos(), global_paths_[camera], 0);
 
 		// Get point on previous segment a set distance lookahead of closest global
-		int closest = getClosest(global_paths_[camera][closest_global],
-			prev_segment_, DEFAULT_CAR_LENGTH_PIX);
+		int closest = getClosest(global_paths_[camera][closest_global], prev_segment_, 0);
 
 		// Previous segment is valid if it is not too far from car
 		// Must compare 2nd point because 1st point was shifted to car's position
 		if (closest + 1 < prev_segment_.size() && 
-			prev_segment_[closest + 1].dist(my_car_.getPos()) < DEFAULT_CAR_LENGTH_PIX * 2) {
+			prev_segment_[closest + 1].dist(my_car_.getPos()) < DEFAULT_CAR_LENGTH_PIX * 0.5) {
 			for (int i = closest; i < prev_segment_.size(); i++) {
 				segment.push_back(prev_segment_[i]);
 				segment.back().locked = false;
@@ -80,10 +80,10 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			global_index_ += closest;
 			reuse_prev = true;
 		}
-	}
+	}*/
 
 	if (!reuse_prev) {
-		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], DEFAULT_CAR_LENGTH_PIX * 0.5);
+		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], 0);
 		prev_camera_ = camera;
 	}
 
@@ -214,7 +214,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// Smooth out path through iterative process
 	int iterations = 25;
-	double change_factor = 0.04;
+	double change_factor = 0.15;
 	double global_path_attraction_factor = 0.01;
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = 1; j < segment.size(); j++) {
@@ -255,10 +255,10 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			// Move point, but do not go beyond road
 			float new_x = segment[j].x + force * change_factor * cos(angle);
 			float new_y = segment[j].y + force * change_factor * sin(angle);
-			if (global_point.distSquared(Point(new_x, new_y)) < 0.5 * ROAD_WIDTH / M_PER_PIX) {
-				segment[j].x += force * change_factor * cos(angle);
-				segment[j].y += force * change_factor * sin(angle);
-			}
+			//if (global_point.distSquared(Point(new_x, new_y)) < 0.5 * ROAD_WIDTH / M_PER_PIX) {
+				segment[j].x = new_x;
+				segment[j].y = new_y;
+			//}
 		}
 	}
 
@@ -268,26 +268,34 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 }
 
 // Return the index of a point on the path, ahead 
-// by look_ahead_dist.  If no points are within
-// look_ahead_dist, returns index of closest point
+// by look_ahead_dist.  If look_ahead = 0, returns index
+// of closest point
 int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path, double look_ahead) {
-	double look_ahead_sq = look_ahead * look_ahead;
-	int i = path.size() - 1;
-	double dist_sq = pos.distSquared(path[i]);
+
+	// Find closest point
 	double min_dist_sq = 999999;
-	int min_index = 0;
-	while (dist_sq > look_ahead_sq && i > 0) {
-		i -= 1;
+	int min_index;
+	double dist_sq;
+	for (std::size_t i = 0; i < path.size(); i++) {
 		dist_sq = pos.distSquared(path[i]);
 		if (dist_sq < min_dist_sq) {
 			min_dist_sq = dist_sq;
 			min_index = i;
 		}
 	}
-	if (i != 0)
-		return i;
-	else
+	if (look_ahead == 0)
 		return min_index;
+	
+	// Look for point forward from closest point that
+	// is at look ahead
+	double look_ahead_sq = look_ahead * look_ahead;
+	for (std::size_t i = min_index; i + 1 < path.size(); i++) {
+		double temp = pos.distSquared(path[i + 1]);
+		if (temp > look_ahead_sq)
+			return i;
+	}
+	
+	return min_index;
 }
 
 // Returns id of car in collision given position of my car

@@ -60,7 +60,9 @@ private:
 	void detectCar();
 	void runPlanner();
 	void sendCarCommand();
-	
+	float getCurveRadius(RaceControl::Point &p0, RaceControl::Point &p1, RaceControl::Point &p2);
+	bool pointsOnStraightLine(RaceControl::Point &p0, RaceControl::Point &p1, RaceControl::Point &p2);
+	float getPursuitRadius();
 
 };
 }
