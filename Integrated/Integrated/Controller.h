@@ -55,6 +55,8 @@ private:
 	Point* finish_line_pos_;
 	float finish_line_dir_;
 	std::vector<Point>* go_signals_;
+	bool wants_to_enter_pitstop;
+	bool wants_to_exit_pitstop;
 
 	void updateView(Object^ stateInfo);
 	void detectCar();

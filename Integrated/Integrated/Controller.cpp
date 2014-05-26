@@ -26,7 +26,9 @@ Controller::Controller() :
 	car_tracking_on(false),
 	go_signal_found(true),
 	finish_line_pos_(new Point()),
-	go_signals_(new std::vector<Point>())
+	go_signals_(new std::vector<Point>()),
+	wants_to_enter_pitstop(false),
+	wants_to_exit_pitstop(false)
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -158,11 +160,11 @@ void Controller::launchOnGo(int camera) {
 }
 
 void Controller::enterPitstop() {
-
+	wants_to_enter_pitstop = true;
 }
 
 void Controller::exitPitstop() {
-
+	wants_to_exit_pitstop = true;
 }
 
 void Controller::detectCar()
@@ -254,18 +256,38 @@ void Controller::detectCar()
 void Controller::runPlanner(){
 
 	while (true) {
-		if (!this->local_planning_on || (my_car_->getPos().x == 0 && my_car_->getPos().y == 0))
-		{
+		if (!this->local_planning_on || (my_car_->getPos().x == 0 && my_car_->getPos().y == 0)) {
 			Thread::Sleep(50);
-		}
-		else
-		{
+		} else {
+			MyCar my_car_temp;
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
-			planner_->updateMyCar(my_car_->getPos(), my_car_->getDir(), my_car_->getSpd());
+			my_car_temp = *my_car_;
 			Interlocked::Exchange(my_car_lock_, 0);
+			planner_->updateMyCar(my_car_temp.getPos(), my_car_temp.getDir(), my_car_temp.getSpd());
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
-			*current_path_ = planner_->getSegment(current_camera_);
+
+			if (wants_to_enter_pitstop && current_camera_ == 0 && 
+			my_car_temp.getPos().dist(planner_->enter_pitstop_points[0]) < 0.5 / M_PER_PIX) {
+
+				// Entering pitstop
+				*current_path_ = planner_->enter_pitstop_points;
+			} else if (wants_to_exit_pitstop) {
+				wants_to_enter_pitstop = false;
+				if (my_car_temp.getPos().dist(planner_->exit_pitstop_points.back()) > 0.2 / M_PER_PIX) {
+					
+					// Exiting pitstop
+					*current_path_ = planner_->exit_pitstop_points;
+				} else {
+
+					// Successfully exited pitstop
+					wants_to_exit_pitstop = false;						
+				}
+			} else {
+
+				// Path planning as normal
+				*current_path_ = planner_->getSegment(current_camera_);
+			}
 			path_index_ = 0;
 			
 			// Release the lock
@@ -298,7 +320,7 @@ void Controller::sendCarCommand() {
 
 			float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
 			std::cout << "turn radius : " << turn_radius << std::endl;
-			float speed_ratio = 1.25 * (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
+			float speed_ratio = (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
 			if (turn_radius > 0) {
 				my_car_->setLSpeed(max_speed_allowed);
 				my_car_->setRSpeed(max_speed_allowed * speed_ratio);

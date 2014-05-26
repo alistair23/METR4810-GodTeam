@@ -27,6 +27,11 @@ public:
 
 	std::vector<std::vector<cv::RotatedRect>> obstacles;
 
+	// Pitstop path relative to midpoint between finish line circle markers
+	std::vector<Point> enter_pitstop_points;
+	std::vector<Point> exit_pitstop_points;
+
+
 private:
 	
 	bool isValid(Point pos, long long time);
@@ -45,9 +50,6 @@ private:
 	std::vector<Point> prev_segment_;
 	int prev_camera_;
 	int global_index_;
-
-	// Pitstop path relative to midpoint between finish line circle markers
-	std::vector<Point> pitstop_points_;
 
 	MyCar my_car_;
 	std::vector<Car> other_cars_;

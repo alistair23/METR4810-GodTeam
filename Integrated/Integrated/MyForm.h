@@ -161,6 +161,7 @@ private: System::Windows::Forms::Label^  label18;
 private: System::Windows::Forms::Button^  button15;
 private: System::Windows::Forms::Button^  button16;
 private: System::Windows::Forms::Button^  button5;
+private: System::Windows::Forms::ImageList^  imageList1;
 
 
 
@@ -316,6 +317,7 @@ private: System::Windows::Forms::Button^  button5;
 			this->textBox9 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
+			this->imageList1 = (gcnew System::Windows::Forms::ImageList(this->components));
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -1030,6 +1032,12 @@ private: System::Windows::Forms::Button^  button5;
 			this->textBox7->Size = System::Drawing::Size(82, 20);
 			this->textBox7->TabIndex = 0;
 			this->textBox7->Text = L"6060";
+			// 
+			// imageList1
+			// 
+			this->imageList1->ColorDepth = System::Windows::Forms::ColorDepth::Depth8Bit;
+			this->imageList1->ImageSize = System::Drawing::Size(16, 16);
+			this->imageList1->TransparentColor = System::Drawing::Color::Transparent;
 			// 
 			// MyForm
 			// 
