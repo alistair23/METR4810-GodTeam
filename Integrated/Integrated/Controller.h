@@ -51,6 +51,7 @@ private:
 	int my_car_lock_;
 	long long old_time_;
 	int path_index_;
+	bool did_move_;
 
 	Point* finish_line_pos_;
 	float finish_line_dir_;

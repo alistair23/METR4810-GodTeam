@@ -1315,28 +1315,35 @@ private: System::Void updateImage( System::Object^ source, System::Timers::Elaps
 private: System::Void dataReceivedHandler(System::Object^ sender,\
 			 System::IO::Ports::SerialDataReceivedEventArgs^ e)
 		 {
-			 if (this->radioButton1->Checked)
+			 try
 			 {
-				int data = this->serialPort1->ReadByte();
-				this->SetText(System::Convert::ToString(data));
-			 }
-			 else if (this->radioButton2->Checked)
+				 if (this->radioButton1->Checked)
+				 {
+					int data = this->serialPort1->ReadByte();
+					this->SetText(System::Convert::ToString(data));
+				 }
+				 else if (this->radioButton2->Checked)
 
-			 {
-				 //this->SetText("in string mode\n");
-				 System::String^ data_char = this->serialPort1->ReadLine();
-				 this->SetText(System::Convert::ToString(data_char));
-				 this->SetText("\n");
+				 {
+					 //this->SetText("in string mode\n");
+					 System::String^ data_char = this->serialPort1->ReadLine();
+					 this->SetText(System::Convert::ToString(data_char));
+					 this->SetText("\n");
 				 
+				 }
+				 else if (this->radioButton3->Checked)
+				 {
+					 /*
+					 int motor_speed_left = ;
+					 int motor_speed_right = ;
+					 this->textBox5->Text = System::Convert::ToString(motor_speed_left);
+					 this->textBox6->Text = System::Convert::ToString(motor_speed_right);
+					 */
+				 }
 			 }
-			 else if (this->radioButton3->Checked)
+			 catch(TimeoutException ^)
 			 {
-				 /*
-				 int motor_speed_left = ;
-				 int motor_speed_right = ;
-				 this->textBox5->Text = System::Convert::ToString(motor_speed_left);
-				 this->textBox6->Text = System::Convert::ToString(motor_speed_right);
-				 */
+				 std::cout<< "serial port timed out..." << std::endl;
 			 }
 		 }
 private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) ;
