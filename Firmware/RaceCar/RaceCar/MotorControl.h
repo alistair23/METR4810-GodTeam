@@ -20,7 +20,7 @@
 #define MOTOR_R (1)
 #define MAX_SPEED (825) //measured from oscilloscope with voltage 6.5V
 #define GEAR_RATIO (30)
-#define ENCODER_FINS (3)
+#define ENCODER_FINS (5)
 #define MEASURE_PERIOD (4 * 65535.0 / (F_CPU))
 
 // initialize PWM

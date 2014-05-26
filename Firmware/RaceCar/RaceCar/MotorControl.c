@@ -171,7 +171,7 @@ extern void MotorControl_CountEncoder()
 	{
 		if(speed_r_measured >= 15 || speed_r_measured <= -15)
 		{
-			direction_r = speed_r_measured > 0 ? 1 : -1;
+			direction_r = speed_r_measured >= 0 ? 1 : -1;
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
 				encoder_count_R++;
@@ -186,7 +186,7 @@ extern void MotorControl_CountEncoder()
 				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 				
 				{
-					encoder_count_R--;
+					encoder_count_R++;
 				
 				}
 			}
@@ -194,7 +194,7 @@ extern void MotorControl_CountEncoder()
 			{
 				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 				{
-					encoder_count_R++;
+					encoder_count_R--;
 				}
 				
 			}
@@ -207,7 +207,7 @@ extern void MotorControl_CountEncoder()
 	{
 		if (speed_l_measured >= 15 || speed_l_measured <= -15)
 		{
-			direction_l = speed_l_measured > 0 ? 1 : -1;		
+			direction_l = speed_l_measured >= 0 ? 1 : -1;		
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
 				encoder_count_L++;  // forward
@@ -222,7 +222,7 @@ extern void MotorControl_CountEncoder()
 				
 				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 				{
-					encoder_count_L++;  // forward
+					encoder_count_L--;  // forward
 				}
 			}
 			else //if other pin is high already, PC2 is behind
@@ -230,7 +230,7 @@ extern void MotorControl_CountEncoder()
 				
 				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 				{
-					encoder_count_L--; //reverse
+					encoder_count_L++; //reverse
 				}
 			
 			}
@@ -344,8 +344,28 @@ ISR(TIMER1_OVF_vect)
 		error_r_sum += (error_r * MEASURE_PERIOD);
 		error_l_der = error_l - error_l_previous;
 		error_r_der = error_r - error_r_previous;
-		float new_input_l = previous_input_l + kp*error_l + ki * error_l_sum + kd * error_l_der;
-		float new_input_r = previous_input_r + kp*error_r + ki * error_r_sum + kd * error_r_der;
+		
+		float new_input_r;
+		float new_input_l; 
+		if (error_l < -10)
+		{
+			new_input_l = speed_l_desired;
+		}
+		else
+		{
+			new_input_l = previous_input_l + kp*error_l + ki * error_l_sum + kd * error_l_der;
+		}
+		
+		if (error_r < -10)
+		{
+			new_input_r = speed_r_desired;
+		}
+		else
+		{
+			new_input_r = previous_input_r + kp*error_r + ki * error_r_sum + kd * error_r_der;
+		}
+		
+		
 		MotorControl_SetMotorSpeed(MOTOR_L, (int8_t) new_input_l );
 		MotorControl_SetMotorSpeed(MOTOR_R, (int8_t) new_input_r );
 		previous_input_l = new_input_l;
@@ -360,7 +380,7 @@ ISR(TIMER1_OVF_vect)
 		error_l_previous = error_l;
 		error_r_previous = error_r;
 		control_counter = 0;
-		//SerialComm_sendTextf("Le: %d , R: %d",speed_l_measured, speed_r_measured);
+		SerialComm_sendTextf("Le: %d , R: %d",speed_l_measured, speed_r_measured);
 	}
 	//SerialComm_sendTextf("R: %d",speed_r_measured);
 	//SerialComm_sendTextf("ki: %d", (uint8_t)(ki * 100));

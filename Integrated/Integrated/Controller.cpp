@@ -27,8 +27,12 @@ Controller::Controller() :
 	go_signal_found(true),
 	finish_line_pos_(new Point()),
 	go_signals_(new std::vector<Point>()),
+<<<<<<< HEAD
 	wants_to_enter_pitstop(false),
 	wants_to_exit_pitstop(false)
+=======
+	did_move_(false)
+>>>>>>> 78faeeb6821158cc8afa6dd0209e947c9efc7070
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -299,6 +303,7 @@ void Controller::runPlanner(){
 
 void Controller::sendCarCommand() {
 	double angle;
+	bool did_turn = false;
 	while(true)
 	{
 		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
@@ -307,6 +312,7 @@ void Controller::sendCarCommand() {
 			old_time_ = time_now();
 		}
 		else {
+
 			long long update_time = time_now();
 
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
@@ -314,20 +320,62 @@ void Controller::sendCarCommand() {
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 1.55 / M_PER_PIX;	// pixels/second
-			double max_speed_allowed = max_speed * 0.1;
+			double max_speed_allowed = max_speed * 0.15;
+			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
+<<<<<<< HEAD
 			float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
 			std::cout << "turn radius : " << turn_radius << std::endl;
 			float speed_ratio = (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
+=======
+			if (!did_move_) {
+				did_move_ = true;
+
+				// Carrot approach - choose a goal point certain distance ahead
+				float lookahead = 0.15 / M_PER_PIX;
+				int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
+				Point* goal = &(*current_path_)[goal_index];
+
+				// Get relative heading to point between -pi and pi radians.
+				float angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
+				if (angle <= -M_PI)
+					angle += 2 * M_PI;
+				if (angle > M_PI)
+					angle -= 2 * M_PI;
+
+				float angle_thresh = 40 * M_PI/180;
+				if (abs(angle) < angle_thresh) {
+					my_car_->setLSpeed(max_speed_allowed * 1.2);
+					my_car_->setRSpeed(max_speed_allowed * 1.2);
+					did_turn = false;
+				} else if (angle > 0) {
+					my_car_->setLSpeed(max_speed_allowed * 1.2);
+					my_car_->setRSpeed(-max_speed_allowed * 1.2);
+					did_turn = true;
+				} else if (angle < 0) {
+					my_car_->setLSpeed(-max_speed_allowed * 1.2);
+					my_car_->setRSpeed(max_speed_allowed * 1.2);
+					did_turn = true;
+				}
+			} else {
+				my_car_->setLSpeed(0);
+				my_car_->setRSpeed(0);
+				did_move_ = false;
+			}
+
+			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
+			std::cout << "turn radius in m: " << turn_radius * M_PER_PIX << std::endl;
+			float speed_ratio = (abs(turn_radius * radius_factor) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius * radius_factor) - my_car_->getAxleLength() * 0.5);
+>>>>>>> 78faeeb6821158cc8afa6dd0209e947c9efc7070
 			if (turn_radius > 0) {
 				my_car_->setLSpeed(max_speed_allowed);
 				my_car_->setRSpeed(max_speed_allowed * speed_ratio);
 			} else {
 				my_car_->setLSpeed(max_speed_allowed * speed_ratio);
 				my_car_->setRSpeed(max_speed_allowed);
-			}
+			}*/
 			
 			Interlocked::Exchange(current_path_lock_, 0);
 			Interlocked::Exchange(my_car_lock_, 0);
@@ -341,9 +389,10 @@ void Controller::sendCarCommand() {
 
 
 		}
-		
-
-		Thread::Sleep(25);
+		if (did_move_ && did_turn)
+			Thread::Sleep(400);
+		else
+			Thread::Sleep(500);
 	}
 }
 
