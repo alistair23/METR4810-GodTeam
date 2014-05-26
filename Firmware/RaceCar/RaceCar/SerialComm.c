@@ -231,8 +231,8 @@ void ProcessPacket(Packet pckt)
 {
 	
 	uint8_t len = pckt.Length;
-	SerialComm_sendData(current_pckt.Data, current_pckt.Length);
-	SerialComm_sendText("\n");
+	//SerialComm_sendData(current_pckt.Data, current_pckt.Length);
+	//SerialComm_sendText("\n");
 	uint8_t reset_l = 0;
 	uint8_t reset_r = 0;
 	switch(pckt.Type)
