@@ -342,8 +342,8 @@ void Controller::sendCarCommand() {
 
 				float angle_thresh = 40 * M_PI/180;
 				if (abs(angle) < angle_thresh) {
-					my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
-					my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
+					my_car_->setLSpeed(max_speed_allowed * (1 + angle/(90 * M_PI/180)));
+					my_car_->setRSpeed(max_speed_allowed * (1 - angle/(90 * M_PI/180)));
 					//did_turn = false;
 				} else if (angle > 0) {
 					my_car_->setLSpeed(max_speed_allowed);
@@ -388,7 +388,7 @@ void Controller::sendCarCommand() {
 			form_ ->setMotorSpeeds(l_motor, r_motor);	
 		}
 		if (longer_wait) {
-			Thread::Sleep(300);
+			Thread::Sleep(400);
 			longer_wait = false;
 		} else {
 			Thread::Sleep(50);

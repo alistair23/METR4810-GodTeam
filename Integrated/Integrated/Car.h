@@ -23,6 +23,7 @@ public:
 	double getSpd() const;
 	double getLength() const;
 	double getWidth() const;
+	double getHeight() const;
 	long long getUpdateTime() const;
 
 protected:
@@ -34,6 +35,7 @@ protected:
 	double spd_;			// Speed in pixels/s
 	double length_;			// Car length in pixels
 	double width_;			// Car width in pixels
+	double height_;
 	long long update_time_;	// Time at last update according to time_now() in CommonFunctions.h
 
 };

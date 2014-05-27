@@ -14,6 +14,7 @@
 
 #define DEFAULT_CAR_LENGTH_PIX 0.15 / M_PER_PIX		// Default car dimensions in pixels
 #define DEFAULT_CAR_WIDTH_PIX 0.075 / M_PER_PIX
+#define DEFAULT_CAR_HEIGHT_PIX 0.05 / M_PER_PIX
 #define SIDE_CLEARANCE_PIX 0.01 / M_PER_PIX			// For collision testing between cars, in pixels
 #define FRONT_CLEARANCE_PIX 0.05 / M_PER_PIX
 

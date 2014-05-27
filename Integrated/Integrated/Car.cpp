@@ -9,6 +9,7 @@ Car::Car():
 	spd_(0),
 	length_(DEFAULT_CAR_LENGTH_PIX),
 	width_(DEFAULT_CAR_WIDTH_PIX),
+	height_(DEFAULT_CAR_HEIGHT_PIX),
 	update_time_(0)
 {
 }
@@ -42,6 +43,7 @@ const Car &Car::operator = (const Car& c) {
 	spd_ = c.getSpd();
 	width_ = c.getWidth();
 	length_ = c.getLength();
+	height_ = c.getHeight();
 	update_time_ = c.getUpdateTime();
 	return *this;
 }
@@ -76,7 +78,9 @@ double Car::getLength() const {
 double Car::getWidth() const {
 	return width_;
 }
-
+double Car::getHeight() const {
+	return height_;
+}
 long long Car::getUpdateTime() const {
 	return update_time_;
 }

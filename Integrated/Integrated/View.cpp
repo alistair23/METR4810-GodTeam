@@ -56,18 +56,6 @@ void View::setBackground(cv::Mat& background) {
 
 void View::updateMyCar(MyCar my_car) {
 	my_car_ = my_car;
-
-	// Draw my_car_
-	cv::RotatedRect rect(
-		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
-		cv::Size2f(my_car_.getLength(), my_car_.getWidth()), my_car_.getDir() * 180 / M_PI);
-	cv::Point2f vertices[4];
-	rect.points(vertices);
-	for (int i = 0; i < 4; i++)
-		cv::line(background_no_dots_, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
-	cv::Point2f dir_p(my_car_.getPos().x + 50 * cos(my_car_.getDir()), my_car_.getPos().y + 50 * sin(my_car_.getDir()));
-	cv::line(background_no_dots_, dir_p, cv::Point2f(my_car_.getPos().x, my_car_.getPos().y), cv::Scalar(0,0,255));
-
 }
 
 void View::redraw() {
@@ -102,6 +90,18 @@ void View::drawNewDots(std::vector<Point>& segment) {
 	for (std::size_t i = 0; i < segment.size(); i++) {
 		cv::circle(background_, cv::Point2f(segment[i].x, segment[i].y), 2, cv::Scalar(255,100,0));
 	}
+
+	// Draw my_car_
+	cv::RotatedRect rect(
+		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
+		cv::Size2f(my_car_.getLength(), my_car_.getWidth()), my_car_.getDir() * 180 / M_PI);
+	cv::Point2f vertices[4];
+	rect.points(vertices);
+	for (int i = 0; i < 4; i++)
+		cv::line(background_, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
+	cv::Point2f dir_p(my_car_.getPos().x + 50 * cos(my_car_.getDir()), my_car_.getPos().y + 50 * sin(my_car_.getDir()));
+	cv::line(background_, dir_p, cv::Point2f(my_car_.getPos().x, my_car_.getPos().y), cv::Scalar(0,0,255));
+
 }
 
 void onMouse(int event, int x, int y, int, void*) {

@@ -599,12 +599,16 @@ bool Vision::getCarMarkers(
 						
 
 						// This is my car
-						my_car_p1.x = (ellipses[k].center.x + ellipses[i].center.x + ellipses[j].center.x)/3;
-						my_car_p1.y = (ellipses[k].center.y + ellipses[i].center.y + ellipses[j].center.y)/3;
+						float cam_angle = acos(ellipses[biggest].size.width/ellipses[biggest].size.height);
+						float adjust_length = 0.05 * ellipses[biggest].size.height/0.07;
+						float marker_angle = ellipses[biggest].angle;
+						my_car_p1.x = (ellipses[k].center.x + ellipses[i].center.x + ellipses[j].center.x)/3; //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
+						my_car_p1.y = (ellipses[k].center.y + ellipses[i].center.y + ellipses[j].center.y)/3 + adjust_length * sin(cam_angle);// * sin(-M_PI/2 + marker_angle);
 						last_car_size_ = ellipses[biggest].size.height;
 						this_is_my_car = true;
 						my_car_found = true;
-
+						std::cout << "cam angle: " << cam_angle << "car height : " << my_car_.getHeight() << std::endl;
+						std::cout << "ratio : " << ellipses[biggest].size.width/ellipses[biggest].size.height << std::endl;
 						cv::ellipse(cdst, ellipses[i], cv::Scalar(255,0,0), 1);
 						cv::ellipse(cdst, ellipses[j], cv::Scalar(0,0,255), 1);
 						cv::ellipse(cdst, ellipses[k], cv::Scalar(0,100,200), 1.5);
@@ -628,7 +632,8 @@ bool Vision::getCarMarkers(
 							
 							float this_dist = dist(ellipses[a].center, my_car_p1);
 							if (this_dist <= ellipses[biggest].size.height * 0.2) {
-								my_car_p2 = ellipses[a].center;
+								my_car_p2.x = ellipses[a].center.x +  my_car_.getHeight();// * sin(cam_angle) * cos(-M_PI/2 + marker_angle);
+								my_car_p2.y = ellipses[a].center.y +  adjust_length * sin(cam_angle);// * sin(-M_PI/2 + marker_angle);
 								cv::ellipse(cdst, ellipses[a], cv::Scalar(0,255,0), 2);
 								
 								break;
