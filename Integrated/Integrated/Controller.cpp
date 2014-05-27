@@ -27,12 +27,10 @@ Controller::Controller() :
 	go_signal_found(true),
 	finish_line_pos_(new Point()),
 	go_signals_(new std::vector<Point>()),
-<<<<<<< HEAD
 	wants_to_enter_pitstop(false),
-	wants_to_exit_pitstop(false)
-=======
-	did_move_(false)
->>>>>>> 78faeeb6821158cc8afa6dd0209e947c9efc7070
+	wants_to_exit_pitstop(false),
+	did_move_(false),
+	did_tight_turn_(false)
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -123,8 +121,8 @@ void Controller::getMidPoints(int camera)
 	cv::Mat img_bgr;
 	vision_->getCamImg(camera, img_bgr);
 	cv::Mat img_white(img_bgr.rows, img_bgr.cols, CV_8UC1, 255);
-	vision_->applyTrans(img_bgr, vision_->transform_mats_[camera]);
-	vision_->applyTrans(img_white, vision_->transform_mats_[camera]);
+	vision_->applyTrans(img_bgr, camera);
+	vision_->applyTrans(img_white, camera);
 	view_->setBackground(img_bgr);
 	std::vector<Point> track = vision_->getMidpoints(img_bgr, img_white,
 		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir(), camera);
@@ -142,7 +140,7 @@ void Controller::getObstacles(int camera)
 	cv::Mat img_bgr;
 	vision_->update(camera);
 	vision_->getCamImg(camera, img_bgr);
-	vision_->applyTrans(img_bgr, vision_->transform_mats_[camera]);
+	vision_->applyTrans(img_bgr, camera);
 	planner_->obstacles[camera].clear();
 	vision_->getObstacles(img_bgr, planner_->obstacles[camera]);
 }
@@ -150,7 +148,7 @@ void Controller::getObstacles(int camera)
 void Controller::getFinishLine(int camera) {
 	cv::Mat img;
 	vision_->getCamImg(camera, img);
-	vision_->applyTrans(img, vision_->transform_mats_[camera]);
+	vision_->applyTrans(img, camera);
 	vision_->findFinishTile(img, *finish_line_pos_);
 }
 
@@ -233,7 +231,7 @@ void Controller::detectCar()
 				// We have changed cameras
 				cv::Mat img_bgr;
 				vision_->getCamImg(temp_camera, img_bgr);
-				vision_->applyTrans(img_bgr, vision_->transform_mats_[temp_camera]);
+				vision_->applyTrans(img_bgr, temp_camera);
 				view_->setBackground(img_bgr);
 				current_camera_ = temp_camera;
 			}
@@ -248,11 +246,6 @@ void Controller::detectCar()
 			//vision_->applyTrans(img_bgr, vision_->transform_mats_[current_camera_]);
 			//view_->setBackground(img_bgr);
 			
-			if (0 == Interlocked::Exchange(current_path_lock_, 1)) {
-				view_->drawNewDots(*current_path_);
-				Interlocked::Exchange(current_path_lock_, 0);
-			}
-			view_->redraw();
 		}
 	}
 }
@@ -291,11 +284,14 @@ void Controller::runPlanner(){
 
 				// Path planning as normal
 				*current_path_ = planner_->getSegment(current_camera_);
+				view_->drawNewDots(*current_path_);
 			}
 			path_index_ = 0;
 			
 			// Release the lock
 			Interlocked::Exchange(current_path_lock_, 0);
+
+			view_->redraw();
 			Thread::Sleep(50);
 		}
 	}
@@ -303,7 +299,7 @@ void Controller::runPlanner(){
 
 void Controller::sendCarCommand() {
 	double angle;
-	bool did_turn = false;
+	bool longer_wait = false;
 	while(true)
 	{
 		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
@@ -320,21 +316,20 @@ void Controller::sendCarCommand() {
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 1.55 / M_PER_PIX;	// pixels/second
-			double max_speed_allowed = max_speed * 0.15;
+			double max_speed_allowed = max_speed * 0.12;
 			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
-
-<<<<<<< HEAD
+			/*
 			float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
 			std::cout << "turn radius : " << turn_radius << std::endl;
 			float speed_ratio = (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
-=======
-			if (!did_move_) {
-				did_move_ = true;
+			*/
+			if (!did_tight_turn_) {
+				//did_move_ = true;
 
 				// Carrot approach - choose a goal point certain distance ahead
-				float lookahead = 0.15 / M_PER_PIX;
+				float lookahead = 0.12 / M_PER_PIX;
 				int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
 				Point* goal = &(*current_path_)[goal_index];
 
@@ -347,28 +342,33 @@ void Controller::sendCarCommand() {
 
 				float angle_thresh = 40 * M_PI/180;
 				if (abs(angle) < angle_thresh) {
-					my_car_->setLSpeed(max_speed_allowed * 1.2);
-					my_car_->setRSpeed(max_speed_allowed * 1.2);
-					did_turn = false;
+					my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
+					my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
+					//did_turn = false;
 				} else if (angle > 0) {
-					my_car_->setLSpeed(max_speed_allowed * 1.2);
+					my_car_->setLSpeed(max_speed_allowed);
 					my_car_->setRSpeed(-max_speed_allowed * 1.2);
-					did_turn = true;
+					did_tight_turn_ = true;
+					longer_wait = true;
+					//did_turn = true;
 				} else if (angle < 0) {
 					my_car_->setLSpeed(-max_speed_allowed * 1.2);
 					my_car_->setRSpeed(max_speed_allowed * 1.2);
-					did_turn = true;
+					did_tight_turn_ = true;
+					longer_wait = true;
+					//did_turn = true;
 				}
 			} else {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
-				did_move_ = false;
+				did_tight_turn_ = false;
+				longer_wait = true;
+				//did_move_ = false;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
 			std::cout << "turn radius in m: " << turn_radius * M_PER_PIX << std::endl;
 			float speed_ratio = (abs(turn_radius * radius_factor) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius * radius_factor) - my_car_->getAxleLength() * 0.5);
->>>>>>> 78faeeb6821158cc8afa6dd0209e947c9efc7070
 			if (turn_radius > 0) {
 				my_car_->setLSpeed(max_speed_allowed);
 				my_car_->setRSpeed(max_speed_allowed * speed_ratio);
@@ -383,16 +383,16 @@ void Controller::sendCarCommand() {
 			// Send commands over bluetooth
 			int r_motor = my_car_->getRSpeed() * 100 / max_speed; 
 			int l_motor = my_car_->getLSpeed() * 100 / max_speed; 
-			std::cout << "Right speed: " << r_motor << "Left speed: " << l_motor<< std::endl; 
-			std::cout <<  std::endl; 
-			form_ ->setMotorSpeeds(l_motor, r_motor);		
+			std::cout << "Right speed: " << r_motor << "Left speed: " << l_motor<< std::endl;
 
-
+			form_ ->setMotorSpeeds(l_motor, r_motor);	
 		}
-		if (did_move_ && did_turn)
-			Thread::Sleep(400);
-		else
-			Thread::Sleep(500);
+		if (longer_wait) {
+			Thread::Sleep(300);
+			longer_wait = false;
+		} else {
+			Thread::Sleep(50);
+		}
 	}
 }
 

@@ -55,16 +55,21 @@ array<System::Byte>^ RaceControl::MyForm::interpretHexadecimalCommand()
 
 void RaceControl::MyForm::sendSerialData(array<System::Byte>^ byteArray)
 {
-	//if port is open send data
-	if (serialPort1->IsOpen)
-	{
-		serialPort1->Write(byteArray, 0, byteArray->Length);
-		//this->SetText(System::Convert::ToString(byteArray->Length));
-	}
+	try{
+		//if port is open send data
+		if (serialPort1->IsOpen)
+		{
+			serialPort1->Write(byteArray, 0, byteArray->Length);
+			//this->SetText(System::Convert::ToString(byteArray->Length));
+		}
 
-	//if it's not display message for the user
-	else
-		this->SetText("\n Connect to COM port first\n");
+		//if it's not display message for the user
+		else
+			this->SetText("\n Connect to COM port first\n");
+	}
+	catch(TimeoutException ^)
+	{
+	}
 }
 void RaceControl::MyForm::setMotorSpeeds()
 {

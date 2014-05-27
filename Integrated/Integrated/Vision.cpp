@@ -43,12 +43,14 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 	current_camera_ = -1;
 	transform_mats_.clear();
 	inv_transform_mats_.clear();
+	transform_sizes_.clear();
 	approx_cam_m_per_pix_.clear();
 	lower_color_thresh_.clear();
 	upper_color_thresh_.clear();
 	for (std::size_t i = 0; i < port_nums.size(); i++) {
 		transform_mats_.push_back(cv::Mat());
 		inv_transform_mats_.push_back(cv::Mat());
+		transform_sizes_.push_back(cv::Size());
 		approx_cam_m_per_pix_.push_back(0);
 		lower_color_thresh_.push_back(cv::Scalar(40, 0, 0));
 		upper_color_thresh_.push_back(cv::Scalar(80, 255, 255));
@@ -351,11 +353,11 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
     transform_out = getPerspectiveTransform( input_quad, output_quad );
 
 	// Make output image the minimum required size
-	cv::Size min_size(right - left, bottom - top);
+	transform_sizes_[camera] = cv::Size(right - left, bottom - top);
 
 	// Show the effect of applying perspective transform to input image
 	//cv::Mat img_output;
-    warpPerspective(img_in, img_display_, transform_out, min_size);
+    warpPerspective(img_in, img_display_, transform_out, transform_sizes_[camera]);
 	cv::imshow("Display2", img_display_);
 	//cv::waitKey();
 
@@ -801,7 +803,7 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 	cv::Point2f finish_line_pos(finish_line_pos_in.x, finish_line_pos_in.y);
 	cv::Mat img;
 	getCamImg(camera, img);
-	applyTrans(img, transform_mats_[camera]);
+	applyTrans(img, camera);
 
 	// Make grayscale copy, Reduce noise with a kernel 5x5
 	cv::Mat temp;
@@ -905,7 +907,7 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 	for (int i = 0; i < num_off_samples; i++) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
-		applyTrans(img_temp, transform_mats_[camera]);
+		applyTrans(img_temp, camera);
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		for (int j = 0; j < 3; j++) {
 			cv::Scalar vals = getColor(img_temp, cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);
@@ -927,7 +929,7 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 	while (true) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
-		applyTrans(img_temp, transform_mats_[camera]);
+		applyTrans(img_temp, camera);
 		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
 		bool on_detected = false;
 		for (int j = 0; j < 3; j++) {
@@ -1061,8 +1063,14 @@ void Vision::colorThresh(cv::Mat& img, int camera) {
 }
 
 // Applies perspective transform to an image
-void Vision::applyTrans(cv::Mat& img, cv::Mat& transform) {
-	cv::warpPerspective(img, img, transform, img.size());
+void Vision::applyTrans(cv::Mat& img, int camera) {
+	cv::warpPerspective(img, img, transform_mats_[camera],
+		transform_sizes_[camera]);
+}
+
+void Vision::applyInvTrans(cv::Mat& img, int camera) {
+	cv::warpPerspective(img, img, inv_transform_mats_[camera],
+		img.size());
 }
 
 // Given a image of the racetrack, perspective transforms it to get

@@ -56,12 +56,7 @@ void View::setBackground(cv::Mat& background) {
 
 void View::updateMyCar(MyCar my_car) {
 	my_car_ = my_car;
-}
 
-void View::redraw() {
-	
-	img_display = background_.clone();
-	
 	// Draw my_car_
 	cv::RotatedRect rect(
 		cv::Point2f(my_car_.getPos().x, my_car_.getPos().y),
@@ -69,9 +64,18 @@ void View::redraw() {
 	cv::Point2f vertices[4];
 	rect.points(vertices);
 	for (int i = 0; i < 4; i++)
-		cv::line(img_display, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
+		cv::line(background_no_dots_, vertices[i], vertices[(i+1)%4], cv::Scalar(100,255,0));
 	cv::Point2f dir_p(my_car_.getPos().x + 50 * cos(my_car_.getDir()), my_car_.getPos().y + 50 * sin(my_car_.getDir()));
-	cv::line(img_display, dir_p, cv::Point2f(my_car_.getPos().x, my_car_.getPos().y), cv::Scalar(0,0,255));
+	cv::line(background_no_dots_, dir_p, cv::Point2f(my_car_.getPos().x, my_car_.getPos().y), cv::Scalar(0,0,255));
+
+}
+
+void View::redraw() {
+	
+	//img_display = background_.clone();
+	
+	
+
 	// DEBUGGING
 	// Draw other car at mouse click point
 	/*
@@ -85,7 +89,7 @@ void View::redraw() {
 		cv::line(image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255));
 		*/
 		
-	cv::imshow("View", img_display);
+	cv::imshow("View", background_);
 	cv::waitKey(frame_time_);
 }
 

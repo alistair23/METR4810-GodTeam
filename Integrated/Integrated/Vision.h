@@ -69,13 +69,15 @@ public:
 	void colorThresh(cv::Mat& img, int camera);
 
 	// Applies perspective transform to an image
-	void applyTrans(cv::Mat& img, cv::Mat& transform);
+	void applyTrans(cv::Mat& img, int camera);
+	void applyInvTrans(cv::Mat& img, int camera);
 
 	bool transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre);	// PROBABLY WILL DELETE
 
 	// Stores perspective transforms for each camera
 	std::vector<cv::Mat> transform_mats_;
 	std::vector<cv::Mat> inv_transform_mats_;
+	std::vector<cv::Size> transform_sizes_;
 
 	bool inImg(cv::Mat& img, int x, int y);
 
