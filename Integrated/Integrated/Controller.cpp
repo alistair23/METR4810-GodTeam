@@ -29,7 +29,7 @@ Controller::Controller() :
 	go_signals_(new std::vector<Point>()),
 	wants_to_enter_pitstop(false),
 	wants_to_exit_pitstop(false),
-	did_move_(false),
+	was_beyond_thresh_(false),
 	did_tight_turn_(false)
 {
 	form_ = gcnew MyForm();
@@ -299,7 +299,7 @@ void Controller::runPlanner(){
 
 void Controller::sendCarCommand() {
 	double angle;
-	bool longer_wait = false;
+	int wait_period = 50;	// milliseconds
 	while(true)
 	{
 		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
@@ -315,8 +315,8 @@ void Controller::sendCarCommand() {
 			//my_car_->step(0.001 * (update_time - old_time_));
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
-			double max_speed = 1.55 / M_PER_PIX;	// pixels/second
-			double max_speed_allowed = max_speed * 0.12;
+			double max_speed = 0.775 / M_PER_PIX;	// pixels/second
+			double max_speed_allowed = max_speed * 0.25;
 			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -325,45 +325,57 @@ void Controller::sendCarCommand() {
 			std::cout << "turn radius : " << turn_radius << std::endl;
 			float speed_ratio = (abs(turn_radius) + my_car_->getAxleLength() * 0.5)/(abs(turn_radius) - my_car_->getAxleLength() * 0.5);
 			*/
-			if (!did_tight_turn_) {
-				//did_move_ = true;
 
-				// Carrot approach - choose a goal point certain distance ahead
-				float lookahead = 0.12 / M_PER_PIX;
-				int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
-				Point* goal = &(*current_path_)[goal_index];
+			//did_move_ = true;
 
-				// Get relative heading to point between -pi and pi radians.
-				float angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
-				if (angle <= -M_PI)
-					angle += 2 * M_PI;
-				if (angle > M_PI)
-					angle -= 2 * M_PI;
+			// Carrot approach - choose a goal point certain distance ahead
+			float lookahead = 0.12 / M_PER_PIX;
+			int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
+			Point* goal = &(*current_path_)[goal_index];
 
-				float angle_thresh = 40 * M_PI/180;
-				if (abs(angle) < angle_thresh) {
-					my_car_->setLSpeed(max_speed_allowed * (1 + angle/(90 * M_PI/180)));
-					my_car_->setRSpeed(max_speed_allowed * (1 - angle/(90 * M_PI/180)));
-					//did_turn = false;
-				} else if (angle > 0) {
-					my_car_->setLSpeed(max_speed_allowed);
-					my_car_->setRSpeed(-max_speed_allowed * 1.2);
-					did_tight_turn_ = true;
-					longer_wait = true;
-					//did_turn = true;
-				} else if (angle < 0) {
-					my_car_->setLSpeed(-max_speed_allowed * 1.2);
-					my_car_->setRSpeed(max_speed_allowed * 1.2);
-					did_tight_turn_ = true;
-					longer_wait = true;
-					//did_turn = true;
-				}
-			} else {
+			// Get relative heading to point between -pi and pi radians.
+			float angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
+			if (angle <= -M_PI)
+				angle += 2 * M_PI;
+			if (angle > M_PI)
+				angle -= 2 * M_PI;
+
+			float angle_thresh = 30 * M_PI/180;
+			if (did_tight_turn_) {
+
+				// Stop and wait after tight turn
+				// This is to avoid overshooting
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
+				wait_period = 200;
 				did_tight_turn_ = false;
-				longer_wait = true;
-				//did_move_ = false;
+			} else if (abs(angle) < angle_thresh) {
+
+				// Normal operation: smooth straight/turn
+				my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
+				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
+				was_beyond_thresh_ = false;
+			} else if (!was_beyond_thresh_) {
+
+				// We were ok but heading error is now beyond threshold
+				// Stop
+				my_car_->setLSpeed(0);
+				my_car_->setRSpeed(0);
+				was_beyond_thresh_ = true;
+				wait_period = 350;
+			} else {
+
+				// Beyond threshold again, take extreme measures 
+				// (tight turn)
+				if (angle > 0) {
+					my_car_->setLSpeed(max_speed_allowed * 1.2);
+					my_car_->setRSpeed(0);
+				} else if (angle < 0) {
+					my_car_->setLSpeed(0);
+					my_car_->setRSpeed(max_speed_allowed * 1.2);
+				}
+				did_tight_turn_ = true;
+				wait_period = 450;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
@@ -387,12 +399,7 @@ void Controller::sendCarCommand() {
 
 			form_ ->setMotorSpeeds(l_motor, r_motor);	
 		}
-		if (longer_wait) {
-			Thread::Sleep(400);
-			longer_wait = false;
-		} else {
-			Thread::Sleep(50);
-		}
+		Thread::Sleep(wait_period);
 	}
 }
 
