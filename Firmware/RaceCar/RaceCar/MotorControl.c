@@ -346,8 +346,24 @@ ISR(TIMER1_OVF_vect)
 		error_r_der = error_r - error_r_previous;
 		
 		float new_input_r;
-		float new_input_l; 
-		if (error_l < -10)
+		float new_input_l;
+		if (speed_l_desired == 0)
+		{
+			new_input_l = 0;
+		}
+		else
+		{
+			new_input_l = previous_input_l + kp*error_l + ki * error_l_sum + kd * error_l_der;
+		} 
+		if (speed_r_desired == 0)
+		{
+			new_input_r = 0;
+		}
+		else
+		{
+			new_input_r = previous_input_r + kp*error_r + ki * error_r_sum + kd * error_r_der;
+		}
+		/*if (error_l < -10)
 		{
 			new_input_l = speed_l_desired;
 		}
@@ -363,9 +379,24 @@ ISR(TIMER1_OVF_vect)
 		else
 		{
 			new_input_r = previous_input_r + kp*error_r + ki * error_r_sum + kd * error_r_der;
+		}*/
+		
+		if(new_input_r > 100)
+		{
+			new_input_r = 100;
 		}
-		
-		
+		if(new_input_l > 100)
+		{
+			new_input_l = 100;
+		}
+		if(new_input_r < -100)
+		{
+			new_input_r = -100;
+		}
+		if(new_input_l < -100)
+		{
+			new_input_l = -100;
+		}
 		MotorControl_SetMotorSpeed(MOTOR_L, (int8_t) new_input_l );
 		MotorControl_SetMotorSpeed(MOTOR_R, (int8_t) new_input_r );
 		previous_input_l = new_input_l;
@@ -380,7 +411,7 @@ ISR(TIMER1_OVF_vect)
 		error_l_previous = error_l;
 		error_r_previous = error_r;
 		control_counter = 0;
-		SerialComm_sendTextf("Le: %d , R: %d",speed_l_measured, speed_r_measured);
+		SerialComm_sendTextf("Le: %d , R: %d", (int8_t)previous_input_l, (int8_t)previous_input_r);
 	}
 	//SerialComm_sendTextf("R: %d",speed_r_measured);
 	//SerialComm_sendTextf("ki: %d", (uint8_t)(ki * 100));
