@@ -317,6 +317,7 @@ void Controller::sendCarCommand() {
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 0.775 / M_PER_PIX;	// pixels/second
 			double max_speed_allowed = max_speed * 0.25;
+			double tight_turn_speed = max_speed * 0.3;
 			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -341,7 +342,13 @@ void Controller::sendCarCommand() {
 				angle -= 2 * M_PI;
 
 			float angle_thresh = 30 * M_PI/180;
-			if (did_tight_turn_) {
+			if (abs(angle) < angle_thresh && !did_tight_turn_) {
+
+				// Normal operation: smooth straight/turn
+				my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
+				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
+				was_beyond_thresh_ = false;
+			} else if (did_tight_turn_) {
 
 				// Stop and wait after tight turn
 				// This is to avoid overshooting
@@ -349,13 +356,7 @@ void Controller::sendCarCommand() {
 				my_car_->setRSpeed(0);
 				wait_period = 200;
 				did_tight_turn_ = false;
-			} else if (abs(angle) < angle_thresh) {
-
-				// Normal operation: smooth straight/turn
-				my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
-				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
-				was_beyond_thresh_ = false;
-			} else if (!was_beyond_thresh_) {
+			} else if (!was_beyond_thresh_ && abs(angle) >= angle_thresh) {
 
 				// We were ok but heading error is now beyond threshold
 				// Stop
@@ -368,14 +369,14 @@ void Controller::sendCarCommand() {
 				// Beyond threshold again, take extreme measures 
 				// (tight turn)
 				if (angle > 0) {
-					my_car_->setLSpeed(max_speed_allowed * 1.2);
+					my_car_->setLSpeed(tight_turn_speed);
 					my_car_->setRSpeed(0);
 				} else if (angle < 0) {
 					my_car_->setLSpeed(0);
-					my_car_->setRSpeed(max_speed_allowed * 1.2);
+					my_car_->setRSpeed(tight_turn_speed);
 				}
 				did_tight_turn_ = true;
-				wait_period = 450;
+				wait_period = 600;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
