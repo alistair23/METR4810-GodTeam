@@ -191,42 +191,59 @@ void Controller::detectCar()
 			Point guess(my_car_->getPos());
 			Interlocked::Exchange(my_car_lock_, 0);
 
-			// If near end of current global path, preferentially 
-			// use next camera
-			int temp_camera;
-			if (false) {//num_cameras_ > 1) {
-				Point next_camera_guess;
-				bool prefer_next_camera = false;
-				double thresh = 0.2 / M_PER_PIX;
-				temp_camera = (current_camera_ + 1) % num_cameras_;
-				while (0 != Interlocked::Exchange(current_path_lock_, 1));
-				if (guess.dist(planner_->getGlobalPathEnd(current_camera_)) < thresh) {
-					next_camera_guess = planner_->getGlobalPathStart(temp_camera);
-					prefer_next_camera = true;
-				}
-				Interlocked::Exchange(current_path_lock_, 0);
-				if (prefer_next_camera)
-					found_my_car = vision_->update(temp_camera, next_camera_guess);
+			// First try detecting car in current camera
+			// Number of tries depends on whether we are near the 
+			// end of this path or not
+			int temp_camera = current_camera_;
+			int num_tries = 3;
+			double thresh = 0.5 / M_PER_PIX;
+			if (guess.dist(planner_->getGlobalPathEnd(current_camera_)) < thresh) {
+					num_tries = 2;
 			}
-			if (!found_my_car)
+			for (int i = 0; i < num_tries; i++) {
+				found_my_car = vision_->update(current_camera_, guess);
+				if (found_my_car) {
+					break;
+				}
+			}
+
+			// If failed to detect car, look in other cameras
+			// Try next camera with first global path point as guess
+			if (num_cameras_ > 1) {
+				if (0 == Interlocked::Exchange(current_path_lock_, 1)) {
+					temp_camera = (current_camera_ + 1) % num_cameras_;
+					Point next_camera_guess = planner_->getGlobalPathStart(temp_camera);
+					Interlocked::Exchange(current_path_lock_, 0);
+					found_my_car = vision_->update(temp_camera, next_camera_guess);
+				}
+			}
+
+			// If still failed, loop through other cameras starting with
+			// last camera until car is found
+			if (!found_my_car) {
 				temp_camera = num_cameras_ - 1;
-			while (!found_my_car) {				
+			}
+
+			while (!found_my_car) {
+
+				// Search in current camera with guess
 				if (temp_camera == current_camera_) {
-					while (0 != Interlocked::Exchange(my_car_lock_, 1));
-					guess = my_car_->getPos();
-					Interlocked::Exchange(my_car_lock_, 0);
+					if (0 == Interlocked::Exchange(my_car_lock_, 1)) {
+						guess = my_car_->getPos();
+						Interlocked::Exchange(my_car_lock_, 0);
+					}
 					found_my_car = vision_->update(temp_camera, guess);
 				}
+
+				// Search in other camera
 				else {
 					found_my_car = vision_->update(temp_camera);
 				}
-
-				// If we didn't find car in current camera, step through 
-				// other cameras until car is found.
 				if (!found_my_car) {
 					temp_camera -= 1;
-					if (temp_camera == -1)
+					if (temp_camera == -1) {
 						temp_camera = num_cameras_ - 1;
+					}
 				}
 			}
 			
@@ -243,13 +260,7 @@ void Controller::detectCar()
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
 			view_->updateMyCar(*my_car_);
-			Interlocked::Exchange(my_car_lock_, 0);
-			
-			//cv::Mat img_bgr;
-			//vision_->getCamImg(current_camera_, img_bgr);
-			//vision_->applyTrans(img_bgr, vision_->transform_mats_[current_camera_]);
-			//view_->setBackground(img_bgr);
-			
+			Interlocked::Exchange(my_car_lock_, 0);			
 		}
 	}
 }
