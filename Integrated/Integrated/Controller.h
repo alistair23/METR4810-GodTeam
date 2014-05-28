@@ -32,6 +32,7 @@ public:
 	void launchOnGo(int camera);
 	void enterPitstop();
 	void exitPitstop();
+	void previewImg(int camera);
 
 	cv::Mat* img;
 	bool car_tracking_on;

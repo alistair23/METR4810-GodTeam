@@ -270,3 +270,9 @@ System::Void RaceControl::MyForm::button16_Click(System::Object^  sender, System
 System::Void RaceControl::MyForm::button5_Click(System::Object^  sender, System::EventArgs^  e) {
 	controller_->exitPitstop();
 }
+
+System::Void RaceControl::MyForm::button17_Click(System::Object^  sender, System::EventArgs^  e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->previewImg(camera);
+}
+

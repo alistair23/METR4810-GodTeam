@@ -162,6 +162,7 @@ private: System::Windows::Forms::Button^  button15;
 private: System::Windows::Forms::Button^  button16;
 private: System::Windows::Forms::Button^  button5;
 private: System::Windows::Forms::ImageList^  imageList1;
+private: System::Windows::Forms::Button^  button17;
 
 
 
@@ -318,6 +319,7 @@ private: System::Windows::Forms::ImageList^  imageList1;
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
 			this->imageList1 = (gcnew System::Windows::Forms::ImageList(this->components));
+			this->button17 = (gcnew System::Windows::Forms::Button());
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -685,6 +687,7 @@ private: System::Windows::Forms::ImageList^  imageList1;
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->button17);
 			this->tabPage2->Controls->Add(this->textBox17);
 			this->tabPage2->Controls->Add(this->textBox16);
 			this->tabPage2->Controls->Add(this->textBox15);
@@ -1039,6 +1042,16 @@ private: System::Windows::Forms::ImageList^  imageList1;
 			this->imageList1->ImageSize = System::Drawing::Size(16, 16);
 			this->imageList1->TransparentColor = System::Drawing::Color::Transparent;
 			// 
+			// button17
+			// 
+			this->button17->Location = System::Drawing::Point(23, 416);
+			this->button17->Name = L"button17";
+			this->button17->Size = System::Drawing::Size(132, 23);
+			this->button17->TabIndex = 89;
+			this->button17->Text = L"Preview Image";
+			this->button17->UseVisualStyleBackColor = true;
+			this->button17->Click += gcnew System::EventHandler(this, &MyForm::button17_Click);
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
@@ -1378,5 +1391,6 @@ private: System::Void button13_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button14_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button15_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button16_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button17_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

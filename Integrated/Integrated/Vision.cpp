@@ -52,8 +52,8 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 		inv_transform_mats_.push_back(cv::Mat());
 		transform_sizes_.push_back(cv::Size());
 		approx_cam_m_per_pix_.push_back(0);
-		lower_color_thresh_.push_back(cv::Scalar(40, 0, 0));
-		upper_color_thresh_.push_back(cv::Scalar(80, 255, 255));
+		lower_color_thresh_.push_back(cv::Scalar(30, 0, 20));
+		upper_color_thresh_.push_back(cv::Scalar(110, 255, 255));
 		//connectRoboRealm(i);
 	}
 }
@@ -117,13 +117,13 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 	cv::Mat img_hls;
 	cv::cvtColor(img_in, img_hls, CV_BGR2HLS_FULL);
 
-	// Make grayscale copy, Reduce noise with a kernel 3x3
+	// Make grayscale copy, Reduce noise with a kernel 5x5
 	cv::Mat img_temp;
 	cv::cvtColor(img_in, img_temp, CV_BGR2GRAY);
-	cv::blur(img_temp, img_temp, cv::Size(3,3) );
+	cv::blur(img_temp, img_temp, cv::Size(5,5) );
 
 	// Canny edge detection
-	int threshold = 60;
+	int threshold = 50;
 	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -184,7 +184,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 				} else {
 					large_circle_pix = ellipses[j].size.height;
 					large_circle_index = j; 
-					small_circle_pix = ellipses[j].size.height;
+					small_circle_pix = ellipses[i].size.height;
 					small_circle_index = i;
 				}
 				approx_cam_m_per_pix_[camera] = OUR_CENTRE_DIAMETER_BIG / large_circle_pix;
@@ -199,11 +199,11 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 
 						// Ignore circles which are too large/small
 						if (ellipses[k].size.height > large_circle_pix ||
-							ellipses[k].size.height < 0.7 * small_circle_pix)
+							ellipses[k].size.height < 0.6 * small_circle_pix)
 							continue;
 						
 						// Ignore white (high luminosity)
-						if (values[1] >= 248)
+						if (values[1] >= 250)
 							continue;
 
 						// Ignore the centre circles
@@ -211,15 +211,15 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 							continue;
 
 						//cv::ellipse(cdst, ellipses[k], cv::Scalar(123,45,67), 2);
-						int blueness = 999 - abs(170 - values[0]);
+						int blueness = 999 - abs(160 - values[0]);
 						int redness = 999 - std::min(values[0], 255 - values[0]);
 						int greenness = 999 - abs(110 - values[0]);
-						if (values[1] < 40) {
+						if (values[1] < 20) {
 							blueness = 0;
 							redness = 0;
 							greenness = 0;
 						}
-						int blackness = 999 - values[1] -values[2];
+						int blackness = 999 - values[1] - values[2];
 						blues.push_back(std::pair<int, int>(k, blueness));
 						reds.push_back(std::pair<int, int>(k, redness));
 						greens.push_back(std::pair<int, int>(k, greenness));
@@ -232,10 +232,16 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 				std::sort(greens.begin(), greens.end(), sort_pred());
 				std::sort(reds.begin(), reds.end(), sort_pred());
 
+				// Limit number to speed up computation
+				if (blacks.size() > 30) blacks.resize(30);
+				if (blues.size() > 30) blues.resize(30);
+				if (greens.size() > 30) greens.resize(30);
+				if (reds.size() > 30) reds.resize(30);
+
 				// Error checks
 				
-				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0] * 2;
-				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[0]) * 0.4;
+				float max_dist = OUR_SQUARE_SIDE / approx_cam_m_per_pix_[camera] * 2.0;
+				float min_dist = (OUR_SQUARE_SIDE / approx_cam_m_per_pix_[camera]) * 0.4;
 
 				for (std::size_t iblack = 0; iblack < blacks.size(); iblack++) {
 					for (std::size_t iblue = 0; iblue < blues.size(); iblue++) {
@@ -601,15 +607,16 @@ bool Vision::getCarMarkers(
 						// This is my car
 						float cam_angle = acos(ellipses[biggest].size.width/ellipses[biggest].size.height);
 						float adjust_length = 0.05 * ellipses[biggest].size.height/0.07;
-						float marker_angle = ellipses[biggest].angle;
+						float marker_angle = ellipses[biggest].angle * M_PI/180;
 						cv::Point2f marker_pos;
 						marker_pos.x = (ellipses[k].center.x + ellipses[i].center.x + ellipses[j].center.x)/3;
 						marker_pos.y = (ellipses[k].center.y + ellipses[i].center.y + ellipses[j].center.y)/3;
-						my_car_p1.x = marker_pos.x; //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
-						my_car_p1.y = marker_pos.y + adjust_length * sin(cam_angle);// * sin(-M_PI/2 + marker_angle);
+						my_car_p1.x = marker_pos.x  + adjust_length * sin(cam_angle) * cos(marker_angle); //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
+						my_car_p1.y = marker_pos.y + adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
 						last_car_size_ = ellipses[biggest].size.height;
 						this_is_my_car = true;
 						my_car_found = true;
+						std::cout<< "marker angle: " << marker_angle << std::endl;
 						//std::cout << "cam angle: " << cam_angle << "car height : " << my_car_.getHeight() << std::endl;
 						//std::cout << "ratio : " << ellipses[biggest].size.width/ellipses[biggest].size.height << std::endl;
 						cv::ellipse(cdst, ellipses[i], cv::Scalar(255,0,0), 1);
@@ -635,8 +642,8 @@ bool Vision::getCarMarkers(
 							
 							float this_dist = dist(ellipses[a].center, marker_pos);
 							if (this_dist <= ellipses[biggest].size.height * 0.2) {
-								my_car_p2.x = ellipses[a].center.x ;//+  my_car_.getHeight();// * sin(cam_angle) * cos(-M_PI/2 + marker_angle);
-								my_car_p2.y = ellipses[a].center.y +  adjust_length * sin(cam_angle);// * sin(-M_PI/2 + marker_angle);
+								my_car_p2.x = ellipses[a].center.x + adjust_length * sin(cam_angle) * cos(marker_angle);//+  my_car_.getHeight();// * sin(cam_angle) * cos(-M_PI/2 + marker_angle);
+								my_car_p2.y = ellipses[a].center.y +  adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
 								cv::ellipse(cdst, ellipses[a], cv::Scalar(0,255,0), 2);
 								
 								break;
@@ -672,9 +679,10 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-	float max_side = 0.1 / M_PER_PIX;
-	float min_side = 0.01 / M_PER_PIX;
-	float car_check_thresh = 0.05 / M_PER_PIX;
+	float max_side = 0.1 / M_PER_PIX;	// Max side length for obstacle
+	float min_side = 0.008 / M_PER_PIX;	// Min side length to accept obstacle
+	float clearance = 0.03 / M_PER_PIX;	// Added to side length
+	float car_check_thresh = DEFAULT_CAR_LENGTH_PIX;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		cv::RotatedRect rect = cv::minAreaRect( cv::Mat(contours[i]));
@@ -701,23 +709,23 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 			continue;
 
 		// Checks have passed
+		rect.size.height += clearance;
+		rect.size.width += clearance;
+		rect.center.x -= clearance * 0.5;
+		rect.center.y -= clearance * 0.5;
 		obstacles.push_back(rect);
 	}
 
 	/// Draw contours + rotated rects + ellipses
 	//cv::Mat drawing;
-	cv::RNG rng(12345);
+	cv::Mat cdst = img_in.clone();
 	for( int i = 0; i< obstacles.size(); i++ )
 	{
-		cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-		// contour
-		//drawContours( img_canny, contours, i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
-		// rotated rectangle
 		cv::Point2f rect_points[4]; obstacles[i].points( rect_points );
 		for( int j = 0; j < 4; j++ )
-			line(img_temp, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
+			line(cdst, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0,0,255), 2);
 	}
-	cv::imshow("Display", img_temp);
+	cv::imshow("Display", cdst);
 	//cv::waitKey();
 }
 
@@ -979,6 +987,24 @@ cv::Scalar Vision::getColor(cv::Mat& img, cv::Point2f p, int pix_length) {
 	return mean(img_roi);
 }
 
+// Draws a black border around a perspective transformed image
+// Used in getMidpointsf
+void Vision::applyBlackBorder(cv::Mat& img, int camera) {
+
+	// Find bounding box for transformed image corners
+	std::vector<cv::Point2f> orig_corners, trans_corners;
+	orig_corners.push_back(cv::Point2f(0, 0));
+	orig_corners.push_back(cv::Point2f(0, img.rows));
+	orig_corners.push_back(cv::Point2f(img.cols, img.rows));
+	orig_corners.push_back(cv::Point2f(img.cols, 0));
+	cv::perspectiveTransform(orig_corners, trans_corners, transform_mats_[camera]);
+
+	// Draw lines
+	for (int i = 0; i < 4; i++) {
+		cv::line(img, trans_corners[i], trans_corners[(i+1)%4], cv::Scalar(0), 3);
+	}
+}
+
 cv::Point getCentre(std::vector<cv::Point> corners) 
 {
 	cv::Point sum_point(0,0);
@@ -1008,6 +1034,11 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	cv::Mat dilate_element = cv::getStructuringElement(
 		cv::MORPH_ELLIPSE,cv::Size(4, 4));
 	cv::dilate(img_thresh, img_thresh, dilate_element);
+
+	// Apply black border
+	//applyBlackBorder(img_thresh, camera);
+	//cv::imshow("Display", img_thresh);
+	//cv::waitKey();
 
 	// Distance transform: makes each pixel value the distance to 
 	// nearest zero (black) pixel
@@ -1491,4 +1522,10 @@ void Vision::testColorThresh(int camera) {
 void Vision::setColorThresh(int camera, cv::Scalar lower, cv::Scalar upper) {
 	lower_color_thresh_[camera] = lower;
 	upper_color_thresh_[camera] = upper;
+}
+
+void Vision::previewImg(int camera) {
+	cv::Mat img;
+	getCamImg(camera, img);
+	imshow("Display", img);
 }

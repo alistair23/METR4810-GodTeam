@@ -169,6 +169,10 @@ void Controller::exitPitstop() {
 	wants_to_exit_pitstop = true;
 }
 
+void Controller::previewImg(int camera) {
+	vision_->previewImg(camera);
+}
+
 void Controller::detectCar()
 {
 	while (true)
@@ -190,7 +194,7 @@ void Controller::detectCar()
 			// If near end of current global path, preferentially 
 			// use next camera
 			int temp_camera;
-			if (num_cameras_ > 1) {
+			if (false) {//num_cameras_ > 1) {
 				Point next_camera_guess;
 				bool prefer_next_camera = false;
 				double thresh = 0.2 / M_PER_PIX;
@@ -329,7 +333,7 @@ void Controller::sendCarCommand() {
 
 			//did_move_ = true;
 
-			// Carrot approach - choose a goal point certain distance ahead
+			// Carrot approach - choose a goal point-+ certain distance ahead
 			float lookahead = 0.12 / M_PER_PIX;
 			int goal_index = planner_->getClosest(my_car_->getPos(), *current_path_, lookahead);
 			Point* goal = &(*current_path_)[goal_index];

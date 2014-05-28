@@ -115,6 +115,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 		}
 	}
 	
+
 	// If there are no points in collision, we go with the existing plan
 	// TODO smoothen?
 	//std::cout << invalidPoints.size() << std::endl;
@@ -131,13 +132,16 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	// 2. Overtake on left
 	// 3. Follow behind other car
 
-	// Cost of path. -1 means invalid path
+	// Cost of path
+	bool right_valid = true;
+	bool left_valid = true;
 	double right_cost = 0;
 	double left_cost = 0;
 	double follow_cost = 0;
 
 	// First check overtaking right option
 	// Make a copy of the segment
+	
 	std::vector<Point> left_segment = segment;
 	std::vector<Point> right_segment = segment;
 	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
@@ -158,18 +162,20 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			deformation += step_size;
 			seg_point.x += dx;
 			seg_point.y += dy;
-			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1);
+			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1 &&
+				obstacleCollision(seg_point, global_point.track_angle, camera) == false);
 		}
+		right_cost += deformation;
 
 		// If a point can't be corrected, then cannot overtake right
 		if (!pointValid) {
-			right_cost = -1;
+			right_valid = false;
 			break;
 		}
 
 		seg_point.locked = true;
 	}
-	
+
 	// Check overtaking left option
 	// Make a copy of the segment
 	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
@@ -190,8 +196,10 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			deformation += step_size;
 			seg_point.x += dx;
 			seg_point.y += dy;
-			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1);
+			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1 &&
+				obstacleCollision(seg_point, global_point.track_angle, camera) == false);
 		}
+		left_cost += deformation;
 
 		// If a point can't be corrected, then cannot overtake left
 		//if (!pointValid) {
@@ -202,20 +210,23 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 		seg_point.locked = true;
 	}
 	
+	
 	// TODO Check following other car option, i.e. match velocity
 
 	// TODO avoid all this copying?
-	if (right_cost != -1) {
+	if (right_cost < left_cost && right_valid) {
 		segment = right_segment;
 	}
-	else if (left_cost != -1) {
+	else if (left_valid) {
 		segment = left_segment;
 	}
+	
 
 	// Smooth out path through iterative process
-	int iterations = 25;
-	double change_factor = 0.15;
-	double global_path_attraction_factor = 0.01;
+	int iterations = 30;
+	double change_factor = 0.1;
+	double global_path_attract_factor = 0.005;
+	double obs_repulse_factor = 15;
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = 1; j < segment.size(); j++) {
 			if (segment[j].locked)
@@ -247,15 +258,35 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 				force += v.dot(u);
 			}
 
+			/*
+			// Repulsive force due to obstacles
+			for (std::size_t k = 0; k < obstacles[camera].size(); k++) {
+				u.y = obstacles[camera][k].center.y - segment[j].y;
+				u.x = obstacles[camera][k].center.x - segment[j].x;
+				double obs_proj = v.dot(u);
+				if (abs(obs_proj) > my_car_.getWidth()) {
+					continue;
+				} else {
+					force -= obs_repulse_factor * (1/obs_proj);
+				}
+				
+				/*	cv::Point2f obs_vertices[4];
+				obstacles[camera][k].points(obs_vertices);
+				for (int l = 0; l < 4; l++) {
+					
+				}
+			}*/
+
 			// Attractive force to global path point
-			u.y = global_point.y - right_segment[j].y;
-			u.x = global_point.x - right_segment[j].x;
-			force += global_path_attraction_factor * v.dot(u);
+			u.y = global_point.y - segment[j].y;
+			u.x = global_point.x - segment[j].x;
+			force += global_path_attract_factor * v.dot(u);
 
 			// Move point, but do not go beyond road
 			float new_x = segment[j].x + force * change_factor * cos(angle);
 			float new_y = segment[j].y + force * change_factor * sin(angle);
-			//if (global_point.distSquared(Point(new_x, new_y)) < 0.5 * ROAD_WIDTH / M_PER_PIX) {
+			//double road_sq = pow(0.5 * ROAD_WIDTH / M_PER_PIX, 2);
+			//if (global_point.distSquared(Point(new_x, new_y)) < road_sq) {
 				segment[j].x = new_x;
 				segment[j].y = new_y;
 			//}
@@ -348,17 +379,19 @@ bool LocalPlanner::obstacleCollision(Point pos, double dir, int camera) {
 		cv::Size(my_car_.getLength(), my_car_.getWidth()), dir);
 	cv::Point2f my_vertices[4];
 	my_rect.points(my_vertices);
-
-	double check_dist_sq = pow(DEFAULT_CAR_LENGTH_PIX + FRONT_CLEARANCE_PIX, 2);
+	Point center;
 
 	for (std::size_t i = 0; i < obstacles[camera].size(); i++) {
 		
 		// If obstacle is very far, no need to do further collision checks
-		Point center(obstacles[camera][i].center.x, obstacles[camera][i].center.y);
+		center.x = obstacles[camera][i].center.x;
+		center.y = obstacles[camera][i].center.y;
 		float longer_length = std::max(obstacles[camera][i].size.height,
 			obstacles[camera][i].size.width);
-		if (pos.distSquared(center) > my_car_.getLength() + longer_length);
+		double check_dist_sq = pow(my_car_.getLength() + longer_length, 2);
+		if (center.distSquared(pos) > check_dist_sq) {
 			continue;
+		}
 
 		cv::Point2f other_vertices[4];
 		obstacles[camera][i].points(other_vertices);

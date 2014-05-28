@@ -88,7 +88,13 @@ cv::Mat* View::getDisplayImage() {
 void View::drawNewDots(std::vector<Point>& segment) {
 	background_ = background_no_dots_.clone();
 	for (std::size_t i = 0; i < segment.size(); i++) {
-		cv::circle(background_, cv::Point2f(segment[i].x, segment[i].y), 2, cv::Scalar(255,100,0));
+		cv::Scalar color;
+		if (segment[i].locked) {
+			color = cv::Scalar(0, 0, 255);
+		} else {
+			color = cv::Scalar(255, 100, 0);
+		}
+		cv::circle(background_, cv::Point2f(segment[i].x, segment[i].y), 2, color);
 	}
 
 	// Draw my_car_

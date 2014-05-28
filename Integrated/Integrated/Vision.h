@@ -83,6 +83,7 @@ public:
 
 	void testColorThresh(int camera);
 	void setColorThresh(int camera, cv::Scalar lower, cv::Scalar upper);
+	void previewImg(int camera);
 
 	cv::Mat* getDisplayImage();
 
@@ -110,6 +111,10 @@ private:
 
 	// Get average color around point in image
 	cv::Scalar getColor(cv::Mat& img, cv::Point2f p, int pix_length = 5);
+
+	// Draws a black border around a perspective transformed image
+	// Used in getMidpoints
+	void applyBlackBorder(cv::Mat& img, int camera);
 
 	cv::Point2f getBoundary(cv::Mat& img, cv::Point2f start, float dir,
 		bool& at_img_edge, uchar road_color = 0);
