@@ -25,7 +25,7 @@ public:
 	// Connect to RoboRealm server. Returns true if success
 	bool connectRoboRealm(int camera);
 
-	void setupCamTransform(int camera);
+	void setupCamTransform(int camera, bool manual_mode);
 
 	// Grab camera frame and update car and obstacle info
 	// If no argument is supplied for my car position guess, 
@@ -84,6 +84,10 @@ public:
 	void testColorThresh(int camera);
 	void setColorThresh(int camera, cv::Scalar lower, cv::Scalar upper);
 	void previewImg(int camera);
+	
+	// Displays image in window, then records a number of 
+	// mouse clicks and then returns the mouse click positions.
+	std::vector<cv::Point2f> getMouseClicks(cv::Mat& img, int num_clicks);
 
 	cv::Mat* getDisplayImage();
 
@@ -95,6 +99,12 @@ private:
 	// give unwarped top-down view. Input image must contain our 
 	// special marker used during setup time. Returns true if success
 	bool getTransform(cv::Mat& img_in, cv::Mat& transform_output, int camera);
+
+	// Find perspective transform, but user manually selects marker circles
+	void getTransformManual(cv::Mat& img_in, cv::Mat& transform_output, int camera);
+
+	void generateTransform(cv::Point2f input_quad[4], int camera,
+		cv::Mat& img_in, cv::Mat& transform_out);
 
 	// Returns euclidean distance between two opencv points
 	float dist(cv::Point2f& p1, cv::Point2f& p2);

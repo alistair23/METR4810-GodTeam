@@ -183,7 +183,7 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 
 System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	this->controller_->getCameraTransform(camera);
+	this->controller_->getCameraTransform(camera, false);
 	this->button7->Enabled = true;
 	this->button11->Enabled = true;
 	this->button12->Enabled = true;
@@ -263,16 +263,24 @@ System::Void RaceControl::MyForm::button15_Click(System::Object^  sender, System
 		upper_hue, upper_lum, upper_sat);
 }
 
-System::Void RaceControl::MyForm::button16_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::button16_Click(System::Object^ sender, System::EventArgs^ e) {
 	controller_->enterPitstop();
 }
 
-System::Void RaceControl::MyForm::button5_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::button5_Click(System::Object^ sender, System::EventArgs^ e) {
 	controller_->exitPitstop();
 }
 
-System::Void RaceControl::MyForm::button17_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::button17_Click(System::Object^ sender, System::EventArgs^ e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->previewImg(camera);
+}
+
+System::Void RaceControl::MyForm::button18_Click(System::Object^ sender, System::EventArgs^ e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	this->controller_->getCameraTransform(camera, true);
+	this->button7->Enabled = true;
+	this->button11->Enabled = true;
+	this->button12->Enabled = true;
 }
 

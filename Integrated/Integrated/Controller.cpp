@@ -108,9 +108,9 @@ void Controller::updateView(Object^ stateInfo) {
 	
 }
 
-void Controller::getCameraTransform( int camera)
+void Controller::getCameraTransform(int camera, bool manual_mode)
 {
-	vision_->setupCamTransform(camera);
+	vision_->setupCamTransform(camera, manual_mode);
 	//showImage(*(vision_->getDisplayImage()));
 }
 

@@ -163,6 +163,7 @@ private: System::Windows::Forms::Button^  button16;
 private: System::Windows::Forms::Button^  button5;
 private: System::Windows::Forms::ImageList^  imageList1;
 private: System::Windows::Forms::Button^  button17;
+private: System::Windows::Forms::Button^  button18;
 
 
 
@@ -284,6 +285,8 @@ private: System::Windows::Forms::Button^  button17;
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->button18 = (gcnew System::Windows::Forms::Button());
+			this->button17 = (gcnew System::Windows::Forms::Button());
 			this->textBox17 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox16 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox15 = (gcnew System::Windows::Forms::TextBox());
@@ -319,7 +322,6 @@ private: System::Windows::Forms::Button^  button17;
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
 			this->imageList1 = (gcnew System::Windows::Forms::ImageList(this->components));
-			this->button17 = (gcnew System::Windows::Forms::Button());
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -687,6 +689,7 @@ private: System::Windows::Forms::Button^  button17;
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->button18);
 			this->tabPage2->Controls->Add(this->button17);
 			this->tabPage2->Controls->Add(this->textBox17);
 			this->tabPage2->Controls->Add(this->textBox16);
@@ -729,6 +732,26 @@ private: System::Windows::Forms::Button^  button17;
 			this->tabPage2->TabIndex = 1;
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
+			// 
+			// button18
+			// 
+			this->button18->Location = System::Drawing::Point(285, 342);
+			this->button18->Name = L"button18";
+			this->button18->Size = System::Drawing::Size(138, 23);
+			this->button18->TabIndex = 90;
+			this->button18->Text = L"Get Transform Manually";
+			this->button18->UseVisualStyleBackColor = true;
+			this->button18->Click += gcnew System::EventHandler(this, &MyForm::button18_Click);
+			// 
+			// button17
+			// 
+			this->button17->Location = System::Drawing::Point(23, 416);
+			this->button17->Name = L"button17";
+			this->button17->Size = System::Drawing::Size(132, 23);
+			this->button17->TabIndex = 89;
+			this->button17->Text = L"Preview Image";
+			this->button17->UseVisualStyleBackColor = true;
+			this->button17->Click += gcnew System::EventHandler(this, &MyForm::button17_Click);
 			// 
 			// textBox17
 			// 
@@ -842,9 +865,9 @@ private: System::Windows::Forms::Button^  button17;
 			// button12
 			// 
 			this->button12->Enabled = false;
-			this->button12->Location = System::Drawing::Point(276, 385);
+			this->button12->Location = System::Drawing::Point(285, 385);
 			this->button12->Name = L"button12";
-			this->button12->Size = System::Drawing::Size(132, 23);
+			this->button12->Size = System::Drawing::Size(138, 23);
 			this->button12->TabIndex = 75;
 			this->button12->Text = L"Get Finish Line";
 			this->button12->UseVisualStyleBackColor = true;
@@ -855,7 +878,7 @@ private: System::Windows::Forms::Button^  button17;
 			this->button11->Enabled = false;
 			this->button11->Location = System::Drawing::Point(149, 384);
 			this->button11->Name = L"button11";
-			this->button11->Size = System::Drawing::Size(121, 23);
+			this->button11->Size = System::Drawing::Size(130, 23);
 			this->button11->TabIndex = 74;
 			this->button11->Text = L"Get Obstacles";
 			this->button11->UseVisualStyleBackColor = true;
@@ -905,9 +928,9 @@ private: System::Windows::Forms::Button^  button17;
 			// button6
 			// 
 			this->button6->Enabled = false;
-			this->button6->Location = System::Drawing::Point(178, 342);
+			this->button6->Location = System::Drawing::Point(151, 342);
 			this->button6->Name = L"button6";
-			this->button6->Size = System::Drawing::Size(92, 23);
+			this->button6->Size = System::Drawing::Size(128, 23);
 			this->button6->TabIndex = 69;
 			this->button6->Text = L"Get Transform";
 			this->button6->UseVisualStyleBackColor = true;
@@ -1041,16 +1064,6 @@ private: System::Windows::Forms::Button^  button17;
 			this->imageList1->ColorDepth = System::Windows::Forms::ColorDepth::Depth8Bit;
 			this->imageList1->ImageSize = System::Drawing::Size(16, 16);
 			this->imageList1->TransparentColor = System::Drawing::Color::Transparent;
-			// 
-			// button17
-			// 
-			this->button17->Location = System::Drawing::Point(23, 416);
-			this->button17->Name = L"button17";
-			this->button17->Size = System::Drawing::Size(132, 23);
-			this->button17->TabIndex = 89;
-			this->button17->Text = L"Preview Image";
-			this->button17->UseVisualStyleBackColor = true;
-			this->button17->Click += gcnew System::EventHandler(this, &MyForm::button17_Click);
 			// 
 			// MyForm
 			// 
@@ -1392,5 +1405,6 @@ private: System::Void button14_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button15_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button16_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button17_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void button18_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

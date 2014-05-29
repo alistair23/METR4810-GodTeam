@@ -23,7 +23,6 @@ public:
 	void drawNewDots(std::vector<Point>& segment);
 
 	cv::Mat* getDisplayImage();
-	Point getMousePos();
 
 private:
 	

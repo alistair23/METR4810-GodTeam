@@ -10,6 +10,18 @@
 
 using namespace RaceControl;
 
+bool mouse_click_changed = false;
+cv::Point2f mouse_pos(0, 0);
+
+// For some reason putting this in header causes an error...
+void onMouse(int event, int x, int y, int, void*) {
+	if(event == CV_EVENT_LBUTTONUP) {
+		mouse_pos.x = x;
+		mouse_pos.y = y;
+		mouse_click_changed = true;
+	}
+}
+
 struct sort_pred {
     bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
         return left.second > right.second;
@@ -87,21 +99,22 @@ cv::Mat* Vision::getDisplayImage() {
 }
 
 // Gets the perspective transform for a camera
-void Vision::setupCamTransform(int camera) {
+void Vision::setupCamTransform(int camera, bool manual_mode) {
 	bool gotTrans = false;
 	cv::Mat img;
 	getCamImg(camera, img);
-	gotTrans = getTransform(img, transform_mats_[camera], camera);
 
-	if (!gotTrans) {
-		std::cout << "Failed to get transform for camera " << camera << std::endl;
-		return;
+	if (manual_mode) {
+		getTransformManual(img, transform_mats_[camera], camera);
+	} else {
+		gotTrans = getTransform(img, transform_mats_[camera], camera);
+		if (!gotTrans) {
+			std::cout << "Failed to get transform for camera " << camera << std::endl;
+			return;
+		}
 	}
-
+	
 	inv_transform_mats_[camera] = transform_mats_[camera].inv();
-
-		//cv::imshow("Display", img);
-		//cv::waitKey();
 	std::cout << "Successfully got transform for camera " << camera << std::endl;
 }
 
@@ -123,7 +136,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 	cv::blur(img_temp, img_temp, cv::Size(5,5) );
 
 	// Canny edge detection
-	int threshold = 50;
+	int threshold = 35;
 	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
 
 	// Make color format for showing stuff
@@ -146,7 +159,7 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
 		
 		// Check circularity and that it isn't too small
-		if (r.size.height/r.size.width < 3 && r.size.area() > 20) {
+		if (r.size.height/r.size.width < 3.5 && r.size.area() > 20) {
 			ellipses.push_back(r);
 			cv::ellipse(cdst, r, cv::Scalar(100,200,100), 1);
 		}
@@ -289,26 +302,116 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 	}
 
 	std::sort(possible_configs.begin(), possible_configs.end(), sort_v_pred());
-	int blue_circle = possible_configs[0].first[0];
-	int red_circle = possible_configs[0].first[1];
-	int green_circle = possible_configs[0].first[2];
-	int black_circle = possible_configs[0].first[3];
+	cv::Point2f blue_circle = ellipses[possible_configs[0].first[0]].center;
+	cv::Point2f red_circle = ellipses[possible_configs[0].first[1]].center;
+	cv::Point2f green_circle = ellipses[possible_configs[0].first[2]].center;
+	cv::Point2f black_circle = ellipses[possible_configs[0].first[3]].center;
 
-	cv::putText(cdst, "Blue", ellipses[blue_circle].center,
+	cv::putText(cdst, "Blue", blue_circle,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
-	cv::putText(cdst, "Red", ellipses[red_circle].center,
+	cv::putText(cdst, "Red", red_circle,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
-	cv::putText(cdst, "Green", ellipses[green_circle].center,
+	cv::putText(cdst, "Green", green_circle,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(255,255,255), 1, CV_AA);
-	cv::putText(cdst, "Black", ellipses[black_circle].center,
+	cv::putText(cdst, "Black", black_circle,
 		cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(2555,255,255), 1, CV_AA);
 
 	cv::imshow("Display1", cdst);
 	//cv::waitKey();
 
-	// Get perspective transform
-	// Input Quadilateral or Image plane coordinates
-    cv::Point2f input_quad[4]; 
+	cv::Point2f input_quad[4] = {blue_circle, red_circle, green_circle, black_circle};
+	generateTransform(input_quad, camera, img_in, transform_out);
+
+	return true;
+}
+
+// Find perspective transform, but user manually selects marker circles
+void Vision::getTransformManual(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
+
+	//cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
+
+	// Make hls copy
+	cv::Mat img_hls;
+	cv::cvtColor(img_in, img_hls, CV_BGR2HLS_FULL);
+
+	// Make grayscale copy, Reduce noise with a kernel 5x5
+	cv::Mat img_temp;
+	cv::cvtColor(img_in, img_temp, CV_BGR2GRAY);
+	cv::blur(img_temp, img_temp, cv::Size(5,5) );
+
+	// Canny edge detection
+	int threshold = 35;
+	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
+
+	// Make color format for showing stuff
+	cv::Mat cdst;
+	cv::cvtColor(img_temp, cdst, CV_GRAY2BGR);
+	
+	// Find contours from Canny image
+	// Warning, findContours affects input image (img_temp)
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+	// Fit ellipses to contours and keep circular ones
+	std::vector<cv::RotatedRect> ellipses;
+	for (std::size_t i = 0; i < contours.size(); i++) {
+		if (contours[i].size() < 5)
+			continue;
+		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
+		
+		// Check circularity and that it isn't too small
+		if (r.size.height/r.size.width < 4 && r.size.area() > 15) {
+			ellipses.push_back(r);
+			cv::Scalar color = getColor(img_in, r.center);
+			cv::ellipse(cdst, r, color, 3);
+		}
+	}
+
+	// Get mouse clicks
+	int num_clicks = 0;
+	cv::namedWindow("Mouse clicks");
+	cv::imshow("Mouse clicks", cdst);
+	cv::setMouseCallback("Mouse clicks", onMouse);
+	mouse_click_changed = false;
+	std::vector<cv::Point2f> click_pos;
+	std::cout << "Click blue, red, green, black circles in order." << std::endl;
+	while (num_clicks < 4) {
+		if (mouse_click_changed) {
+			click_pos.push_back(cv::Point2f(mouse_pos.x, mouse_pos.y));
+			num_clicks++;
+			mouse_click_changed = false;
+		}
+		cv::waitKey(100);
+	}
+	cv::destroyWindow("Mouse clicks");	
+	
+	// Find the closest ellipses to the mouse clicks
+	int closest_ellipses[4];
+	float distances[4] = {99999, 99999, 99999, 99999};
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
+		for (int j = 0; j < 4; j++) {
+			float this_distance = dist(click_pos[j], ellipses[i].center);
+			if (this_distance < distances[j]) {
+				distances[j] = this_distance;
+				closest_ellipses[j] = i;
+			}
+		}
+	}
+
+	// Generate transform
+	cv::Point2f blue_circle = ellipses[closest_ellipses[0]].center;
+	cv::Point2f red_circle = ellipses[closest_ellipses[1]].center;
+	cv::Point2f green_circle = ellipses[closest_ellipses[2]].center;
+	cv::Point2f black_circle = ellipses[closest_ellipses[3]].center;
+	cv::Point2f input_quad[4] = {blue_circle, red_circle, green_circle, black_circle};
+	generateTransform(input_quad, camera, img_in, transform_out);
+}
+
+void Vision::generateTransform(cv::Point2f input_quad[4],
+							   int camera, cv::Mat& img_in, 
+							   cv::Mat& transform_out) {
+
 	// Output Quadilateral or World plane coordinates
     cv::Point2f output_quad[4];
 	float side_in_pix = OUR_SQUARE_SIDE / M_PER_PIX;
@@ -318,11 +421,6 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
 	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
 	output_quad[3] = cv::Point2f(output_quad[0].x, output_quad[0].y + side_in_pix);
-
-	input_quad[0] = ellipses[blue_circle].center;
-	input_quad[1] = ellipses[red_circle].center;
-	input_quad[2] = ellipses[green_circle].center;
-	input_quad[3] = ellipses[black_circle].center;
       
     // Get the Perspective Transform Matrix
     transform_out = getPerspectiveTransform( input_quad, output_quad );
@@ -366,8 +464,6 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
     warpPerspective(img_in, img_display_, transform_out, transform_sizes_[camera]);
 	cv::imshow("Display2", img_display_);
 	//cv::waitKey();
-
-	return true;
 }
 
 
@@ -988,20 +1084,31 @@ cv::Scalar Vision::getColor(cv::Mat& img, cv::Point2f p, int pix_length) {
 }
 
 // Draws a black border around a perspective transformed image
-// Used in getMidpointsf
+// Used in getMidpoints
 void Vision::applyBlackBorder(cv::Mat& img, int camera) {
+
+	// Get input image dimensions
+	int width = 1280;
+	int height = 720;
+	if (roborealm_.connected) {
+		roborealm_.getDimension(&width, &height);
+	}
 
 	// Find bounding box for transformed image corners
 	std::vector<cv::Point2f> orig_corners, trans_corners;
 	orig_corners.push_back(cv::Point2f(0, 0));
-	orig_corners.push_back(cv::Point2f(0, img.rows));
-	orig_corners.push_back(cv::Point2f(img.cols, img.rows));
-	orig_corners.push_back(cv::Point2f(img.cols, 0));
+	orig_corners.push_back(cv::Point2f(width, 0));
+	orig_corners.push_back(cv::Point2f(width, height));
+	orig_corners.push_back(cv::Point2f(0, height));
 	cv::perspectiveTransform(orig_corners, trans_corners, transform_mats_[camera]);
 
 	// Draw lines
 	for (int i = 0; i < 4; i++) {
-		cv::line(img, trans_corners[i], trans_corners[(i+1)%4], cv::Scalar(0), 3);
+		if (img.channels() == 3) {
+			cv::line(img, trans_corners[i], trans_corners[(i+1)%4], cv::Scalar(0,0,0), 3);
+		} else if (img.channels() == 1) {
+			cv::line(img, trans_corners[i], trans_corners[(i+1)%4], cv::Scalar(0), 3);
+		}
 	}
 }
 
@@ -1036,9 +1143,9 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	cv::dilate(img_thresh, img_thresh, dilate_element);
 
 	// Apply black border
-	//applyBlackBorder(img_thresh, camera);
-	//cv::imshow("Display", img_thresh);
-	//cv::waitKey();
+	applyBlackBorder(img_thresh, camera);
+	cv::imshow("Display", img_thresh);
+	cv::waitKey();
 
 	// Distance transform: makes each pixel value the distance to 
 	// nearest zero (black) pixel
@@ -1054,7 +1161,7 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	midpoints.push_back(Point(start_pos.x, start_pos.y, start_dir));
 
 	float step_size = 10;	// Distance between midpoints in pixels
-	float adjust_factor = 0.5;
+	float adjust_factor = 0.6;
 
 	for (int i = 0; i < 1000; i++) {
 

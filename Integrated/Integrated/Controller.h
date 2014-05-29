@@ -20,7 +20,7 @@ public:
 	!Controller();
 
 	void showImage(cv::Mat im);
-	void getCameraTransform( int camera);
+	void getCameraTransform(int camera, bool manual_mode);
 	void getMidPoints(int camera);
 	void connectToRoborealm(int port_num_1, int port_num_2, int port_num_3, int port_num_4, System::String^ ip_address, int num_cameras);
 	void testColorThresh(int camera);

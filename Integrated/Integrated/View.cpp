@@ -8,10 +8,6 @@
 
 using namespace RaceControl;
 
-// For some reason putting this in header causes an error...
-void onMouse( int event, int x, int y, int, void* );	
-Point mouse_pos(0, 0);
-
 View::View():
 	frame_time_(20)		// milliseconds / frame
 {
@@ -108,16 +104,4 @@ void View::drawNewDots(std::vector<Point>& segment) {
 	cv::Point2f dir_p(my_car_.getPos().x + 50 * cos(my_car_.getDir()), my_car_.getPos().y + 50 * sin(my_car_.getDir()));
 	cv::line(background_, dir_p, cv::Point2f(my_car_.getPos().x, my_car_.getPos().y), cv::Scalar(0,0,255));
 
-}
-
-void onMouse(int event, int x, int y, int, void*) {
-	if( event != CV_EVENT_LBUTTONDOWN )
-		return;
-	
-	mouse_pos.x = x;
-	mouse_pos.y = y;
-}
-
-Point View::getMousePos() {
-	return mouse_pos;
 }
