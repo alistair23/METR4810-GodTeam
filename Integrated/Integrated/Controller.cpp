@@ -209,7 +209,7 @@ void Controller::detectCar()
 
 			// If failed to detect car, look in other cameras
 			// Try next camera with first global path point as guess
-			if (num_cameras_ > 1) {
+			if (num_cameras_ > 1 && !found_my_car) {
 				if (0 == Interlocked::Exchange(current_path_lock_, 1)) {
 					temp_camera = (current_camera_ + 1) % num_cameras_;
 					Point next_camera_guess = planner_->getGlobalPathStart(temp_camera);

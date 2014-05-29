@@ -64,8 +64,8 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 		inv_transform_mats_.push_back(cv::Mat());
 		transform_sizes_.push_back(cv::Size());
 		approx_cam_m_per_pix_.push_back(0);
-		lower_color_thresh_.push_back(cv::Scalar(30, 0, 20));
-		upper_color_thresh_.push_back(cv::Scalar(110, 255, 255));
+		lower_color_thresh_.push_back(cv::Scalar(30, 0, 0));
+		upper_color_thresh_.push_back(cv::Scalar(150, 255, 255));
 		//connectRoboRealm(i);
 	}
 }
@@ -621,7 +621,34 @@ bool Vision::getCarMarkers(
 		cv::imshow("Display", cdst);
 		cv::waitKey();
 	}*/
-	
+	/*
+	// Find the four contours indicating our car, smallest to largest
+	// hierarchy indicates previous, next, child, parent
+	for (std::size_t i = 0; i < contours.size(); i++) {
+		std::vector<std::vector<int>> car_contours;
+		if (hierarchy[i][2] == -1) {	// no child
+			std::vector<int> temp;
+			temp.push_back(i);
+			std::vector<std::vector<cv::Point>> contour;
+			contour.push_back(contours[i]);
+			cv::drawContours(cdst,contour, -1, cv::Scalar(0,255,0), 2);
+			for (int j = 0; j < 3; j++) {
+				int prev = temp.back();
+				int parent = hierarchy[prev][3];
+				if (parent == -1) {
+					break;
+				}
+				std::vector<std::vector<cv::Point>> contour2;
+				contour2.push_back(contours[parent]);
+				temp.push_back(parent);
+				cv::drawContours(cdst,contour2, -1, cv::Scalar(rand()%255,rand()%255,rand()%255), 1);
+			}
+		}
+	}
+
+	cv::imshow("Display", cdst);
+	cv::waitKey();
+	*/
 	// Fit ellipses to contours and keep circular ones
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
@@ -1144,8 +1171,6 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 
 	// Apply black border
 	applyBlackBorder(img_thresh, camera);
-	cv::imshow("Display", img_thresh);
-	cv::waitKey();
 
 	// Distance transform: makes each pixel value the distance to 
 	// nearest zero (black) pixel
