@@ -12,7 +12,8 @@ Point::Point():
 	x(0),
 	y(0),
 	track_angle(0),
-	locked(false)
+	locked(false),
+	strict(false)
 {}
 
 // Copy
@@ -33,6 +34,7 @@ const Point &Point::operator = (const Point& p) {
 	y = p.y;
 	track_angle = p.track_angle;
 	locked = p.locked;
+	strict = p.strict;
 
 	return *this;
 }
@@ -42,7 +44,8 @@ Point::Point(double arg_x, double arg_y, double arg_track_angle):
 	x(arg_x),
 	y(arg_y),
 	track_angle(arg_track_angle),
-	locked(false)
+	locked(false),
+	strict(false)
 {}
 
 // Returns distance to other point

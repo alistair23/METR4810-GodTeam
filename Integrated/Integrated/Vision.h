@@ -32,7 +32,7 @@ public:
 
 	void setupCamTransform(int camera, bool manual_mode);
 
-	// Grab camera frame and update car and obstacle info
+	// Grab camera frame and update car info
 	// If no argument is supplied for my car position guess, 
 	// jump straight to full image search.
 	// Returns true if my car is found, false otherwise
@@ -121,6 +121,9 @@ private:
 
 	// Smooth path by bringing points towards together
 	void smoothPath(std::vector<Point>& path, int selected);
+
+	// Set each point's strictness. Strict for points in a tunnel
+	void checkStrictness(cv::Mat& img_dist, std::vector<Point>& path);
 
 	void generateTransform(cv::Point2f input_quad[4], int camera,
 		cv::Mat& img_in, cv::Mat& transform_out);

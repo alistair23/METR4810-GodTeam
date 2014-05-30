@@ -43,6 +43,7 @@ public:
 
 	// Stuff for path planning
 	bool locked;		// For trajectory deformation; do not move
+	bool strict;		// Should be followed strictly (true for tunnel)
 
 	double track_angle;	// Radians, parallel to track edge
 	

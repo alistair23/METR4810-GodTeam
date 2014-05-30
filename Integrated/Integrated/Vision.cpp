@@ -29,7 +29,6 @@ void onMouse(int event, int x, int y, int, void*) {
 	} else if (event == CV_EVENT_LBUTTONDOWN) {
 		mouse_l_down = true;
 	}
-
 }
 
 struct sort_pred {
@@ -504,7 +503,7 @@ void Vision::generateTransform(cv::Point2f input_quad[4],
 }
 
 
-// Grab camera frame and update car and obstacle info
+// Grab camera frame and update car info
 // If no argument is supplied for my car position guess, 
 // jump straight to full image search.
 // Returns true if my car is found, false otherwise
@@ -599,7 +598,7 @@ bool Vision::update(int camera, Point car_pos_guess) {
 	double new_spd = my_car_.getPos().dist(new_pos) / seconds;
 	my_car_.update(new_pos, new_dir, new_spd);
 
-	// TODO other cars, obstacles
+	// TODO other cars
 	update_time += time_now() - time1;
 	return true;
 
@@ -799,7 +798,7 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
 
 	// Find contours from Canny image
-	// Warning, findContours affects input image (img_canny)
+	// Warning, findContours affects input image (img_temp)
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
@@ -1175,7 +1174,7 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 
 	// Distance transform: makes each pixel value the distance to 
 	// nearest zero (black) pixel
-	cv::distanceTransform(img_thresh, img_dist, CV_DIST_L2, 3); 
+	cv::distanceTransform(img_thresh, img_dist, CV_DIST_L2, 3);
 
 	// Get image gradients of img_dist. These will be used for centering 
 	// the midpoints to the middle of the track
@@ -1215,11 +1214,30 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 		float new_y = midpoints.back().y + step_size * sin(angle);
 		midpoints.push_back(Point(new_x, new_y, angle));
 	}
+	checkStrictness(img_dist, midpoints);
 	return midpoints;
 }
 
 std::vector<Point> Vision::getMidpointsManual(cv::Mat& img_in,
 cv::Mat& img_white_warped, int camera) {
+
+	// Apply color threshold to get road as white (255), everything 
+	// else black (0)
+	cv::Mat img_thresh = img_in.clone();
+	cv::Mat img_dist;
+	colorThresh(img_thresh, camera);
+
+	// Dilate to remove noise
+	cv::Mat dilate_element = cv::getStructuringElement(
+		cv::MORPH_ELLIPSE,cv::Size(4, 4));
+	cv::dilate(img_thresh, img_thresh, dilate_element);
+
+	// Apply black border
+	applyBlackBorder(img_thresh, camera);
+
+	// Distance transform: makes each pixel value the distance to 
+	// nearest zero (black) pixel
+	cv::distanceTransform(img_thresh, img_dist, CV_DIST_L2, 3); 
 
 	// Get starting position from first click
 	cv::Mat img_temp = img_in.clone();
@@ -1247,6 +1265,7 @@ cv::Mat& img_white_warped, int camera) {
 	// Get midpoints
 	std::vector<Point> midpoints = getMidpoints(img_in, img_white_warped, start_pos, 
 		start_dir, camera);
+	checkStrictness(img_dist, midpoints);
 
 	std::cout << "Click and drag to edit path. Spacebar when done." << std::endl;
 	char keypress = 0;
@@ -1256,15 +1275,19 @@ cv::Mat& img_white_warped, int camera) {
 		// Draw dots and lines
 		for (std::size_t i = 0; i < midpoints.size(); i++) {
 			cv::Scalar color;
+			cv::Point2f cv_point(midpoints[i].x, midpoints[i].y);
 			if (midpoints[i].locked) {
 				color = cv::Scalar(0, 0, 255);	// Red
 			} else {
 				color = cv::Scalar(255, 100, 0);	// Blueish
 			}
-			cv::circle(img_temp, cv::Point2f(midpoints[i].x, midpoints[i].y), 3, color);
+			cv::circle(img_temp, cv_point, 3, color);
 			if (i != 0) {
-				cv::line(img_temp, cv::Point2f(midpoints[i].x, midpoints[i].y), 
-					cv::Point2f(midpoints[i-1].x, midpoints[i-1].y), cv::Scalar(0, 255, 0));
+				cv::Point2f prev_cv_point(midpoints[i-1].x, midpoints[i-1].y);
+				cv::line(img_temp, cv_point, prev_cv_point, cv::Scalar(0, 255, 0));
+			}
+			if (midpoints[i].strict) {
+				cv::circle(img_temp, cv_point, 5, cv::Scalar(100, 150, 200), 2);
 			}
 		}
 
@@ -1278,6 +1301,7 @@ cv::Mat& img_white_warped, int camera) {
 			smoothPath(midpoints, selected);
 			midpoints[selected].locked = false;
 			addRemovePoints(midpoints);
+			checkStrictness(img_dist, midpoints);
 		}
 		cv::imshow("Mouse clicks", img_temp);
 		keypress = cv::waitKey(50);
@@ -1356,6 +1380,72 @@ void Vision::smoothPath(std::vector<Point>& path, int selected) {
 			path[j-1].track_angle = path[j-1].angle(path[j]);
 		}
 	}		
+}
+
+// Set each point's strictness. Strict for points in a tunnel
+void Vision::checkStrictness(cv::Mat& img_dist, std::vector<Point>& path) {
+
+	// Assign strictness depends on road width,
+	// as tunnel is detected as a wider road
+	float min_dist = ROAD_WIDTH * 0.6 / M_PER_PIX;
+	for (std::size_t i = 0; i < path.size(); i++) {
+		float this_dist = img_dist.at<float>((int) path[i].y, path[i].x);
+		std::cout << this_dist << std::endl;
+		if (this_dist > min_dist) {			
+			path[i].strict = true;
+		}
+	}
+	
+	// Check that the condition for minimum number of points
+	// in a straight line is met
+	int min_adjacent = 4;
+	float max_angle_diff = 10 * M_PI / 180;
+	int strict_buffer = 3;
+	for (std::size_t i = 0; i < path.size(); i++) {
+		if (!path[i].strict) {
+			continue;
+		}
+		
+		int adjacent_count = 0;
+		
+		// Count forwards
+		for (std::size_t j = i; j < path.size(); j++) {
+			float angle_diff = path[j].track_angle - path[i].track_angle;
+			if (angle_diff > M_PI) {
+				angle_diff -= 2 * M_PI;
+			} else if (angle_diff < -M_PI) {
+				angle_diff += 2 * M_PI;
+			}
+			angle_diff = abs(angle_diff);
+			if (!path[j].strict || angle_diff > max_angle_diff) {
+				break;
+			} 
+			else {
+				adjacent_count++;
+			}
+		}
+
+		if (adjacent_count < min_adjacent) {
+			path[i].strict = false;
+		} else {
+
+			// We can skip some adjacency checks
+			i += adjacent_count - 1;
+
+			// Make a few at the start and end strict
+			int lower = i - strict_buffer;
+			int higher = i + strict_buffer;
+			if (lower < 0) {
+				lower = 0;
+			}
+			if (higher >= path.size()) {
+				higher = path.size() - 1;
+			}
+			for (int j = lower; j < higher; j++) {
+				path[j].strict = true;
+			}
+		}
+	}
 }
 
 // Color threshold on img to get binary image with
