@@ -64,6 +64,9 @@ public:
 		cv::Mat& img_in, cv::Mat& img_white_warped,
 		cv::Point2f start_pos, float start_dir, int camera);
 
+	std::vector<Point> Vision::getMidpointsManual(cv::Mat& img_in,
+		cv::Mat& img_white_warped, int camera);
+
 	// Color threshold on img to get binary image with
 	// road white and everything else black
 	void colorThresh(cv::Mat& img, int camera);
@@ -103,6 +106,13 @@ private:
 	// Find perspective transform, but user manually selects marker circles
 	void getTransformManual(cv::Mat& img_in, cv::Mat& transform_output, int camera);
 
+	// Add new points in between if distance is too large
+	// Remove points if too small
+	void addRemovePoints(std::vector<Point>& path);
+
+	// Smooth path by bringing points towards together
+	void smoothPath(std::vector<Point>& path, int selected);
+
 	void generateTransform(cv::Point2f input_quad[4], int camera,
 		cv::Mat& img_in, cv::Mat& transform_out);
 
@@ -114,6 +124,9 @@ private:
 	
 	// Returns atan2(p2.y - p1.y, p2.x - p1.x)
 	float angle(cv::Point2f& p1, cv::Point2f& p2);
+
+	// Returns index of point in path closest to target point
+	std::size_t getClosest(std::vector<Point> path, Point target);
 
 	// Return vertices of a rotated rectangle in clockwise order,
 	// starting from top left

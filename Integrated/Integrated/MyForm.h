@@ -163,7 +163,8 @@ private: System::Windows::Forms::Button^  button16;
 private: System::Windows::Forms::Button^  button5;
 private: System::Windows::Forms::ImageList^  imageList1;
 private: System::Windows::Forms::Button^  button17;
-private: System::Windows::Forms::Button^  button18;
+private: System::Windows::Forms::CheckBox^  checkBox4;
+
 
 
 
@@ -285,7 +286,7 @@ private: System::Windows::Forms::Button^  button18;
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
-			this->button18 = (gcnew System::Windows::Forms::Button());
+			this->checkBox4 = (gcnew System::Windows::Forms::CheckBox());
 			this->button17 = (gcnew System::Windows::Forms::Button());
 			this->textBox17 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox16 = (gcnew System::Windows::Forms::TextBox());
@@ -689,7 +690,7 @@ private: System::Windows::Forms::Button^  button18;
 			// 
 			// tabPage2
 			// 
-			this->tabPage2->Controls->Add(this->button18);
+			this->tabPage2->Controls->Add(this->checkBox4);
 			this->tabPage2->Controls->Add(this->button17);
 			this->tabPage2->Controls->Add(this->textBox17);
 			this->tabPage2->Controls->Add(this->textBox16);
@@ -733,15 +734,18 @@ private: System::Windows::Forms::Button^  button18;
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
 			// 
-			// button18
+			// checkBox4
 			// 
-			this->button18->Location = System::Drawing::Point(285, 342);
-			this->button18->Name = L"button18";
-			this->button18->Size = System::Drawing::Size(138, 23);
-			this->button18->TabIndex = 90;
-			this->button18->Text = L"Get Transform Manually";
-			this->button18->UseVisualStyleBackColor = true;
-			this->button18->Click += gcnew System::EventHandler(this, &MyForm::button18_Click);
+			this->checkBox4->AutoSize = true;
+			this->checkBox4->Checked = true;
+			this->checkBox4->CheckState = System::Windows::Forms::CheckState::Checked;
+			this->checkBox4->Location = System::Drawing::Point(439, 348);
+			this->checkBox4->Name = L"checkBox4";
+			this->checkBox4->Size = System::Drawing::Size(90, 17);
+			this->checkBox4->TabIndex = 91;
+			this->checkBox4->Text = L"Manual mode";
+			this->checkBox4->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			this->checkBox4->UseVisualStyleBackColor = true;
 			// 
 			// button17
 			// 
@@ -917,9 +921,9 @@ private: System::Windows::Forms::Button^  button18;
 			// button7
 			// 
 			this->button7->Enabled = false;
-			this->button7->Location = System::Drawing::Point(23, 385);
+			this->button7->Location = System::Drawing::Point(285, 343);
 			this->button7->Name = L"button7";
-			this->button7->Size = System::Drawing::Size(105, 22);
+			this->button7->Size = System::Drawing::Size(138, 22);
 			this->button7->TabIndex = 70;
 			this->button7->Text = L"GetMidPoints";
 			this->button7->UseVisualStyleBackColor = true;
@@ -1405,6 +1409,5 @@ private: System::Void button14_Click(System::Object^  sender, System::EventArgs^
 private: System::Void button15_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button16_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void button17_Click(System::Object^  sender, System::EventArgs^  e);
-private: System::Void button18_Click(System::Object^  sender, System::EventArgs^  e);
 };
 }

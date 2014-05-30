@@ -7,19 +7,29 @@
 #include "Vision.h"
 #include "Globals.h"
 #include "CommonFunctions.h"
+#include "Vector2D.h"
 
 using namespace RaceControl;
 
 bool mouse_click_changed = false;
+bool mouse_l_down = false;
 cv::Point2f mouse_pos(0, 0);
+cv::Point2f mouse_l_click_pos(0, 0);
 
+// Callback for mouse events on OpenCV windows
 // For some reason putting this in header causes an error...
 void onMouse(int event, int x, int y, int, void*) {
+	mouse_pos.x = x;
+	mouse_pos.y = y;
 	if(event == CV_EVENT_LBUTTONUP) {
-		mouse_pos.x = x;
-		mouse_pos.y = y;
 		mouse_click_changed = true;
+		mouse_l_click_pos.x = x;
+		mouse_l_click_pos.y = y;
+		mouse_l_down = false;
+	} else if (event == CV_EVENT_LBUTTONDOWN) {
+		mouse_l_down = true;
 	}
+
 }
 
 struct sort_pred {
@@ -378,7 +388,7 @@ void Vision::getTransformManual(cv::Mat& img_in, cv::Mat& transform_out, int cam
 	std::cout << "Click blue, red, green, black circles in order." << std::endl;
 	while (num_clicks < 4) {
 		if (mouse_click_changed) {
-			click_pos.push_back(cv::Point2f(mouse_pos.x, mouse_pos.y));
+			click_pos.push_back(cv::Point2f(mouse_l_click_pos.x, mouse_l_click_pos.y));
 			num_clicks++;
 			mouse_click_changed = false;
 		}
@@ -1217,6 +1227,145 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	return midpoints;
 }
 
+std::vector<Point> Vision::getMidpointsManual(cv::Mat& img_in,
+cv::Mat& img_white_warped, int camera) {
+
+	// Get starting position from first click
+	cv::Mat img_temp = img_in.clone();
+	cv::namedWindow("Mouse clicks");
+	cv::imshow("Mouse clicks", img_temp);
+	cv::setMouseCallback("Mouse clicks", onMouse);
+	mouse_click_changed = false;
+	std::cout << "Click to select start position" << std::endl;
+	while (!mouse_click_changed) {
+		cv::waitKey(50);
+	}
+	cv::Point2f start_pos(mouse_l_click_pos.x, mouse_l_click_pos.y);
+	mouse_click_changed = false;
+
+	// Get starting direction from another click
+	std::cout << "Click again to set start direction" << std::endl;
+	while (!mouse_click_changed) {
+		img_temp = img_in.clone();
+		cv::line(img_temp, start_pos, mouse_pos, cv::Scalar(0, 0, 255));
+		cv::imshow("Mouse clicks", img_temp);
+		cv::waitKey(50);
+	}
+	float start_dir = angle(start_pos, mouse_l_click_pos);
+
+	// Get midpoints
+	std::vector<Point> midpoints = getMidpoints(img_in, img_white_warped, start_pos, 
+		start_dir, camera);
+
+	std::cout << "Click and drag to edit path. Spacebar when done." << std::endl;
+	char keypress = 0;
+	while (keypress != ' ') {
+		img_temp = img_in.clone();
+
+		// Draw dots and lines
+		for (std::size_t i = 0; i < midpoints.size(); i++) {
+			cv::Scalar color;
+			if (midpoints[i].locked) {
+				color = cv::Scalar(0, 0, 255);	// Red
+			} else {
+				color = cv::Scalar(255, 100, 0);	// Blueish
+			}
+			cv::circle(img_temp, cv::Point2f(midpoints[i].x, midpoints[i].y), 3, color);
+			if (i != 0) {
+				cv::line(img_temp, cv::Point2f(midpoints[i].x, midpoints[i].y), 
+					cv::Point2f(midpoints[i-1].x, midpoints[i-1].y), cv::Scalar(0, 255, 0));
+			}
+		}
+
+		// Mouse drag for moving points
+		int selected = -1;
+		if (mouse_l_down) {
+			selected = getClosest(midpoints, Point(mouse_pos.x, mouse_pos.y));
+			midpoints[selected].x = mouse_pos.x;
+			midpoints[selected].y = mouse_pos.y;
+			midpoints[selected].locked = true;
+			smoothPath(midpoints, selected);
+			midpoints[selected].locked = false;
+			addRemovePoints(midpoints);
+		}
+		cv::imshow("Mouse clicks", img_temp);
+		keypress = cv::waitKey(50);
+	}
+
+	cv::destroyWindow("Mouse clicks");	
+
+	return midpoints;
+}
+
+// Add new points in between if distance is too large
+// Remove points if too small
+void Vision::addRemovePoints(std::vector<Point>& path) {
+	std::size_t index = 0;
+	double lower_dist = 7;	// pixels
+	double ideal_dist = 10;
+	double upper_dist = 13;
+	while(true) {
+		if (index >= path.size() - 1) {
+			break;
+		}
+		double distance = path[index].dist(path[index+1]);
+		if (distance < lower_dist) {
+			path.erase(path.begin() + index + 1);
+			if (index < path.size() - 1) {
+				path[index].track_angle = path[index].angle(path[index+1]);
+			}
+		} else if (distance > upper_dist) {
+			double new_x = path[index].x + ideal_dist * cos(path[index].track_angle);
+			double new_y = path[index].y + ideal_dist * sin(path[index].track_angle);
+			Point new_point(new_x, new_y);
+			new_point.track_angle = new_point.angle(path[index+1]);
+			path.insert(path.begin() + index + 1, new_point); 
+			index++;
+		} else {
+			index++;
+		}
+	}
+}
+
+// Smooth path by bringing points towards together
+void Vision::smoothPath(std::vector<Point>& path, int selected) {
+	int iterations = 10;
+	double smoothing_factor = 0.1;
+	int lower_neighbour = selected - 3;
+	int upper_neighbour = selected + 3;
+	if (lower_neighbour < 0) {
+		lower_neighbour = 0;
+	}
+	if (upper_neighbour > path.size() - 1) {
+		upper_neighbour = path.size() - 1;
+	}
+	for (int i = 0; i < iterations; i++) {
+		for (std::size_t j = lower_neighbour + 1; j < upper_neighbour; j++) {
+			if (path[j].locked)
+				continue;
+
+			// Move towards previous point
+			double angle_to_prev = path[j-1].track_angle - M_PI;
+			double dist_to_prev = path[j-1].dist(path[j]);
+			path[j].x += dist_to_prev * cos(angle_to_prev) * smoothing_factor;
+			path[j].y += dist_to_prev * sin(angle_to_prev) * smoothing_factor;
+
+			// Move towards next point
+			if (j < path.size()) {
+				double angle_to_next = path[j].track_angle;
+				double dist_to_next = path[j-1].dist(path[j]);
+				path[j].x += dist_to_next * cos(angle_to_next) * smoothing_factor;
+				path[j].y += dist_to_next * sin(angle_to_next) * smoothing_factor;
+			}
+
+			// Update track angles
+			if (j + 1 < path.size()) {
+				path[j].track_angle = path[j].angle(path[j+1]);
+			}
+			path[j-1].track_angle = path[j-1].angle(path[j]);
+		}
+	}		
+}
 
 // Color threshold on img to get binary image with
 // road white and everything else black
@@ -1550,9 +1699,23 @@ float Vision::distSq(cv::Point2f& p1, cv::Point2f& p2) {
 	return pow(p1.x - p2.x, 2) + (pow(p1.y - p2.y, 2));
 }
 
-
 float Vision::angle(cv::Point2f& p1, cv::Point2f& p2) {
 	return atan2(p2.y - p1.y, p2.x - p1.x);
+}
+
+// Returns index of point in path closest to target point
+std::size_t Vision::getClosest(std::vector<Point> path, Point target) {
+	double min_dist_sq = 999999;
+	int min_index;
+	double dist_sq;
+	for (std::size_t i = 0; i < path.size(); i++) {
+		dist_sq = target.distSquared(path[i]);
+		if (dist_sq < min_dist_sq) {
+			min_dist_sq = dist_sq;
+			min_index = i;
+		}
+	}
+	return min_index;
 }
 
 // Return vertices of a rotated rectangle in clockwise order,

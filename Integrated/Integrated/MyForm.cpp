@@ -183,7 +183,8 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 
 System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	this->controller_->getCameraTransform(camera, false);
+	bool manual_mode = this->checkBox4->Checked;
+	this->controller_->getCameraTransform(camera, manual_mode);
 	this->button7->Enabled = true;
 	this->button11->Enabled = true;
 	this->button12->Enabled = true;
@@ -191,7 +192,8 @@ System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System:
 
 System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	controller_->getMidPoints(camera);
+	bool manual_mode = this->checkBox4->Checked;
+	controller_->getMidPoints(camera, manual_mode);
 }
 
  System::Void RaceControl::MyForm::button8_Click_1(System::Object^  sender, System::EventArgs^  e) {
@@ -275,12 +277,3 @@ System::Void RaceControl::MyForm::button17_Click(System::Object^ sender, System:
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->previewImg(camera);
 }
-
-System::Void RaceControl::MyForm::button18_Click(System::Object^ sender, System::EventArgs^ e) {
-	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	this->controller_->getCameraTransform(camera, true);
-	this->button7->Enabled = true;
-	this->button11->Enabled = true;
-	this->button12->Enabled = true;
-}
-

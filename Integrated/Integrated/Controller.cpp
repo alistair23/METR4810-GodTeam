@@ -114,25 +114,34 @@ void Controller::getCameraTransform(int camera, bool manual_mode)
 	//showImage(*(vision_->getDisplayImage()));
 }
 
-void Controller::getMidPoints(int camera)
+void Controller::getMidPoints(int camera, bool manual_mode)
 {
-	vision_->update(camera);
-	Car temp = vision_->getMyCarInfo();
+	// Grab image and apply transform
 	cv::Mat img_bgr;
 	vision_->getCamImg(camera, img_bgr);
 	cv::Mat img_white(img_bgr.rows, img_bgr.cols, CV_8UC1, 255);
 	vision_->applyTrans(img_bgr, camera);
 	vision_->applyTrans(img_white, camera);
 	view_->setBackground(img_bgr);
-	std::vector<Point> track = vision_->getMidpoints(img_bgr, img_white,
-		cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir(), camera);
+
+	// Get midpoints
+	std::vector<Point> track;
+	if (!manual_mode) {
+		vision_->update(camera);
+		Car temp = vision_->getMyCarInfo();
+		track = vision_->getMidpoints(img_bgr, img_white,
+			cv::Point2f(temp.getPos().x, temp.getPos().y), temp.getDir(), camera);
+	} else {
+		track = vision_->getMidpointsManual(img_bgr, img_white, camera);
+	}
+
+	// Display stuff
 	view_->drawNewDots(track);
-
-
 	view_->updateMyCar(*my_car_);
 	planner_->setGlobalPath(track, camera);
-	view_->redraw();
-	//showImage(*(view_->getDisplayImage()));
+	if (manual_mode) {
+		view_->redraw();
+	}
 }
 
 void Controller::getObstacles(int camera)
