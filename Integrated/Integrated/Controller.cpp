@@ -35,7 +35,7 @@ Controller::Controller() :
 	form_ = gcnew MyForm();
 	form_->setParent(this);
 
-
+	
 	//while(!vision_->connectRoboRealm());
 
 	
@@ -139,7 +139,7 @@ void Controller::getMidPoints(int camera, bool manual_mode)
 	view_->drawNewDots(track);
 	view_->updateMyCar(*my_car_);
 	planner_->setGlobalPath(track, camera);
-	if (manual_mode) {
+	if (!manual_mode) {
 		view_->redraw();
 	}
 }
@@ -182,6 +182,15 @@ void Controller::previewImg(int camera) {
 	vision_->previewImg(camera);
 }
 
+void Controller::saveToFile(int camera) {
+	vision_->saveToFile(camera);
+}
+
+void Controller::loadFromFile(int camera) {
+	vision_->loadFromFile(camera);
+}
+
+long long timebob;
 void Controller::detectCar()
 {
 	while (true)
@@ -189,6 +198,7 @@ void Controller::detectCar()
 		if(!car_tracking_on)
 		{
 			Thread::Sleep(10);
+			timebob = time_now();
 			
 		}
 		else
@@ -269,7 +279,17 @@ void Controller::detectCar()
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
 			view_->updateMyCar(*my_car_);
-			Interlocked::Exchange(my_car_lock_, 0);			
+			Interlocked::Exchange(my_car_lock_, 0);	
+
+			long long total_time = time_now() - timebob;
+			std::cout << "Car detection frequency: " << (float) vision_->num_cycles / (total_time / 1000) << " Hz" << std::endl;
+			std::cout << "Time spent getting image: " << (float) vision_->get_img_time / vision_->update_time * 100 << " %" << std::endl;
+			if (total_time > 5000) {
+				timebob = time_now();
+				vision_->num_cycles = 0;
+				vision_->get_img_time = 0;
+				vision_->update_time = 0;
+			}
 		}
 	}
 }

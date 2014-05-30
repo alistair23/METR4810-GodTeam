@@ -181,18 +181,19 @@ void RaceControl::MyForm::DrawCVImage(cv::Mat* colorImage)
 	}*/
 }
 
-System::Void RaceControl::MyForm::button6_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_get_transform_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	bool manual_mode = this->checkBox4->Checked;
+	bool manual_mode = this->chkbox_manual_mode->Checked;
 	this->controller_->getCameraTransform(camera, manual_mode);
-	this->button7->Enabled = true;
-	this->button11->Enabled = true;
-	this->button12->Enabled = true;
+	this->btn_get_midpoints->Enabled = true;
+	this->btn_get_obstacles->Enabled = true;
+	this->btn_get_finish_line->Enabled = true;
+	this->btn_save->Enabled = true;
 }
 
-System::Void RaceControl::MyForm::button7_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_get_midpoints_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
-	bool manual_mode = this->checkBox4->Checked;
+	bool manual_mode = this->chkbox_manual_mode->Checked;
 	controller_->getMidPoints(camera, manual_mode);
 }
 
@@ -212,7 +213,7 @@ System::Void RaceControl::MyForm::button3_Click(System::Object^  sender, System:
 }
 
 
-System::Void RaceControl::MyForm::button9_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_connect_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 port_num_1, port_num_2, port_num_3, port_num_4, num_cameras;
 	System::String^ ip_address;
 	port_num_1 = System::Convert::ToInt16(this->textBox7->Text);
@@ -222,28 +223,30 @@ System::Void RaceControl::MyForm::button9_Click(System::Object^  sender, System:
 	ip_address = this->textBox11->Text;
 	num_cameras = System::Convert::ToInt16(this->comboBox3->Text);
 	controller_->connectToRoborealm(port_num_1, port_num_2, port_num_3, port_num_4, ip_address, num_cameras);
-	this->button6->Enabled = true;
-	this->button10->Enabled = true;
-	this->button15->Enabled = true;
+	this->btn_get_transform->Enabled = true;
+	this->btn_test_color_thresh->Enabled = true;
+	this->btn_set_color_thresh->Enabled = true;
+	this->btn_preview_image->Enabled = true;
+	this->btn_load->Enabled = true;
 }
  
-System::Void RaceControl::MyForm::button10_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_test_color_thresh_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->testColorThresh(camera);
 }
 
-System::Void RaceControl::MyForm::button11_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_get_obstacles_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->getObstacles(camera);
 }
 
-System::Void RaceControl::MyForm::button12_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_get_finish_line_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->getFinishLine(camera);
-	this->button13->Enabled = true;
+	this->btn_get_go_signal->Enabled = true;
 }
 
-System::Void RaceControl::MyForm::button13_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_get_go_signal_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->getGoSignal(camera);
 }
@@ -253,7 +256,7 @@ System::Void RaceControl::MyForm::button14_Click(System::Object^  sender, System
 	controller_->launchOnGo(camera);
 }
 
-System::Void RaceControl::MyForm::button15_Click(System::Object^  sender, System::EventArgs^  e) {
+System::Void RaceControl::MyForm::btn_set_color_thresh_Click(System::Object^  sender, System::EventArgs^  e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	System::Int16 lower_hue = System::Convert::ToInt16(this->textBox12->Text);	
 	System::Int16 lower_lum = System::Convert::ToInt16(this->textBox13->Text);	
@@ -273,7 +276,22 @@ System::Void RaceControl::MyForm::button5_Click(System::Object^ sender, System::
 	controller_->exitPitstop();
 }
 
-System::Void RaceControl::MyForm::button17_Click(System::Object^ sender, System::EventArgs^ e) {
+System::Void RaceControl::MyForm::btn_preview_image_Click(System::Object^ sender, System::EventArgs^ e) {
 	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
 	controller_->previewImg(camera);
 }
+
+System::Void RaceControl::MyForm::btn_save_Click(System::Object^ sender, System::EventArgs^ e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->saveToFile(camera);
+}
+
+System::Void RaceControl::MyForm::btn_load_Click(System::Object^ sender, System::EventArgs^ e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->loadFromFile(camera);
+	this->btn_get_midpoints->Enabled = true;
+	this->btn_get_obstacles->Enabled = true;
+	this->btn_get_finish_line->Enabled = true;
+	this->btn_save->Enabled = true;
+}
+

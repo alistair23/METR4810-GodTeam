@@ -19,6 +19,11 @@ class Vision {
 
 public:
 
+	// DEBUG
+	long long get_img_time;
+	long long update_time;
+	long num_cycles;
+
 	Vision();
 	void initCameras(std::vector<int> port_nums, std::string ip_address);
 
@@ -93,6 +98,10 @@ public:
 	std::vector<cv::Point2f> getMouseClicks(cv::Mat& img, int num_clicks);
 
 	cv::Mat* getDisplayImage();
+
+	// Save/load transform matrices to file
+	void saveToFile(int camera);
+	void loadFromFile(int camera);
 
 private:
 
