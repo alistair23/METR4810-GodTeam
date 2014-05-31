@@ -1303,7 +1303,14 @@ cv::Mat& img_white_warped, int camera) {
 				new_start_dir, camera);
 
 			// Join and set to new path number
+			float overlap_thresh = ROAD_WIDTH / M_PER_PIX;
 			for (std::size_t i = 0; i < new_midpoints.size(); i++) {
+
+				// Prevent overlap with first point (for dealing with finish line)
+				if (new_midpoints[i].dist(midpoints[0]) < overlap_thresh) {
+					break;
+				}
+				
 				new_midpoints[i].path_num = num_paths;
 				midpoints.push_back(new_midpoints[i]);
 			}
