@@ -20,7 +20,6 @@ Controller::Controller() :
 	view_(new View()),
 	planner_(new LocalPlanner()),
 	current_camera_(0),
-	current_midpoint_index_(0),
 	num_cameras_(0),
 	current_path_(new std::vector<Point>()),
 	local_planning_on(false),
@@ -191,19 +190,13 @@ void Controller::loadFromFile(int camera) {
 	vision_->loadFromFile(camera);
 }
 
-long long timebob;
 void Controller::detectCar()
 {
 	while (true)
 	{
-		if(!car_tracking_on)
-		{
-			Thread::Sleep(10);
-			timebob = time_now();
-			
-		}
-		else
-		{
+		if(!car_tracking_on) {
+			Thread::Sleep(10);			
+		} else {
 			bool found_my_car = false;
 
 			// Use predicted car position as a guess
@@ -275,23 +268,12 @@ void Controller::detectCar()
 				vision_->applyTrans(img_bgr, temp_camera);
 				view_->setBackground(img_bgr);
 				current_camera_ = temp_camera;
-				current_midpoint_index_ = 0;
 			}
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
 			view_->updateMyCar(*my_car_);
 			Interlocked::Exchange(my_car_lock_, 0);	
-
-			long long total_time = time_now() - timebob;
-			std::cout << "Car detection frequency: " << (float) vision_->num_cycles / (total_time / 1000.0) << " Hz" << std::endl;
-			std::cout << "Time spent getting image: " << (float) vision_->get_img_time / vision_->update_time * 100 << " %" << std::endl;
-			if (total_time > 5000) {
-				timebob = time_now();
-				vision_->num_cycles = 0;
-				vision_->get_img_time = 0;
-				vision_->update_time = 0;
-			}
 		}
 	}
 }
@@ -381,17 +363,8 @@ void Controller::sendCarCommand() {
 			float stop_dist = 0.02 / M_PER_PIX;	// Stops if this close to goal
 			float touch_dist = 0.1 / M_PER_PIX;	// For checking if point has been passed
 
-			// Update current point
-			Point curr_midpoint = planner_->getGlobalPoint(
-				current_camera_, current_midpoint_index_);
-			std::size_t midpoints_length = planner_->getGlobalPathLength(current_camera_);
-			while (my_car_->getPos().dist(curr_midpoint) < touch_dist && 
-				current_midpoint_index_ + 1 < midpoints_length) {
-				current_midpoint_index_++;
-				curr_midpoint = planner_->getGlobalPoint(
-					current_camera_, current_midpoint_index_);
-			}
-			int goal_index = planner_->getClosest(curr_midpoint,
+			// Get goal point
+			int goal_index = planner_->getClosest(my_car_->getPos(),
 				*current_path_, lookahead, max_points_ahead);
 			Point* goal = &(*current_path_)[goal_index];
 
@@ -405,10 +378,13 @@ void Controller::sendCarCommand() {
 			}
 
 			float angle_thresh = 30 * M_PI/180;
-			if (my_car_->getPos().dist(*goal) < stop_dist) {
+			if (update_time - my_car_->getUpdateTime() >1000) {
+				my_car_->setLSpeed(my_car_->getLSpeed() * 0.5);
+				my_car_->setRSpeed(my_car_->getRSpeed() * 0.5);
+			}
+			else if (my_car_->getPos().dist(*goal) < stop_dist) {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
-				current_midpoint_index_++;
 			} else if (abs(angle) < angle_thresh && !did_tight_turn_) {
 
 				// Normal operation: smooth straight/turn

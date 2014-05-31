@@ -48,7 +48,6 @@ private:
 	View *view_;
 	LocalPlanner *planner_;
 	int current_camera_;
-	int current_midpoint_index_;
 	int num_cameras_;
 	std::vector<Point>* current_path_;
 	int current_path_lock_;	// 0 if current_path_ is free, otherwise 1

@@ -773,6 +773,7 @@ bool Vision::getCarMarkers(
 							}
 						}
 						cv::imshow("BOB", cdst);
+						cv::waitKey(10);
 						break;							
 					}
 				}

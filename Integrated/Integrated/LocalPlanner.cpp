@@ -99,10 +99,12 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	std::size_t s = segment.size();
 	for (int i = 0; i < num_points - s; i++) {
 		int j = global_index_ + s + i;
-		if (j > global_paths_[camera].size() || 
-			segment.back().path_num != global_paths_[camera][j].path_num) {
+		/*if (j > global_paths_[camera].size()) {
 			break;
 		}
+		if (segment.size() > 0 && segment.back().path_num != global_paths_[camera][j].path_num) {
+			break;
+		}*/
 		segment.push_back(global_paths_[camera][j % global_paths_[camera].size()]);
 	}
 
@@ -316,7 +318,7 @@ int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path,
 	double look_ahead_sq = look_ahead * look_ahead;
 	for (std::size_t i = min_index; i + 1 < path.size(); i++) {
 		double temp = pos.distSquared(path[i + 1]);
-		if (temp > look_ahead_sq || i - min_index == max_points_ahead) {
+		if (temp > look_ahead_sq || i - min_index == max_points_ahead && max_points_ahead != -1) {
 			return i;
 		}
 	}
