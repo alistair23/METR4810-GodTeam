@@ -99,13 +99,13 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	std::size_t s = segment.size();
 	for (int i = 0; i < num_points - s; i++) {
 		int j = global_index_ + s + i;
-		/*if (j > global_paths_[camera].size()) {
+		if (j >= global_paths_[camera].size()) {
 			break;
 		}
 		if (segment.size() > 0 && segment.back().path_num != global_paths_[camera][j].path_num) {
 			break;
-		}*/
-		segment.push_back(global_paths_[camera][j % global_paths_[camera].size()]);
+		}
+		segment.push_back(global_paths_[camera][j]);
 	}
 
 	// Shift first point to match current
@@ -122,7 +122,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	if (carInCollision(segment[0], my_car_.getDir(), timetodo) != -1 ||
 		obstacleCollision(segment[0], my_car_.getDir(), camera))
 		invalidPoints.push_back(0);
-	for (int i = 1; i < num_points; i++) {
+	for (int i = 1; i < segment.size(); i++) {
  		if (carInCollision(segment[i], segment[i-1].angle(segment[i]), timetodo) != -1 ||
 			obstacleCollision(segment[i], segment[i-1].angle(segment[i]), camera)) {
 			invalidPoints.push_back(i);

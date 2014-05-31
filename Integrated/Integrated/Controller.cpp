@@ -208,11 +208,7 @@ void Controller::detectCar()
 			// Number of tries depends on whether we are near the 
 			// end of this path or not
 			int temp_camera = current_camera_;
-			int num_tries = 3;
-			double thresh = 0.5 / M_PER_PIX;
-			if (guess.dist(planner_->getGlobalPathEnd(current_camera_)) < thresh) {
-				num_tries = 2;
-			}
+			int num_tries = 2;
 			for (int i = 0; i < num_tries; i++) {
 				found_my_car = vision_->update(current_camera_, guess);
 				if (found_my_car) {
@@ -367,7 +363,6 @@ void Controller::sendCarCommand() {
 			int goal_index = planner_->getClosest(my_car_->getPos(),
 				*current_path_, lookahead, max_points_ahead);
 			Point* goal = &(*current_path_)[goal_index];
-
 			// Get relative heading to point between -pi and pi radians.
 			float angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
 			if (angle <= -M_PI) {
@@ -382,6 +377,7 @@ void Controller::sendCarCommand() {
 				my_car_->setLSpeed(my_car_->getLSpeed() * 0.5);
 				my_car_->setRSpeed(my_car_->getRSpeed() * 0.5);
 			}
+			
 			else if (my_car_->getPos().dist(*goal) < stop_dist) {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);

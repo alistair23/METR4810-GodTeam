@@ -720,12 +720,12 @@ bool Vision::getCarMarkers(
 							smallest = k;
 						}
 
-						/*float up_thresh = MY_CAR_MARKER_BIGGEST/MY_CAR_MARKER_SMALLEST+ 0.35;
+						/*float up_thresh = MY_CAR_MARKER_BIGGEST/MY_CAR_MARKER_SMALLEST + 0.35;
 						float bottom_thresh =  MY_CAR_MARKER_BIGGEST/MY_CAR_MARKER_SMALLEST- 0.35;
 						float aspect_ratio = ellipses[biggest].size.height/ellipses[smallest].size.height;
 						if ( aspect_ratio> up_thresh || aspect_ratio < bottom_thresh )
-							continue;*/
-						
+							continue;
+						*/
 
 						// This is my car
 						float cam_angle = acos(ellipses[biggest].size.width/ellipses[biggest].size.height);
@@ -1441,7 +1441,7 @@ void Vision::checkStrictness(cv::Mat& img_dist, std::vector<Point>& path) {
 
 	// Assign strictness depends on road width,
 	// as tunnel is detected as a wider road
-	float min_dist = ROAD_WIDTH * 0.6 / M_PER_PIX;
+	float min_dist = ROAD_WIDTH * 0.5 / M_PER_PIX;
 	for (std::size_t i = 0; i < path.size(); i++) {
 		float this_dist = img_dist.at<float>((int) path[i].y, path[i].x);
 		if (this_dist > min_dist) {			
