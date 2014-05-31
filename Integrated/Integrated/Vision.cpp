@@ -804,9 +804,9 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 	float max_side = 0.1 / M_PER_PIX;	// Max side length for obstacle
-	float min_side = 0.008 / M_PER_PIX;	// Min side length to accept obstacle
+	float min_side = 0.007 / M_PER_PIX;	// Min side length to accept obstacle
 	float clearance = 0.03 / M_PER_PIX;	// Added to side length
-	float car_check_thresh = DEFAULT_CAR_LENGTH_PIX;
+	float car_check_thresh = DEFAULT_CAR_LENGTH_PIX * 2;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		cv::RotatedRect rect = cv::minAreaRect( cv::Mat(contours[i]));
@@ -822,6 +822,7 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 			car_check_thresh)
 			continue;
 
+		/*
 		bool is_other_car = false;
 		for (int j = 0; j < other_cars_.size(); j++) {
 			if (other_cars_[j].getPos().dist(Point(rect.center.x, rect.center.y)) < car_check_thresh) {
@@ -831,6 +832,7 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 		}
 		if (is_other_car)
 			continue;
+			*/
 
 		// Checks have passed
 		rect.size.height += clearance;
@@ -1396,8 +1398,8 @@ void Vision::addRemovePoints(std::vector<Point>& path) {
 void Vision::smoothPath(std::vector<Point>& path, int selected) {
 	int iterations = 10;
 	double smoothing_factor = 0.1;
-	int lower_neighbour = selected - 3;
-	int upper_neighbour = selected + 3;
+	int lower_neighbour = selected - 2;
+	int upper_neighbour = selected + 2;
 	if (lower_neighbour < 0) {
 		lower_neighbour = 0;
 	}

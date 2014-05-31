@@ -30,7 +30,8 @@ Controller::Controller() :
 	wants_to_enter_pitstop(false),
 	wants_to_exit_pitstop(false),
 	was_beyond_thresh_(false),
-	did_tight_turn_(false)
+	did_tight_turn_(false),
+	obs_check_count_(0)
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -270,6 +271,16 @@ void Controller::detectCar()
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
 			view_->updateMyCar(*my_car_);
 			Interlocked::Exchange(my_car_lock_, 0);	
+
+			// Obstacles check every 10 loops
+			if (0 == Interlocked::Exchange(current_path_lock_, 1) && 
+				obs_check_count_ > 10) {
+				getObstacles(current_camera_);
+				obs_check_count_ = 0;
+				Interlocked::Exchange(current_path_lock_, 0);
+			} else {
+				obs_check_count_++;
+			}
 		}
 	}
 }

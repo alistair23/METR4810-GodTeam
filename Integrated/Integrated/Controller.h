@@ -54,6 +54,7 @@ private:
 	int my_car_lock_;
 	long long old_time_;
 	int path_index_;
+	int obs_check_count_;
 	bool was_beyond_thresh_;
 	bool did_tight_turn_;
 
