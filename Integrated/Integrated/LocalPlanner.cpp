@@ -45,6 +45,14 @@ Point LocalPlanner::getGlobalPathStart(int camera) {
 	return global_paths_[camera][0];
 }
 
+Point LocalPlanner::getGlobalPoint(int camera, int index) {
+	return global_paths_[camera][index];
+}
+
+std::size_t LocalPlanner::getGlobalPathLength(int camera) {
+	return global_paths_[camera].size();
+}
+
 void LocalPlanner::updateMyCar(Point pos, double dir, double spd) {
 	my_car_.update(pos, dir, spd);
 }
@@ -283,9 +291,10 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 }
 
 // Return the index of a point on the path, ahead 
-// by look_ahead_dist.  If look_ahead = 0, returns index
-// of closest point
-int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path, double look_ahead) {
+// by distance look_ahead. If look_ahead = 0, returns index
+// of closest point. 
+int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path,
+							 double look_ahead, int max_points_ahead) {
 
 	// Find closest point
 	double min_dist_sq = 999999;
@@ -307,7 +316,7 @@ int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path, double look_a
 	double look_ahead_sq = look_ahead * look_ahead;
 	for (std::size_t i = min_index; i + 1 < path.size(); i++) {
 		double temp = pos.distSquared(path[i + 1]);
-		if (temp > look_ahead_sq) {
+		if (temp > look_ahead_sq || i - min_index == max_points_ahead) {
 			return i;
 		}
 	}

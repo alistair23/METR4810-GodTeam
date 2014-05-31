@@ -1185,7 +1185,7 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	std::vector<Point> midpoints;
 	midpoints.push_back(Point(start_pos.x, start_pos.y, start_dir));
 
-	float step_size = 10;	// Distance between midpoints in pixels
+	float step_size = MIDPOINT_STEP_SIZE;
 	float adjust_factor = 0.6;
 
 	for (int i = 0; i < 1000; i++) {
@@ -1356,9 +1356,9 @@ cv::Mat& img_white_warped, int camera) {
 // Remove points if too small
 void Vision::addRemovePoints(std::vector<Point>& path) {
 	std::size_t index = 0;
-	double lower_dist = 7;	// pixels
-	double ideal_dist = 10;
-	double upper_dist = 13;
+	double lower_dist = MIDPOINT_STEP_SIZE - 3;
+	double ideal_dist = MIDPOINT_STEP_SIZE;
+	double upper_dist = MIDPOINT_STEP_SIZE + 3;
 	while(index < path.size() - 1) {
 		if (path[index].path_num != path[index+1].path_num) {
 			index++;

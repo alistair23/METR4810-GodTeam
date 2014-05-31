@@ -20,10 +20,13 @@ public:
 	bool isGlobalPathSet(int camera);
 	Point getGlobalPathEnd(int camera);
 	Point getGlobalPathStart(int camera);
+	Point getGlobalPoint(int camera, int index);
+	std::size_t getGlobalPathLength(int camera);
 	std::vector<Point> getSegment(int curr_camera, int num_points = 20);
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
-	int getClosest(Point& pos, std::vector<Point>& path, double look_ahead);
+	int getClosest(Point& pos, std::vector<Point>& path,
+		double look_ahead, int max_points_ahead = -1);
 
 	std::vector<std::vector<cv::RotatedRect>> obstacles;
 

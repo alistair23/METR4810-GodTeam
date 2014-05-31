@@ -11,6 +11,7 @@
 #define TILE_M_LENGTH	0.5			// Side length of (square) tile in metres
 #define GO_SIGNAL_DIAMETER_PIX 0.04 / M_PER_PIX	
 #define GO_SIGNAL_MAX_DIST_TO_FINISH_LINE_PIX 600
+#define MIDPOINT_STEP_SIZE 10		// Distance between midpoints in pixels
 
 #define DEFAULT_CAR_LENGTH_PIX 0.15 / M_PER_PIX		// Default car dimensions in pixels
 #define DEFAULT_CAR_WIDTH_PIX 0.075 / M_PER_PIX
