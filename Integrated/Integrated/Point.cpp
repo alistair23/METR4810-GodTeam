@@ -12,6 +12,7 @@ Point::Point():
 	x(0),
 	y(0),
 	track_angle(0),
+	path_num(0),
 	locked(false),
 	strict(false)
 {}
@@ -33,6 +34,7 @@ const Point &Point::operator = (const Point& p) {
 	x = p.x;
 	y = p.y;
 	track_angle = p.track_angle;
+	path_num = p.path_num;
 	locked = p.locked;
 	strict = p.strict;
 
@@ -40,10 +42,11 @@ const Point &Point::operator = (const Point& p) {
 }
 
 // Constructor
-Point::Point(double arg_x, double arg_y, double arg_track_angle):
+Point::Point(double arg_x, double arg_y, double arg_track_angle, int arg_path_num):
 	x(arg_x),
 	y(arg_y),
 	track_angle(arg_track_angle),
+	path_num(arg_path_num),
 	locked(false),
 	strict(false)
 {}

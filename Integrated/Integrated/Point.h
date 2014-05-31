@@ -19,7 +19,7 @@ public:
 	const Point &Point::operator = (const Point& p);
 
 	// Constructor
-	Point(double x, double y, double track_angle = 0);
+	Point(double x, double y, double track_angle = 0, int path = 0);
 
 	// Returns distance to other point
 	double dist(const Point& p);
@@ -41,11 +41,14 @@ public:
 	double x;
 	double y;
 
+	double track_angle;	// Radians, parallel to track edge
+	int path_num;			// For dealing with multiple segments in one camera
+
 	// Stuff for path planning
 	bool locked;		// For trajectory deformation; do not move
 	bool strict;		// Should be followed strictly (true for tunnel)
 
-	double track_angle;	// Radians, parallel to track edge
+	
 	
 
 	// TODO

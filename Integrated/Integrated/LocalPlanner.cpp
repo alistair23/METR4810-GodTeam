@@ -91,6 +91,10 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	std::size_t s = segment.size();
 	for (int i = 0; i < num_points - s; i++) {
 		int j = global_index_ + s + i;
+		if (j > global_paths_[camera].size() || 
+			segment.back().path_num != global_paths_[camera][j].path_num) {
+			break;
+		}
 		segment.push_back(global_paths_[camera][j % global_paths_[camera].size()]);
 	}
 
@@ -226,7 +230,6 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	int iterations = 30;
 	double change_factor = 0.1;
 	double global_path_attract_factor = 0.005;
-	double obs_repulse_factor = 15;
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = 1; j < segment.size(); j++) {
 			if (segment[j].locked)
@@ -257,25 +260,6 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 				u.x = segment[j + 1].x - segment[j].x;
 				force += v.dot(u);
 			}
-
-			/*
-			// Repulsive force due to obstacles
-			for (std::size_t k = 0; k < obstacles[camera].size(); k++) {
-				u.y = obstacles[camera][k].center.y - segment[j].y;
-				u.x = obstacles[camera][k].center.x - segment[j].x;
-				double obs_proj = v.dot(u);
-				if (abs(obs_proj) > my_car_.getWidth()) {
-					continue;
-				} else {
-					force -= obs_repulse_factor * (1/obs_proj);
-				}
-				
-				/*	cv::Point2f obs_vertices[4];
-				obstacles[camera][k].points(obs_vertices);
-				for (int l = 0; l < 4; l++) {
-					
-				}
-			}*/
 
 			// Attractive force to global path point
 			u.y = global_point.y - segment[j].y;
@@ -314,19 +298,22 @@ int LocalPlanner::getClosest(Point& pos, std::vector<Point>& path, double look_a
 			min_index = i;
 		}
 	}
-	if (look_ahead == 0)
+	if (look_ahead == 0) {
 		return min_index;
+	}
 	
 	// Look for point forward from closest point that
 	// is at look ahead
 	double look_ahead_sq = look_ahead * look_ahead;
 	for (std::size_t i = min_index; i + 1 < path.size(); i++) {
 		double temp = pos.distSquared(path[i + 1]);
-		if (temp > look_ahead_sq)
+		if (temp > look_ahead_sq) {
 			return i;
+		}
 	}
 	
-	return min_index;
+	// If we get here, then the last point is within look ahead
+	return path.size() - 1;
 }
 
 // Returns id of car in collision given position of my car

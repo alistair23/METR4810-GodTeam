@@ -1247,6 +1247,7 @@ cv::Mat& img_white_warped, int camera) {
 	mouse_click_changed = false;
 	std::cout << "Click to select start position" << std::endl;
 	while (!mouse_click_changed) {
+		cv::imshow("Mouse clicks", img_temp);
 		cv::waitKey(50);
 	}
 	cv::Point2f start_pos(mouse_l_click_pos.x, mouse_l_click_pos.y);
@@ -1268,9 +1269,46 @@ cv::Mat& img_white_warped, int camera) {
 	checkStrictness(img_dist, midpoints);
 
 	std::cout << "Click and drag to edit path. Spacebar when done." << std::endl;
+	std::cout << "Press c to add new path segment" << std::endl;
 	char keypress = 0;
+	int num_paths = 1;
 	while (keypress != ' ') {
 		img_temp = img_in.clone();
+
+		// Press c for creating new path segment
+		if (keypress == 'c') {
+
+			// Get starting position from first click
+			mouse_click_changed = false;
+			std::cout << "Click to select start position" << std::endl;
+			while (!mouse_click_changed) {
+				cv::imshow("Mouse clicks", img_temp);
+				cv::waitKey(50);
+			}
+			cv::Point2f new_start_pos(mouse_l_click_pos.x, mouse_l_click_pos.y);
+			mouse_click_changed = false;
+
+			// Get starting direction from another click
+			std::cout << "Click again to set start direction" << std::endl;
+			while (!mouse_click_changed) {
+				img_temp = img_in.clone();
+				cv::line(img_temp, new_start_pos, mouse_pos, cv::Scalar(0, 0, 255));
+				cv::imshow("Mouse clicks", img_temp);
+				cv::waitKey(50);
+			}
+			float new_start_dir = angle(new_start_pos, mouse_l_click_pos);
+
+			// Get midpoints
+			std::vector<Point> new_midpoints = getMidpoints(img_in, img_white_warped, new_start_pos, 
+				new_start_dir, camera);
+
+			// Join and set to new path number
+			for (std::size_t i = 0; i < new_midpoints.size(); i++) {
+				new_midpoints[i].path_num = num_paths;
+				midpoints.push_back(new_midpoints[i]);
+			}
+			num_paths++;
+		}
 
 		// Draw dots and lines
 		for (std::size_t i = 0; i < midpoints.size(); i++) {
@@ -1283,11 +1321,13 @@ cv::Mat& img_white_warped, int camera) {
 			}
 			cv::circle(img_temp, cv_point, 3, color);
 			if (i != 0) {
-				cv::Point2f prev_cv_point(midpoints[i-1].x, midpoints[i-1].y);
-				cv::line(img_temp, cv_point, prev_cv_point, cv::Scalar(0, 255, 0));
+				if (midpoints[i].path_num == midpoints[i-1].path_num) {
+					cv::Point2f prev_cv_point(midpoints[i-1].x, midpoints[i-1].y);
+					cv::line(img_temp, cv_point, prev_cv_point, cv::Scalar(0, 255, 0));
+				}
 			}
 			if (midpoints[i].strict) {
-				cv::circle(img_temp, cv_point, 5, cv::Scalar(100, 150, 200), 2);
+				cv::circle(img_temp, cv_point, 5, cv::Scalar(100, 150, 200), 2);	// Yellow outline
 			}
 		}
 
@@ -1319,9 +1359,10 @@ void Vision::addRemovePoints(std::vector<Point>& path) {
 	double lower_dist = 7;	// pixels
 	double ideal_dist = 10;
 	double upper_dist = 13;
-	while(true) {
-		if (index >= path.size() - 1) {
-			break;
+	while(index < path.size() - 1) {
+		if (path[index].path_num != path[index+1].path_num) {
+			index++;
+			continue;
 		}
 		double distance = path[index].dist(path[index+1]);
 		if (distance < lower_dist) {
@@ -1333,6 +1374,7 @@ void Vision::addRemovePoints(std::vector<Point>& path) {
 			double new_x = path[index].x + ideal_dist * cos(path[index].track_angle);
 			double new_y = path[index].y + ideal_dist * sin(path[index].track_angle);
 			Point new_point(new_x, new_y);
+			new_point.path_num = path[index].path_num;
 			new_point.track_angle = new_point.angle(path[index+1]);
 			path.insert(path.begin() + index + 1, new_point); 
 			index++;
@@ -1360,24 +1402,28 @@ void Vision::smoothPath(std::vector<Point>& path, int selected) {
 				continue;
 
 			// Move towards previous point
-			double angle_to_prev = path[j-1].track_angle - M_PI;
-			double dist_to_prev = path[j-1].dist(path[j]);
-			path[j].x += dist_to_prev * cos(angle_to_prev) * smoothing_factor;
-			path[j].y += dist_to_prev * sin(angle_to_prev) * smoothing_factor;
+			if (path[j-1].path_num == path[j].path_num) {
+				double angle_to_prev = path[j-1].track_angle - M_PI;
+				double dist_to_prev = path[j-1].dist(path[j]);
+				path[j].x += dist_to_prev * cos(angle_to_prev) * smoothing_factor;
+				path[j].y += dist_to_prev * sin(angle_to_prev) * smoothing_factor;
+			}
 
 			// Move towards next point
-			if (j < path.size()) {
+			if (j + 1 < path.size() && path[j].path_num == path[j+1].path_num) {
 				double angle_to_next = path[j].track_angle;
-				double dist_to_next = path[j-1].dist(path[j]);
+				double dist_to_next = path[j].dist(path[j+1]);
 				path[j].x += dist_to_next * cos(angle_to_next) * smoothing_factor;
 				path[j].y += dist_to_next * sin(angle_to_next) * smoothing_factor;
 			}
 
 			// Update track angles
-			if (j + 1 < path.size()) {
-				path[j].track_angle = path[j].angle(path[j+1]);
-			}
 			path[j-1].track_angle = path[j-1].angle(path[j]);
+			if (j + 1 < path.size() && path[j].path_num == path[j+1].path_num) {
+				path[j].track_angle = path[j].angle(path[j+1]);
+			} else {
+				path[j].track_angle = path[j-1].track_angle;
+			}
 		}
 	}		
 }
@@ -1390,7 +1436,6 @@ void Vision::checkStrictness(cv::Mat& img_dist, std::vector<Point>& path) {
 	float min_dist = ROAD_WIDTH * 0.6 / M_PER_PIX;
 	for (std::size_t i = 0; i < path.size(); i++) {
 		float this_dist = img_dist.at<float>((int) path[i].y, path[i].x);
-		std::cout << this_dist << std::endl;
 		if (this_dist > min_dist) {			
 			path[i].strict = true;
 		}
@@ -1410,13 +1455,10 @@ void Vision::checkStrictness(cv::Mat& img_dist, std::vector<Point>& path) {
 		
 		// Count forwards
 		for (std::size_t j = i; j < path.size(); j++) {
-			float angle_diff = path[j].track_angle - path[i].track_angle;
+			float angle_diff = abs(path[j].track_angle - path[i].track_angle);
 			if (angle_diff > M_PI) {
-				angle_diff -= 2 * M_PI;
-			} else if (angle_diff < -M_PI) {
-				angle_diff += 2 * M_PI;
+				angle_diff = 2 * M_PI - abs(angle_diff);
 			}
-			angle_diff = abs(angle_diff);
 			if (!path[j].strict || angle_diff > max_angle_diff) {
 				break;
 			} 
