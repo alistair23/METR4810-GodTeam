@@ -16,11 +16,11 @@ LocalPlanner::LocalPlanner(int num_cameras):
 		obstacles.push_back(std::vector<cv::RotatedRect>());
 	}
 
-	enter_pitstop_points.push_back(Point(880, 30));
-	enter_pitstop_points.push_back(Point(775, 185));
-	enter_pitstop_points.push_back(Point(475, 185));
-	exit_pitstop_points.push_back(Point(250, 185));
-	exit_pitstop_points.push_back(Point(130, 30));
+	source_enter_pitstop_points.push_back(Point(880, 30));
+	source_enter_pitstop_points.push_back(Point(775, 185));
+	source_enter_pitstop_points.push_back(Point(475, 185));
+	source_exit_pitstop_points.push_back(Point(250, 185));
+	source_exit_pitstop_points.push_back(Point(130, 30));
 }
 
 LocalPlanner::LocalPlanner(std::vector<std::vector<Point>> global_path):
@@ -424,4 +424,24 @@ bool LocalPlanner::lineIntersects(cv::Point2f a1, cv::Point2f a2, cv::Point2f b1
 	double ua = (((b2.x - b1.x) * (a1.y - b1.y)) - ((b2.y - b1.y) * (a1.x - b1.x)))/denom;
 	double ub = (((a2.x - a1.x) * (a1.y - b1.y)) - ((a2.y - a1.y) * (a1.x - b1.x)))/denom;
 	return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+}
+
+void LocalPlanner::setPitstopPoints(int camera, Point finish_line_pos) {
+	enter_pitstop_points.clear();
+	exit_pitstop_points.clear();
+	double scale = SOURCE_M_PER_PIX / M_PER_PIX;
+	for (std::size_t i = 0; i < source_enter_pitstop_points.size(); i++) {
+		double source_x = source_enter_pitstop_points[i].x;
+		double source_y = source_enter_pitstop_points[i].y;
+		double new_x = source_x * scale + finish_line_pos.x;
+		double new_y = source_y * scale + finish_line_pos.y;
+		enter_pitstop_points.push_back(Point(new_x, new_y));
+	}
+	for (std::size_t i = 0; i < source_exit_pitstop_points.size(); i++) {
+		double source_x = source_exit_pitstop_points[i].x;
+		double source_y = source_exit_pitstop_points[i].y;
+		double new_x = source_x * scale + finish_line_pos.x;
+		double new_y = source_y * scale + finish_line_pos.y;
+		exit_pitstop_points.push_back(Point(new_x, new_y));
+	}
 }

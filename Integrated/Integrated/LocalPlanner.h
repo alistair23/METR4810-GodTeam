@@ -27,13 +27,15 @@ public:
 	void update(MyCar my_car, std::vector<Car> other_cars);
 	int getClosest(Point& pos, std::vector<Point>& path,
 		double look_ahead, int max_points_ahead = -1);
+	void setPitstopPoints(int camera, Point finish_line_pos);
 
 	std::vector<std::vector<cv::RotatedRect>> obstacles;
 
 	// Pitstop path relative to midpoint between finish line circle markers
+	std::vector<Point> source_enter_pitstop_points;
+	std::vector<Point> source_exit_pitstop_points;
 	std::vector<Point> enter_pitstop_points;
 	std::vector<Point> exit_pitstop_points;
-
 
 private:
 	

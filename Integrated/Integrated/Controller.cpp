@@ -165,7 +165,11 @@ void Controller::getFinishLine(int camera) {
 	cv::Mat img;
 	vision_->getCamImg(camera, img);
 	vision_->applyTrans(img, camera);
-	vision_->findFinishTile(img, *finish_line_pos_);
+	bool success = vision_->findFinishTile(img, *finish_line_pos_);
+	if (success) {
+		planner_->setPitstopPoints(camera, *finish_line_pos_);
+		finish_line_camera_ = camera;
+	}
 }
 
 void Controller::getGoSignal(int camera) {
@@ -279,8 +283,7 @@ void Controller::detectCar()
 			Interlocked::Exchange(my_car_lock_, 0);	
 
 			// Obstacles check every 10 loops
-			if (0 == Interlocked::Exchange(current_path_lock_, 1) && 
-				obs_check_count_ > 10) {
+			if (obs_check_count_ > 10 && 0 == Interlocked::Exchange(current_path_lock_, 1)) {
 				getObstacles(current_camera_);
 				obs_check_count_ = 0;
 				Interlocked::Exchange(current_path_lock_, 0);
@@ -305,8 +308,8 @@ void Controller::runPlanner(){
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
-			if (wants_to_enter_pitstop && current_camera_ == 0 && 
-			my_car_temp.getPos().dist(planner_->enter_pitstop_points[0]) < 0.5 / M_PER_PIX) {
+			if (wants_to_enter_pitstop && current_camera_ == finish_line_camera_ && 
+			my_car_temp.getPos().dist(planner_->enter_pitstop_points[0]) < 500 / M_PER_PIX) {
 
 				// Entering pitstop
 				*current_path_ = planner_->enter_pitstop_points;
@@ -325,8 +328,8 @@ void Controller::runPlanner(){
 
 				// Path planning as normal
 				*current_path_ = planner_->getSegment(current_camera_);
-				view_->drawNewDots(*current_path_);
 			}
+			view_->drawNewDots(*current_path_);
 			path_index_ = 0;
 			
 			// Release the lock
