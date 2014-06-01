@@ -922,7 +922,7 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 	cv::blur(temp, temp, cv::Size(5, 5) );
 
 	// Canny edge detection
-	int threshold = 35;
+	int threshold = 40;
 	cv::Canny(temp, temp, threshold, threshold * 3, 3);
 		
 	// Find contours from Canny image
@@ -935,13 +935,13 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
 
-		if (contours[i].size() < 25)
+		if (contours[i].size() < 5)
 			continue;
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
 
 		// Check circularity and size
-		float max_diameter = GO_SIGNAL_DIAMETER_PIX * 1.2;
-		float min_diameter = GO_SIGNAL_DIAMETER_PIX * 0.8;
+		float max_diameter = GO_SIGNAL_DIAMETER_PIX * 1.3;
+		float min_diameter = GO_SIGNAL_DIAMETER_PIX * 0.7;
 		if (r.size.height/r.size.width > 1.2 || 
 			r.size.height > max_diameter ||
 			r.size.height < min_diameter)
@@ -955,49 +955,77 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 		}
 	}
 	
-	for (std::size_t i = 0; i < ellipses.size() - 2; i++) {
-		for (std::size_t j = i + 1; j < ellipses.size() - 1; j++) {
+	int best[3] = {-1, -1, -1};
+	float min_error = 99999;
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
+		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
 			for (std::size_t k = j + 1; k < ellipses.size(); k++) {
 
-				// First check they are collinear
-				if (isCollinear(ellipses[i].center, ellipses[j].center, ellipses[k].center)) {
-					
-					float dist_thresh = 20;	// Pixels
-					float dist1 = dist(ellipses[i].center, ellipses[j].center);
-					float dist2 = dist(ellipses[j].center, ellipses[k].center);
-					float dist3 = dist(ellipses[i].center, ellipses[k].center);
+				// Simple distance checks
+				float dist1 = dist(ellipses[i].center, ellipses[j].center);
+				float dist2 = dist(ellipses[i].center, ellipses[k].center);
+				float dist3 = dist(ellipses[j].center, ellipses[k].center);
+				if (dist1 < 10 || dist2 < 10 || dist3 < 10) {
+					continue;
+				}
 
-					// Check that they are somewhat equidistant
-					if (dist1 < dist_thresh || dist2 < dist_thresh || dist3 < dist_thresh)
+				// Equidistance
+				if (!(abs(dist1 - dist2) < 50 ||
+					abs(dist1 - dist3) < 50 ||
+					abs(dist2 - dist3) < 50)) {
 						continue;
-					if (!(abs(dist1 - dist2) < dist_thresh ||
-						abs(dist1 - dist3) < dist_thresh ||
-						abs(dist2 - dist3) < dist_thresh))
-						continue;
-					
-					int b = rand() % 255;
-					int g = rand() % 255;
-					int r = rand() % 255;
-					cv::line(img, ellipses[i].center, ellipses[j].center, cv::Scalar(b, g, r), 2);
-					cv::line(img, ellipses[j].center, ellipses[k].center, cv::Scalar(b, g, r), 2);
-					cv::imshow("Display", img);
+				}
 
-					std::vector<Point> result;
-					result.push_back(Point(ellipses[i].center.x, ellipses[i].center.y));
-					result.push_back(Point(ellipses[j].center.x, ellipses[j].center.y));
-					result.push_back(Point(ellipses[k].center.x, ellipses[k].center.y));
-					return result;
+				// Max distance
+				if (dist1 > GO_SIGNAL_MAX_SEPARATION_PIX ||
+					dist2 > GO_SIGNAL_MAX_SEPARATION_PIX ||
+					dist3 > GO_SIGNAL_MAX_SEPARATION_PIX) {
+						continue;
+				}
+
+				float error = 0;
+
+				// Diameter check
+				error += abs(ellipses[i].size.height - GO_SIGNAL_DIAMETER_PIX);
+				error += abs(ellipses[j].size.height - GO_SIGNAL_DIAMETER_PIX);
+				error += abs(ellipses[k].size.height - GO_SIGNAL_DIAMETER_PIX);
+
+				// Collinearity check
+				float angle1 = angle(ellipses[i].center, ellipses[j].center);
+				float angle2 = angle(ellipses[i].center, ellipses[k].center);
+				float angle_diff1 = abs(angle1 - angle2);
+				float angle_diff2 = abs(abs(angle1 - angle2) - M_PI);
+				if (angle_diff1 < angle_diff2) {
+					error *= angle_diff1;
+				} else {
+					error *= angle_diff2;
+				}
+				if (error < min_error) {
+					min_error = error;
+					best[0] = i;
+					best[1] = j;
+					best[2] = k;
 				}
 			}
 		}
 	}
-
-	return std::vector<Point>();
+	if (best[0] == -1) {
+		std::cout << "Failed to find go signal" << std::endl;
+		return std::vector<Point>();
+	}
+	cv::line(img, ellipses[best[0]].center, ellipses[best[1]].center, cv::Scalar(100, 0, 0), 2);
+	cv::line(img, ellipses[best[1]].center, ellipses[best[2]].center, cv::Scalar(100, 0, 0), 2);
+	cv::imshow("Display", img);
+	std::vector<Point> result;
+	result.push_back(Point(ellipses[best[0]].center.x, ellipses[best[0]].center.y));
+	result.push_back(Point(ellipses[best[1]].center.x, ellipses[best[1]].center.y));
+	result.push_back(Point(ellipses[best[2]].center.x, ellipses[best[2]].center.y));
+	return result;
 }
 
 // Returns true if the 3 points are collinear (within some threshold)
 bool Vision::isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3) {
-	float thresh = 20 * M_PI/180;	// Radians
+	float thresh = 25 * M_PI/180;	// Radians
 	float angle1 = angle(p1, p2);
 	float angle2 = angle(p2, p3);
 	return abs(angle1 - angle2) < thresh ||
