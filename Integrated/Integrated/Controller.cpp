@@ -117,6 +117,12 @@ void Controller::getCameraTransform(int camera, bool manual_mode)
 
 void Controller::getMidPoints(int camera, bool manual_mode)
 {
+	// Can only get midpoints after getting transform
+	if (vision_->transform_mats_[camera].size() == cv::Size(0, 0)) {
+		std::cout << "Get transform first" << std::endl;
+		return;
+	}
+
 	// Grab image and apply transform
 	cv::Mat img_bgr;
 	vision_->getCamImg(camera, img_bgr);

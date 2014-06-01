@@ -356,7 +356,8 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 	//cv::waitKey();
 
 	cv::Point2f input_quad[4] = {blue_circle, red_circle, green_circle, black_circle};
-	generateTransform(input_quad, camera, img_in, transform_out);
+	float side_in_pix = OUR_SQUARE_SIDE / M_PER_PIX;
+	generateTransform(input_quad, camera, img_in, transform_out, side_in_pix);
 
 	return true;
 }
@@ -364,95 +365,37 @@ bool Vision::getTransform(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 // Find perspective transform, but user manually selects marker circles
 void Vision::getTransformManual(cv::Mat& img_in, cv::Mat& transform_out, int camera) {
 
-	//cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
-
-	// Make hls copy
-	cv::Mat img_hls;
-	cv::cvtColor(img_in, img_hls, CV_BGR2HLS_FULL);
-
-	// Make grayscale copy, Reduce noise with a kernel 5x5
-	cv::Mat img_temp;
-	cv::cvtColor(img_in, img_temp, CV_BGR2GRAY);
-	cv::blur(img_temp, img_temp, cv::Size(5,5) );
-
-	// Canny edge detection
-	int threshold = 35;
-	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
-
-	// Make color format for showing stuff
-	cv::Mat cdst;
-	cv::cvtColor(img_temp, cdst, CV_GRAY2BGR);
-	
-	// Find contours from Canny image
-	// Warning, findContours affects input image (img_temp)
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-
-	// Fit ellipses to contours and keep circular ones
-	std::vector<cv::RotatedRect> ellipses;
-	for (std::size_t i = 0; i < contours.size(); i++) {
-		if (contours[i].size() < 5)
-			continue;
-		cv::RotatedRect r = cv::fitEllipse(contours[i]);	
-		
-		// Check circularity and that it isn't too small
-		if (r.size.height/r.size.width < 4 && r.size.area() > 15) {
-			ellipses.push_back(r);
-			cv::Scalar color = getColor(img_in, r.center);
-			cv::ellipse(cdst, r, color, 3);
-		}
-	}
-
 	// Get mouse clicks
 	int num_clicks = 0;
 	cv::namedWindow("Mouse clicks");
-	cv::imshow("Mouse clicks", cdst);
+	cv::imshow("Mouse clicks", img_in);
 	cv::setMouseCallback("Mouse clicks", onMouse);
 	mouse_click_changed = false;
+	cv::Point2f input_quad[4];
 	std::vector<cv::Point2f> click_pos;
-	std::cout << "Click blue, red, green, black circles in order." << std::endl;
+	std::cout << "Click tile corners in clockwise order." << std::endl;
 	while (num_clicks < 4) {
 		if (mouse_click_changed) {
-			click_pos.push_back(cv::Point2f(mouse_l_click_pos.x, mouse_l_click_pos.y));
+			input_quad[num_clicks] = mouse_l_click_pos;
 			num_clicks++;
 			mouse_click_changed = false;
 		}
 		cv::waitKey(100);
 	}
 	cv::destroyWindow("Mouse clicks");	
-	
-	// Find the closest ellipses to the mouse clicks
-	int closest_ellipses[4];
-	float distances[4] = {99999, 99999, 99999, 99999};
-	for (std::size_t i = 0; i < ellipses.size(); i++) {
-		for (int j = 0; j < 4; j++) {
-			float this_distance = dist(click_pos[j], ellipses[i].center);
-			if (this_distance < distances[j]) {
-				distances[j] = this_distance;
-				closest_ellipses[j] = i;
-			}
-		}
-	}
 
 	// Generate transform
-	cv::Point2f blue_circle = ellipses[closest_ellipses[0]].center;
-	cv::Point2f red_circle = ellipses[closest_ellipses[1]].center;
-	cv::Point2f green_circle = ellipses[closest_ellipses[2]].center;
-	cv::Point2f black_circle = ellipses[closest_ellipses[3]].center;
-	cv::Point2f input_quad[4] = {blue_circle, red_circle, green_circle, black_circle};
-	generateTransform(input_quad, camera, img_in, transform_out);
+	float side_in_pix = TILE_M_LENGTH / M_PER_PIX;
+	generateTransform(input_quad, camera, img_in, transform_out, side_in_pix);
 }
 
 void Vision::generateTransform(cv::Point2f input_quad[4],
 							   int camera, cv::Mat& img_in, 
-							   cv::Mat& transform_out) {
+							   cv::Mat& transform_out, float side_in_pix) {
 
 	// Output Quadilateral or World plane coordinates
     cv::Point2f output_quad[4];
-	float side_in_pix = OUR_SQUARE_SIDE / M_PER_PIX;
 
-	// Order is blue, red, green, black (clockwise)
 	output_quad[0] = cv::Point2f(0, 0); //ellipses[blue_circle].center;
 	output_quad[1] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y);
 	output_quad[2] = cv::Point2f(output_quad[0].x + side_in_pix, output_quad[0].y + side_in_pix);
@@ -863,77 +806,81 @@ bool Vision::findFinishTile(cv::Mat& img_in, Point& pos_out) {
 	cv::blur(img_temp, img_temp, cv::Size(5, 5) );
 
 	// Canny edge detection
-	int threshold = 35;
+	int threshold = 40;
 	cv::Canny(img_temp, img_temp, threshold, threshold * 3, 3);
 
-	// Make color format for showing stuff
-	//cv::Mat cdst;
 	//cv::cvtColor(img_temp, cdst, CV_GRAY2BGR);
 	
 	// Find contours from Canny image
-	// Warning, findContours affects input image (img_canny)
+	// Warning, findContours affects input image (img_temp)
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours( img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 
 	// Fit ellipses to contours 
+	float marker_diameter = CIRCLE_MARK_DIAMETER / M_PER_PIX;
+	float max_diameter = marker_diameter * 1.2;
+	float min_diameter = marker_diameter * 0.8;
 	std::vector<cv::RotatedRect> ellipses;
 	for (std::size_t i = 0; i < contours.size(); i++) {
 
-		if (contours[i].size() < 5)
+		if (contours[i].size() < 5) {
 			continue;
+		}
+
 		cv::RotatedRect r = cv::fitEllipse(contours[i]);
 
 		// Check circularity and size
-		float max_diameter = CIRCLE_MARK_DIAMETER * 1.2 / M_PER_PIX;
-		float min_diameter = CIRCLE_MARK_DIAMETER * 0.8 / M_PER_PIX;
 		if (r.size.height/r.size.width < 1.2 && 
 			r.size.height < max_diameter &&
 			r.size.height > min_diameter) {
-			//cv::ellipse(cdst, r, cv::Scalar(255, 0, 0));
+			cv::ellipse(img_in, r, cv::Scalar(255, 0, 0));
 			ellipses.push_back(r);
 		}
 	}
 
-	//cv::imshow("Display", cdst);
-	//cv::waitKey();
-
 	// Go through ellipse and find circle pairs indicating starting line
-	std::vector<cv::Point2f> pair_centres;
-	float dist_thresh = 40;			// Pixels
+	cv::Point2f pair_centre;
+	float min_error = 999999;
 	float max_angle = M_PI_2 * 1.2;	// Radians
 	float min_angle = M_PI_2 * 0.8;
 	float marker_dist_pix = CIRCLE_MARK_DIST / M_PER_PIX;
-	for (std::size_t i = 0; i < ellipses.size() - 1; i++) {
+	for (std::size_t i = 0; i < ellipses.size(); i++) {
 		for (std::size_t j = i + 1; j < ellipses.size(); j++) {
-			if (abs(dist(ellipses[i].center, ellipses[j].center) - marker_dist_pix) > dist_thresh)
-				continue;
 
 			// TODO image rotation, pixel comparison to source tile
 			// Currently assumes finish line is orientated with direction
 			// of car travel to the left
 			float dir = angle(ellipses[i].center, ellipses[j].center);
-			if (abs(dir) < max_angle && abs(dir) > min_angle) {
+			if (abs(dir) > max_angle || abs(dir) < min_angle) {
+				continue;
+			}
+
+			float error = abs(dist(ellipses[i].center, ellipses[j].center) - marker_dist_pix);
+			error += abs(ellipses[i].size.height - marker_diameter);
+			error += abs(ellipses[j].size.height - marker_diameter);
+			
+			if (error < min_error) {
 				float mid_x = 0.5 * (ellipses[i].center.x + ellipses[j].center.x);
 				float mid_y = 0.5 * (ellipses[i].center.y + ellipses[j].center.y);
-				pair_centres.push_back(cv::Point2f(mid_x, mid_y));
-				cv::circle(img_in, ellipses[i].center, ellipses[i].size.height, cv::Scalar(0, 0, 255), 2);
-				cv::circle(img_in, ellipses[j].center, ellipses[j].size.height, cv::Scalar(0, 0, 255), 2);
-				cv::circle(img_in, pair_centres.back(), 3, cv::Scalar(255, 0, 0), 2);
+				pair_centre = cv::Point2f(mid_x, mid_y);
+				min_error = error;
 			}
 		}
 	}
 
-	if (pair_centres.size() == 0) {
+	cv::imshow("Display", img_in);
+
+	if (pair_centre.x == 0 && pair_centre.y == 0) {
 		std::cout << "Could not find finish line" << std::endl;
 		return false;
 	}
 
-	
+	cv::circle(img_in, pair_centre, 3, cv::Scalar(0, 255, 0), 2);	
 	cv::imshow("Display", img_in);
 
-	pos_out.x = pair_centres[0].x;
-	pos_out.y = pair_centres[0].y;
+	pos_out.x = pair_centre.x;
+	pos_out.y = pair_centre.y;
 	pos_out.track_angle = M_PI;	// TODO
 }
 
@@ -955,9 +902,6 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 	// Canny edge detection
 	int threshold = 35;
 	cv::Canny(temp, temp, threshold, threshold * 3, 3);
-
-	cv::imshow("Display", temp);
-	cv::waitKey();
 		
 	// Find contours from Canny image
 	// Warning, findContours affects input image
@@ -1041,42 +985,52 @@ bool Vision::isCollinear(cv::Point2f p1, cv::Point2f p2, cv::Point2f p3) {
 // Waits until go signal given, then returns true
 bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 
-	// To distinguish if signal is on/off, use luminosity + saturation
-	// Take off value from average over 4 pictures
-	int lum_sat_off[3] = {0, 0, 0};
+	// To distinguish if signal is on/off, use change in HLS
+	// Take "off" value from average over 4 pictures
+	std::vector<cv::Scalar> hls_off;
+	for (int i = 0; i < 3; i++) {
+		hls_off.push_back(cv::Scalar(0,0,0));
+	}
 	int num_off_samples = 4;
-	float cone_diameter = 180;// 0.1 / M_PER_PIX;
+	float cone_diameter = 0.02 / M_PER_PIX;
 	for (int i = 0; i < num_off_samples; i++) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
 		applyTrans(img_temp, camera);
-		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
+		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS_FULL);
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColor(img_temp, cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);
-			lum_sat_off[j] += vals[1] + vals[2];
+			cv::Scalar vals = getColor(img_temp,
+				cv::Point2f(signal_pos[j].x, signal_pos[j].y), cone_diameter);
+			hls_off[j][0] += vals[0];
+			hls_off[j][1] += vals[1];
+			hls_off[j][2] += vals[2];
 		}
 	}
 	for (int i = 0; i < 3; i++) {
-		lum_sat_off[i] = lum_sat_off[i] / num_off_samples;
+		for (int j = 0; j < 3; j++) {
+			hls_off[i][j] /= num_off_samples;
+		}
 	}
-	std::cout << "Off lum sat sums: " << lum_sat_off[0] << 
-		" " << lum_sat_off[1] << " " << lum_sat_off[2] << std::endl;
 	std::cout << "Waiting ..." << std::endl;
 	
 	// Start monitoring
 	long long last_update_time = time_now();
 	int on_time = 0;
-	int go_time = 5000;	// 5 seconds
-	int lum_sat_thresh = 6;
+	int go_time = 3500;	// 3.5 seconds
+	int thresh = 30;
 	while (true) {
 		cv::Mat img_temp;
 		getCamImg(camera, img_temp);
 		applyTrans(img_temp, camera);
-		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS);
+		cv::cvtColor(img_temp, img_temp, CV_BGR2HLS_FULL);
 		bool on_detected = false;
 		for (int j = 0; j < 3; j++) {
-			cv::Scalar vals = getColor(img_temp,  cv::Point2f(signal_pos[j].x, signal_pos[j].x), cone_diameter);			
-			if (lum_sat_off[j]  + lum_sat_thresh < vals[1] + vals[2]) {
+			cv::Scalar vals = getColor(img_temp,  cv::Point2f(signal_pos[j].x, signal_pos[j].y), cone_diameter);
+			int error_sum = 0;
+			for (int k = 0; k < 3; k++) {
+				error_sum += abs(hls_off[j][k] - vals[k]);
+			}
+			if (error_sum > thresh) {
 				on_detected = true;
 				break;
 			}
@@ -1085,8 +1039,9 @@ bool Vision::waitForGo(int camera, std::vector<Point> signal_pos) {
 			on_time += time_now() - last_update_time;
 			std::cout << "Time before go: " << go_time - on_time << std::endl;
 		}
-		if (on_time > go_time)
+		if (on_time > go_time) {
 			return true;
+		}
 		last_update_time = time_now();
 	}
 }
@@ -1366,9 +1321,9 @@ cv::Mat& img_white_warped, int camera) {
 // Remove points if too small
 void Vision::addRemovePoints(std::vector<Point>& path) {
 	std::size_t index = 0;
-	double lower_dist = MIDPOINT_STEP_SIZE - 3;
+	double lower_dist = MIDPOINT_STEP_SIZE - 4;
 	double ideal_dist = MIDPOINT_STEP_SIZE;
-	double upper_dist = MIDPOINT_STEP_SIZE + 3;
+	double upper_dist = MIDPOINT_STEP_SIZE + 4;
 	while(index < path.size() - 1) {
 		if (path[index].path_num != path[index+1].path_num) {
 			index++;
@@ -1396,7 +1351,7 @@ void Vision::addRemovePoints(std::vector<Point>& path) {
 
 // Smooth path by bringing points towards together
 void Vision::smoothPath(std::vector<Point>& path, int selected) {
-	int iterations = 10;
+	int iterations = 8;
 	double smoothing_factor = 0.1;
 	int lower_neighbour = selected - 2;
 	int upper_neighbour = selected + 2;
@@ -1408,19 +1363,21 @@ void Vision::smoothPath(std::vector<Point>& path, int selected) {
 	}
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = lower_neighbour + 1; j < upper_neighbour; j++) {
-			if (path[j].locked)
+			if (path[j].locked ||
+				path[j].path_num != path[selected].path_num || 
+				path[j-1].path_num != path[selected].path_num ||
+				path[j+1].path_num != path[selected].path_num) {
 				continue;
-
-			// Move towards previous point
-			if (path[j-1].path_num == path[j].path_num) {
-				double angle_to_prev = path[j-1].track_angle - M_PI;
-				double dist_to_prev = path[j-1].dist(path[j]);
-				path[j].x += dist_to_prev * cos(angle_to_prev) * smoothing_factor;
-				path[j].y += dist_to_prev * sin(angle_to_prev) * smoothing_factor;
 			}
 
+			// Move towards previous point
+			double angle_to_prev = path[j-1].track_angle - M_PI;
+			double dist_to_prev = path[j-1].dist(path[j]);
+			path[j].x += dist_to_prev * cos(angle_to_prev) * smoothing_factor;
+			path[j].y += dist_to_prev * sin(angle_to_prev) * smoothing_factor;
+
 			// Move towards next point
-			if (j + 1 < path.size() && path[j].path_num == path[j+1].path_num) {
+			if (j + 1 < path.size()) {
 				double angle_to_next = path[j].track_angle;
 				double dist_to_next = path[j].dist(path[j+1]);
 				path[j].x += dist_to_next * cos(angle_to_next) * smoothing_factor;
@@ -1445,9 +1402,11 @@ void Vision::checkStrictness(cv::Mat& img_dist, std::vector<Point>& path) {
 	// as tunnel is detected as a wider road
 	float min_dist = ROAD_WIDTH * 0.5 / M_PER_PIX;
 	for (std::size_t i = 0; i < path.size(); i++) {
-		float this_dist = img_dist.at<float>((int) path[i].y, path[i].x);
-		if (this_dist > min_dist) {			
-			path[i].strict = true;
+		if (inImg(img_dist, path[i].x, path[i].y)) {
+			float this_dist = img_dist.at<float>((int) path[i].y, path[i].x);
+			if (this_dist > min_dist) {			
+				path[i].strict = true;
+			}
 		}
 	}
 	

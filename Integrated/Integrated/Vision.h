@@ -126,7 +126,7 @@ private:
 	void checkStrictness(cv::Mat& img_dist, std::vector<Point>& path);
 
 	void generateTransform(cv::Point2f input_quad[4], int camera,
-		cv::Mat& img_in, cv::Mat& transform_out);
+		cv::Mat& img_in, cv::Mat& transform_out, float side_in_pix);
 
 	// Returns euclidean distance between two opencv points
 	float dist(cv::Point2f& p1, cv::Point2f& p2);
