@@ -107,6 +107,9 @@ private:
 
 	cv::Mat img_display_;
 
+	//obstacles detected in the previous frame
+
+	std::vector<cv::RotatedRect> prev_obstacles_;
 	// Find perspective transform which when applied to image will
 	// give unwarped top-down view. Input image must contain our 
 	// special marker used during setup time. Returns true if success

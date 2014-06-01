@@ -55,10 +55,6 @@ void Car::update(Point pos, double dir, double spd) {
 	update_time_ = time_now();
 }
 
-void Car::setPos(Point pos) {
-	pos_ = pos;
-}
-
 Point Car::getPos() const {
 	return pos_;
 }
@@ -78,9 +74,19 @@ double Car::getLength() const {
 double Car::getWidth() const {
 	return width_;
 }
+
 double Car::getHeight() const {
 	return height_;
 }
+
 long long Car::getUpdateTime() const {
 	return update_time_;
+}
+
+void Car::setPos(Point pos) {
+	pos_ = pos;
+}
+
+void Car::setDir(double dir) {
+	dir_ = dir;
 }

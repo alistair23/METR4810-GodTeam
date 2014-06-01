@@ -29,9 +29,11 @@ Controller::Controller() :
 	go_signals_(new std::vector<Point>()),
 	wants_to_enter_pitstop(false),
 	wants_to_exit_pitstop(false),
+	is_entering_pitstop(false),
 	was_beyond_thresh_(false),
 	did_tight_turn_(false),
-	obs_check_count_(0)
+	obs_check_count_(0),
+	view_background_set(false)
 {
 	form_ = gcnew MyForm();
 	form_->setParent(this);
@@ -177,8 +179,12 @@ void Controller::getGoSignal(int camera) {
 }
 
 void Controller::launchOnGo(int camera) {
+	
 	vision_->waitForGo(camera, *go_signals_);
 	std::cout << "GO!!" << std::endl;
+	car_tracking_on = true;
+	local_planning_on = true;
+	go_signal_found = true;
 }
 
 void Controller::enterPitstop() {
@@ -267,7 +273,7 @@ void Controller::detectCar()
 				}
 			}
 			
-			if (temp_camera != current_camera_) {
+			if (temp_camera != current_camera_ || !view_background_set) {
 
 				// We have changed cameras
 				cv::Mat img_bgr;
@@ -275,6 +281,7 @@ void Controller::detectCar()
 				vision_->applyTrans(img_bgr, temp_camera);
 				view_->setBackground(img_bgr);
 				current_camera_ = temp_camera;
+				view_background_set = true;
 			}
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
@@ -283,13 +290,13 @@ void Controller::detectCar()
 			Interlocked::Exchange(my_car_lock_, 0);	
 
 			// Obstacles check every 10 loops
-			if (obs_check_count_ > 10 && 0 == Interlocked::Exchange(current_path_lock_, 1)) {
+			/*if (obs_check_count_ > 25 && 0 == Interlocked::Exchange(current_path_lock_, 1)) {
 				getObstacles(current_camera_);
 				obs_check_count_ = 0;
 				Interlocked::Exchange(current_path_lock_, 0);
 			} else {
 				obs_check_count_++;
-			}
+			}*/
 		}
 	}
 }
@@ -308,13 +315,9 @@ void Controller::runPlanner(){
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
-			if (wants_to_enter_pitstop && current_camera_ == finish_line_camera_ && 
-			my_car_temp.getPos().dist(planner_->enter_pitstop_points[0]) < 500 / M_PER_PIX) {
-
-				// Entering pitstop
-				*current_path_ = planner_->enter_pitstop_points;
-			} else if (wants_to_exit_pitstop) {
+			if (wants_to_exit_pitstop) {
 				wants_to_enter_pitstop = false;
+				is_entering_pitstop = false;
 				if (my_car_temp.getPos().dist(planner_->exit_pitstop_points.back()) > 0.2 / M_PER_PIX) {
 					
 					// Exiting pitstop
@@ -324,6 +327,13 @@ void Controller::runPlanner(){
 					// Successfully exited pitstop
 					wants_to_exit_pitstop = false;						
 				}
+			} else if (wants_to_enter_pitstop && current_camera_ == finish_line_camera_ && 
+			my_car_temp.getPos().dist(planner_->enter_pitstop_points[0]) < 0.5 / M_PER_PIX ||
+			is_entering_pitstop) {
+
+				// Entering pitstop
+				*current_path_ = planner_->enter_pitstop_points;
+				is_entering_pitstop = true;
 			} else {
 
 				// Path planning as normal
@@ -343,7 +353,7 @@ void Controller::runPlanner(){
 
 void Controller::sendCarCommand() {
 	double angle;
-	int wait_period = 50;	// milliseconds
+	int wait_period = 50;
 	while(true)
 	{
 		if (!go_signal_found || !local_planning_on || current_path_->size() == 0)
@@ -352,7 +362,7 @@ void Controller::sendCarCommand() {
 			old_time_ = time_now();
 		}
 		else {
-
+			wait_period = 50;	// milliseconds
 			long long update_time = time_now();
 
 			while (0 != Interlocked::Exchange(my_car_lock_, 1)); 
@@ -362,6 +372,7 @@ void Controller::sendCarCommand() {
 			double max_speed = 0.775 / M_PER_PIX;	// pixels/second
 			double max_speed_allowed = max_speed * 0.25;
 			double tight_turn_speed = max_speed * 0.3;
+			double tight_turn_angle_change = 25 * M_PI/180;
 			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -375,8 +386,8 @@ void Controller::sendCarCommand() {
 
 			// Carrot approach - choose a goal point-+ certain distance ahead
 			float lookahead = 0.12 / M_PER_PIX;
-			int max_points_ahead = lookahead / MIDPOINT_STEP_SIZE;
-			float stop_dist = 0.02 / M_PER_PIX;	// Stops if this close to goal
+			int max_points_ahead = 9999; //lookahead / MIDPOINT_STEP_SIZE;
+			float stop_dist = 0.04 / M_PER_PIX;	// Stops if this close to goal
 			float touch_dist = 0.1 / M_PER_PIX;	// For checking if point has been passed
 
 			// Get goal point
@@ -392,28 +403,31 @@ void Controller::sendCarCommand() {
 				angle -= 2 * M_PI;
 			}
 
-			float angle_thresh = 30 * M_PI/180;
-			if (update_time - my_car_->getUpdateTime() >1000) {
-				my_car_->setLSpeed(my_car_->getLSpeed() * 0.5);
-				my_car_->setRSpeed(my_car_->getRSpeed() * 0.5);
+			float angle_thresh = 20 * M_PI/180;
+			/*if (update_time - my_car_->getUpdateTime() >1000) {
+				my_car_->setLSpeed(0.5 * max_speed_allowed);
+				my_car_->setRSpeed(0.5 * max_speed_allowed);
 			}
 			
-			else if (my_car_->getPos().dist(*goal) < stop_dist) {
+			else*/
+			if (my_car_->getPos().dist(*goal) < stop_dist && is_entering_pitstop) {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
 			} else if (abs(angle) < angle_thresh && !did_tight_turn_) {
 
 				// Normal operation: smooth straight/turn
-				my_car_->setLSpeed(max_speed_allowed * (1 + angle/(100 * M_PI/180)));
-				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(100 * M_PI/180)));
+				my_car_->setLSpeed(max_speed_allowed * (1 + angle/(80 * M_PI/180)));
+				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(80 * M_PI/180)));
 				was_beyond_thresh_ = false;
+				my_car_->step(wait_period / 1000.0);
+				
 			} else if (did_tight_turn_) {
 
 				// Stop and wait after tight turn
 				// This is to avoid overshooting
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
-				wait_period = 200;
+				wait_period = 1000;
 				did_tight_turn_ = false;
 			} else if (!was_beyond_thresh_ && abs(angle) >= angle_thresh) {
 
@@ -430,12 +444,14 @@ void Controller::sendCarCommand() {
 				if (angle > 0) {
 					my_car_->setLSpeed(tight_turn_speed);
 					my_car_->setRSpeed(0);
+					my_car_->setDir(my_car_->getDir() + tight_turn_angle_change);
 				} else if (angle < 0) {
 					my_car_->setLSpeed(0);
 					my_car_->setRSpeed(tight_turn_speed);
+					my_car_->setDir(my_car_->getDir() - tight_turn_angle_change);
 				}
 				did_tight_turn_ = true;
-				wait_period = 600;
+				wait_period = 300;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels

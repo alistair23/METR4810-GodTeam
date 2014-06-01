@@ -63,7 +63,9 @@ private:
 	int finish_line_camera_;
 	std::vector<Point>* go_signals_;
 	bool wants_to_enter_pitstop;
+	bool is_entering_pitstop;
 	bool wants_to_exit_pitstop;
+	bool view_background_set;
 
 	void updateView(Object^ stateInfo);
 	void detectCar();

@@ -682,7 +682,7 @@ bool Vision::getCarMarkers(
 						last_car_size_ = ellipses[biggest].size.height;
 						this_is_my_car = true;
 						my_car_found = true;
-						std::cout<< "marker angle: " << marker_angle << std::endl;
+						//std::cout<< "marker angle: " << marker_angle << std::endl;
 						//std::cout << "cam angle: " << cam_angle << "car height : " << my_car_.getHeight() << std::endl;
 						//std::cout << "ratio : " << ellipses[biggest].size.width/ellipses[biggest].size.height << std::endl;
 						cv::ellipse(cdst, ellipses[i], cv::Scalar(255,0,0), 1);
@@ -746,8 +746,8 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-	float max_side = 0.1 / M_PER_PIX;	// Max side length for obstacle
-	float min_side = 0.007 / M_PER_PIX;	// Min side length to accept obstacle
+	float max_side = 0.04 / M_PER_PIX;	// Max side length for obstacle
+	float min_side = 0.01 / M_PER_PIX;	// Min side length to accept obstacle
 	float clearance = 0.03 / M_PER_PIX;	// Added to side length
 	float car_check_thresh = DEFAULT_CAR_LENGTH_PIX * 2;
 	for (int i = 0; i < contours.size(); i++)
@@ -778,12 +778,33 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 			*/
 
 		// Checks have passed
+		//Now check if we already have the same obstacle
 		rect.size.height += clearance;
 		rect.size.width += clearance;
 		rect.center.x -= clearance * 0.5;
 		rect.center.y -= clearance * 0.5;
 		obstacles.push_back(rect);
 	}
+	//use previous update to add obstacles that are missed
+	/*
+	float obstacle_thresh = 0.03/M_PER_PIX;
+	for (int j = 0; j < prev_obstacles_.size(); j++){
+		bool same_obstacle = false;
+		for (int k = 0; k < obstacles.size(); k++){
+			if(dist(prev_obstacles_[j].center, obstacles[k].center) <  obstacle_thresh){
+				same_obstacle = true;
+				break;
+			}
+		}
+		if(!same_obstacle){
+			obstacles.push_back(prev_obstacles_[j]);
+		}
+	}
+
+	prev_obstacles_.clear();
+	for (int j = 0; j<obstacles.size(); j++){
+			prev_obstacles_.push_back(obstacles[j]);
+	}*/
 
 	/// Draw contours + rotated rects + ellipses
 	//cv::Mat drawing;
@@ -882,6 +903,7 @@ bool Vision::findFinishTile(cv::Mat& img_in, Point& pos_out) {
 	pos_out.x = pair_centre.x;
 	pos_out.y = pair_centre.y;
 	pos_out.track_angle = M_PI;	// TODO
+	return true;
 }
 
 

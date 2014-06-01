@@ -15,7 +15,6 @@ public:
 	Car(const Car& p);	// Copy
 	const Car &Car::operator = (const Car& c);
 	void update(Point pos, double dir, double spd);
-	void setPos(Point pos);
 
 	// Getters
 	Point getPos() const;
@@ -25,6 +24,10 @@ public:
 	double getWidth() const;
 	double getHeight() const;
 	long long getUpdateTime() const;
+
+	// Setters
+	void setPos(Point pos);
+	void setDir(double dir);
 
 protected:
 

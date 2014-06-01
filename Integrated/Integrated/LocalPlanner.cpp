@@ -16,11 +16,15 @@ LocalPlanner::LocalPlanner(int num_cameras):
 		obstacles.push_back(std::vector<cv::RotatedRect>());
 	}
 
-	source_enter_pitstop_points.push_back(Point(880, 30));
-	source_enter_pitstop_points.push_back(Point(775, 185));
-	source_enter_pitstop_points.push_back(Point(475, 185));
-	source_exit_pitstop_points.push_back(Point(250, 185));
-	source_exit_pitstop_points.push_back(Point(130, 30));
+	source_enter_pitstop_points.push_back(Point(925, 30));
+	source_enter_pitstop_points.push_back(Point(875, 110));
+	source_enter_pitstop_points.push_back(Point(800, 185));
+	source_enter_pitstop_points.push_back(Point(750, 185));
+	source_enter_pitstop_points.push_back(Point(700, 185));
+	source_enter_pitstop_points.push_back(Point(650, 185));
+	source_exit_pitstop_points.push_back(Point(240, 185));
+	source_exit_pitstop_points.push_back(Point(180, 110));
+	source_exit_pitstop_points.push_back(Point(120, 30));
 }
 
 LocalPlanner::LocalPlanner(std::vector<std::vector<Point>> global_path):

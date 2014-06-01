@@ -1030,7 +1030,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->textBox11->Name = L"textBox11";
 			this->textBox11->Size = System::Drawing::Size(148, 20);
 			this->textBox11->TabIndex = 9;
-			this->textBox11->Text = L"127.0.0.1";
+			this->textBox11->Text = L"169.254.88.211";
 			// 
 			// btn_connect
 			// 
