@@ -370,7 +370,7 @@ void Controller::sendCarCommand() {
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 0.775 / M_PER_PIX;	// pixels/second
-			double max_speed_allowed = max_speed * 0.25;
+			double max_speed_allowed = max_speed * 0.3;
 			double tight_turn_speed = max_speed * 0.3;
 			double tight_turn_angle_change = 25 * M_PI/180;
 			double radius_factor = 0.4;
@@ -404,13 +404,18 @@ void Controller::sendCarCommand() {
 			}
 
 			float angle_thresh = 20 * M_PI/180;
-			/*if (update_time - my_car_->getUpdateTime() >1000) {
-				my_car_->setLSpeed(0.5 * max_speed_allowed);
-				my_car_->setRSpeed(0.5 * max_speed_allowed);
+			if (update_time - my_car_->getUpdateTime() > 800) {
+				if(my_car_->getLSpeed() > 0.5 * max_speed_allowed && my_car_->getRSpeed() > 0.5 * max_speed_allowed){
+					my_car_->setLSpeed(0.7 * my_car_->getLSpeed());
+					my_car_->setRSpeed(0.7 * my_car_->getRSpeed());
+				}
+				else{
+					my_car_->setLSpeed(0.5 * max_speed_allowed);
+					my_car_->setRSpeed(0.5 * max_speed_allowed);
+				}
 			}
 			
-			else*/
-			if (my_car_->getPos().dist(*goal) < stop_dist && is_entering_pitstop) {
+			else if (my_car_->getPos().dist(*goal) < stop_dist && is_entering_pitstop) {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
 			} else if (abs(angle) < angle_thresh && !did_tight_turn_) {
@@ -427,7 +432,7 @@ void Controller::sendCarCommand() {
 				// This is to avoid overshooting
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
-				wait_period = 1000;
+				wait_period = 600;
 				did_tight_turn_ = false;
 			} else if (!was_beyond_thresh_ && abs(angle) >= angle_thresh) {
 
@@ -451,7 +456,7 @@ void Controller::sendCarCommand() {
 					my_car_->setDir(my_car_->getDir() - tight_turn_angle_change);
 				}
 				did_tight_turn_ = true;
-				wait_period = 300;
+				wait_period = 500;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels
