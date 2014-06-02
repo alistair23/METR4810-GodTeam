@@ -122,126 +122,81 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// Check points validity, record indices of points in collision
 	long long timetodo = 0;	// TODO
-	std::vector<int> invalidPoints;
+	std::vector<int> invalid_points;
 
 	// First point needs to be checked specially, as 
 	// there is no previous point to get angle from
 	if (carInCollision(segment[0], my_car_.getDir(), timetodo) != -1 ||
 		obstacleCollision(segment[0], my_car_.getDir(), camera))
-		invalidPoints.push_back(0);
+		invalid_points.push_back(0);
 	for (int i = 1; i < segment.size(); i++) {
  		if (carInCollision(segment[i], segment[i-1].angle(segment[i]), timetodo) != -1 ||
 			obstacleCollision(segment[i], segment[i-1].angle(segment[i]), camera)) {
-			invalidPoints.push_back(i);
+			invalid_points.push_back(i);
 		}
 	}
 	
 
 	// If there are no points in collision, we go with the existing plan
 	// TODO smoothen?
-	//std::cout << invalidPoints.size() << std::endl;
-	if (invalidPoints.size() == 0)  {
+	//std::cout << invalid_points.size() << std::endl;
+	if (invalid_points.size() == 0)  {
 		prev_segment_ = segment;
 		
 		//return segment;
 	}
 	
+	// Move segment points to avoid collision with obstacles
+	for (std::size_t i = 0; i < invalid_points.size(); i++) {
 
-	// Otherwise there are three options. Check each and use the 
-	// best one.
-	// 1. Overtake on right
-	// 2. Overtake on left
-	// 3. Follow behind other car
-
-	// Cost of path
-	bool right_valid = true;
-	bool left_valid = true;
-	double right_cost = 0;
-	double left_cost = 0;
-	double follow_cost = 0;
-
-	// First check overtaking right option
-	// Make a copy of the segment
-	
-	std::vector<Point> left_segment = segment;
-	std::vector<Point> right_segment = segment;
-	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
-
-		// Get references to invalid segment point and corresponding global path point
-		Point& seg_point = right_segment[invalidPoints[i]];
-		Point& global_point = global_paths_[camera][(invalidPoints[i] + global_index_) % global_paths_[camera].size()];
+		Point right_point = segment[invalid_points[i]];
+		Point left_point = segment[invalid_points[i]];
+		Point& global_point = global_paths_[camera][(invalid_points[i] + global_index_) % global_paths_[camera].size()];
 
 		// Get gradient from point towards right track edge
 		double step_size = 1;	// In pixels
-		double dy = step_size * sin(seg_point.track_angle + M_PI_2);
-		double dx = step_size * cos(seg_point.track_angle + M_PI_2);
+		double dy = step_size * sin(global_point.track_angle + M_PI_2);
+		double dx = step_size * cos(global_point.track_angle + M_PI_2);
 
-		// Go along gradient until valid point is found
-		double deformation = seg_point.dist(global_point);
-		bool pointValid = false;
-		while (!pointValid && deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
-			deformation += step_size;
-			seg_point.x += dx;
-			seg_point.y += dy;
-			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1 &&
-				obstacleCollision(seg_point, global_point.track_angle, camera) == false);
-		}
-		right_cost += deformation;
-
-		// If a point can't be corrected, then cannot overtake right
-		if (!pointValid) {
-			right_valid = false;
-			break;
+		// Try right:
+		double right_deformation = right_point.dist(global_point);
+		bool right_valid = false;
+		while (!right_valid && right_deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
+			right_deformation += step_size;
+			right_point.x += dx;
+			right_point.y += dy;
+			right_valid = (carInCollision(right_point, global_point.track_angle, timetodo) == -1 &&
+				obstacleCollision(right_point, global_point.track_angle, camera) == false);
 		}
 
-		seg_point.locked = true;
+		// Try left:
+		double left_deformation = left_point.dist(global_point);
+		bool left_valid = false;
+		while (!left_valid && left_deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
+			left_deformation += step_size;
+			left_point.x -= dx;
+			left_point.y -= dy;
+			left_valid = (carInCollision(left_point, global_point.track_angle, timetodo) == -1 &&
+				obstacleCollision(left_point, global_point.track_angle, camera) == false);
+		}
+
+		// Pick the one with less deformation
+		double left_cost = left_deformation;
+		double right_cost = right_deformation;
+		if (invalid_points[i] > 1) {
+			left_cost += left_point.dist(segment[invalid_points[i] - 1]);
+			right_cost += right_point.dist(segment[invalid_points[i] - 1]);
+		}
+		if (left_cost < right_cost) {
+			segment[invalid_points[i]] = left_point;
+		} else {
+			segment[invalid_points[i]] = right_point;
+		}
+		segment[invalid_points[i]].locked = true;
 	}
 
-	// Check overtaking left option
-	// Make a copy of the segment
-	for (std::size_t i = 0; i < invalidPoints.size(); i++) {
-
-		// Get references to invalid segment point and corresponding global path point
-		Point& seg_point = left_segment[invalidPoints[i]];
-		Point& global_point = global_paths_[camera][(invalidPoints[i] + global_index_) % global_paths_[camera].size()];
-
-		// Get gradient from point towards left track edge
-		double step_size = 1;	// In pixels
-		double dy = step_size * sin(seg_point.track_angle - M_PI_2);
-		double dx = step_size * cos(seg_point.track_angle - M_PI_2);
-
-		// Go along gradient until valid point is found
-		double deformation = seg_point.dist(global_point);
-		bool pointValid = false;
-		while (!pointValid && deformation < 0.5 * ROAD_WIDTH / M_PER_PIX) {
-			deformation += step_size;
-			seg_point.x += dx;
-			seg_point.y += dy;
-			pointValid = (carInCollision(seg_point, global_point.track_angle, timetodo) == -1 &&
-				obstacleCollision(seg_point, global_point.track_angle, camera) == false);
-		}
-		left_cost += deformation;
-
-		// If a point can't be corrected, then cannot overtake left
-		//if (!pointValid) {
-		//	left_cost = -1;
-		//	break;
-		//}
-
-		seg_point.locked = true;
-	}
-	
 	
 	// TODO Check following other car option, i.e. match velocity
-
-	// TODO avoid all this copying?
-	if (right_cost < left_cost && right_valid) {
-		segment = right_segment;
-	}
-	else if (left_valid) {
-		segment = left_segment;
-	}
-	
 
 	// Smooth out path through iterative process
 	int iterations = 25;

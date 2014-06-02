@@ -80,6 +80,8 @@ public:
 	// Applies perspective transform to an image
 	void applyTrans(cv::Mat& img, int camera);
 	void applyInvTrans(cv::Mat& img, int camera);
+	cv::Point2f applyTrans(cv::Point2f point, int camera);
+	cv::Point2f applyInvTrans(cv::Point2f point, int camera);
 
 	bool transformTrackImage(cv::Mat& img_in, cv::Mat& img_thresh, cv::Point2f& pair_centre);	// PROBABLY WILL DELETE
 

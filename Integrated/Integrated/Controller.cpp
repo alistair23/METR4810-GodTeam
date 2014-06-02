@@ -225,11 +225,25 @@ void Controller::detectCar()
 			Point guess(my_car_->getPos());
 			Interlocked::Exchange(my_car_lock_, 0);
 
-			// First try detecting car in current camera
-			// Number of tries depends on whether we are near the 
-			// end of this path or not
-			int temp_camera = current_camera_;
+			// See if we are near the edge 
+			cv::Point2f guess_cv(guess.x, guess.y);
+			cv::Point2f cam_pos = vision_->applyInvTrans(guess_cv, current_camera_);
+			int img_cols = 1280;
+			int img_rows = 720;
+			int edge_dist[4] = {cam_pos.y, img_rows - cam_pos.y, cam_pos.x, img_cols - cam_pos.x};
+			int dist_to_edge = edge_dist[0];
+			for (int i = 1; i < 4; i++) {
+				if (edge_dist[i] < dist_to_edge) {
+					dist_to_edge = edge_dist[i];
+				}
+			}
 			int num_tries = 2;
+			if (dist_to_edge < 100) {
+				num_tries = 1;
+			}
+
+			// Try detecting car in current camera
+			int temp_camera = current_camera_;
 			for (int i = 0; i < num_tries; i++) {
 				found_my_car = vision_->update(current_camera_, guess);
 				if (found_my_car) {
