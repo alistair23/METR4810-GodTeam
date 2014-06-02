@@ -493,7 +493,7 @@ bool Vision::update(int camera, Point car_pos_guess) {
 		
 		cv::Rect roi(roi_x, roi_y, 2 * search_size, 2 * search_size);
 		cv::Mat img_roi = img_in(roi);
-		found_my_car = getCarMarkers(img_roi, my_car_p1, my_car_p2, other_cars_points, 1);// 1 means roi_mode 
+		found_my_car = getCarMarkers(img_roi, my_car_p1, my_car_p2, other_cars_points); 
 
 		if (found_my_car)  {
 
@@ -510,7 +510,7 @@ bool Vision::update(int camera, Point car_pos_guess) {
 
 	if (!found_my_car) {
 		std::cout << "Failed to find my car, trying full image" << std::endl;
-		found_my_car = getCarMarkers(img_in, my_car_p1, my_car_p2, other_cars_points, 0);//0 means no roi_mode
+		found_my_car = getCarMarkers(img_in, my_car_p1, my_car_p2, other_cars_points);
 		if (!found_my_car) {
 			std::cout << "Failed to find my car" << std::endl;
 			update_time += time_now() - time1;
@@ -575,7 +575,7 @@ Car Vision::getMyCarInfo() {
 // output in other_cars. Returns true if my car is found
 bool Vision::getCarMarkers(
 	cv::Mat& img_in, cv::Point2f& my_car_p1, cv::Point2f& my_car_p2,
-	std::vector<cv::Point2f>& other_cars, int roi_mode) {
+	std::vector<cv::Point2f>& other_cars) {
 
 	// Make grayscale copy, Reduce noise with a kernel 3x3
 	cv::Mat img_gray;
@@ -619,7 +619,7 @@ bool Vision::getCarMarkers(
 	other_cars.clear();
 
 	// Max pixels between detected circle centres to consider circles concentric
-	float dist_thresh[2] = {7, 9};	
+	float dist_thresh = 9;	
 	bool my_car_found = false;
 
 	// Look for concentric circles: this indicates car markers
@@ -631,7 +631,7 @@ bool Vision::getCarMarkers(
 				continue;
 			}
 			float centre_dist = dist(ellipses[i].center, ellipses[j].center);
-			if (centre_dist < dist_thresh[roi_mode] && abs(ellipses[i].size.height - ellipses[j].size.height) > 7)  {
+			if (centre_dist < dist_thresh && abs(ellipses[i].size.height - ellipses[j].size.height) > 7)  {
 
 				bool this_is_my_car = false;
 				if (my_car_found) {
@@ -645,7 +645,7 @@ bool Vision::getCarMarkers(
 					if (abs(ratio_k - ratio_i) > 0.15 || abs(ratio_k - ratio_j) > 0.15)
 						continue;
 					centre_dist = dist(ellipses[i].center, ellipses[k].center);
-					if (centre_dist < dist_thresh[roi_mode] && 
+					if (centre_dist < dist_thresh && 
 						abs(ellipses[i].size.height - ellipses[k].size.height) > 7 &&
 						abs(ellipses[j].size.height - ellipses[k].size.height) > 7) {
 						
@@ -730,7 +730,8 @@ bool Vision::getCarMarkers(
 	return my_car_found;
 }
 
-void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles) {
+void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles,
+						  cv::Point2f finish_line_pos) {
 
 	// Make grayscale copy, Reduce noise with a kernel 5x5
 	cv::Mat img_temp;
@@ -777,8 +778,19 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 			continue;
 			*/
 
+		// No obstacles in finish line
+		float tile_length = TILE_M_LENGTH / M_PER_PIX;
+		if (finish_line_pos.x != -1) {
+			float dx = rect.center.x - finish_line_pos.x;
+			float dy = rect.center.y - finish_line_pos.y;
+			if (dx > 0 && dx < 2 * tile_length || abs(dx) < 0.1 / M_PER_PIX) {
+				if (abs(dy) < 0.5 * tile_length) {
+					continue;
+				}
+			}
+		}
+
 		// Checks have passed
-		//Now check if we already have the same obstacle
 		rect.size.height += clearance;
 		rect.size.width += clearance;
 		rect.center.x -= clearance * 0.5;
@@ -1278,6 +1290,7 @@ cv::Mat& img_white_warped, int camera) {
 
 	std::cout << "Click and drag to edit path. Spacebar when done." << std::endl;
 	std::cout << "Press c to add new path segment" << std::endl;
+	std::cout << "Press d to delete path segment" << std::endl;
 	char keypress = 0;
 	int num_paths = 1;
 	while (keypress != ' ') {
@@ -1325,6 +1338,7 @@ cv::Mat& img_white_warped, int camera) {
 			num_paths++;
 		}
 
+
 		// Draw dots and lines
 		for (std::size_t i = 0; i < midpoints.size(); i++) {
 			cv::Scalar color;
@@ -1358,8 +1372,16 @@ cv::Mat& img_white_warped, int camera) {
 			addRemovePoints(midpoints);
 			checkStrictness(img_dist, midpoints);
 		}
+
+		// Press d for deleting
+		if (keypress == 'd' && mouse_l_down) {
+			if (midpoints[selected].dist(Point(mouse_pos.x, mouse_pos.y)) < 15) {
+				midpoints.erase(midpoints.begin() + selected, midpoints.end());
+			}
+		}
+
 		cv::imshow("Mouse clicks", img_temp);
-		keypress = cv::waitKey(50);
+		keypress = cv::waitKey(40);
 	}
 
 	cv::destroyWindow("Mouse clicks");	
@@ -1371,7 +1393,7 @@ cv::Mat& img_white_warped, int camera) {
 // Remove points if too small
 void Vision::addRemovePoints(std::vector<Point>& path) {
 	std::size_t index = 0;
-	double lower_dist = MIDPOINT_STEP_SIZE - 4;
+	double lower_dist = MIDPOINT_STEP_SIZE - 3;
 	double ideal_dist = MIDPOINT_STEP_SIZE;
 	double upper_dist = MIDPOINT_STEP_SIZE + 4;
 	while(index < path.size() - 1) {

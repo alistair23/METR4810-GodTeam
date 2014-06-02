@@ -22,6 +22,9 @@ LocalPlanner::LocalPlanner(int num_cameras):
 	source_enter_pitstop_points.push_back(Point(750, 185));
 	source_enter_pitstop_points.push_back(Point(700, 185));
 	source_enter_pitstop_points.push_back(Point(650, 185));
+	source_enter_pitstop_points.push_back(Point(600, 185));
+	source_enter_pitstop_points.push_back(Point(550, 185));
+	source_enter_pitstop_points.push_back(Point(500, 185));
 	source_exit_pitstop_points.push_back(Point(240, 185));
 	source_exit_pitstop_points.push_back(Point(180, 110));
 	source_exit_pitstop_points.push_back(Point(120, 30));
@@ -72,7 +75,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 
 	// Reuse path from before (unless this is the first time)
 	bool reuse_prev = false;
-	/*
+	
 	if (prev_segment_.size() > 0 && prev_camera_ == camera) {
 
 		// Get closest global point index
@@ -84,7 +87,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 		// Previous segment is valid if it is not too far from car
 		// Must compare 2nd point because 1st point was shifted to car's position
 		if (closest + 1 < prev_segment_.size() && 
-			prev_segment_[closest + 1].dist(my_car_.getPos()) < DEFAULT_CAR_LENGTH_PIX * 0.5) {
+			prev_segment_[closest + 1].dist(my_car_.getPos()) < DEFAULT_CAR_LENGTH_PIX * 2.5) {
 			for (int i = closest; i < prev_segment_.size(); i++) {
 				segment.push_back(prev_segment_[i]);
 				segment.back().locked = false;
@@ -92,7 +95,7 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			global_index_ += closest;
 			reuse_prev = true;
 		}
-	}*/
+	}
 
 	if (!reuse_prev) {
 		global_index_ = getClosest(my_car_.getPos(), global_paths_[camera], 0);
@@ -241,9 +244,9 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	
 
 	// Smooth out path through iterative process
-	int iterations = 30;
-	double change_factor = 0.1;
-	double global_path_attract_factor = 0.005;
+	int iterations = 25;
+	double change_factor = 0.02;
+	double global_path_attract_factor = 0.05;
 	for (int i = 0; i < iterations; i++) {
 		for (std::size_t j = 1; j < segment.size(); j++) {
 			if (segment[j].locked)
@@ -283,11 +286,11 @@ std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 			// Move point, but do not go beyond road
 			float new_x = segment[j].x + force * change_factor * cos(angle);
 			float new_y = segment[j].y + force * change_factor * sin(angle);
-			//double road_sq = pow(0.5 * ROAD_WIDTH / M_PER_PIX, 2);
-			//if (global_point.distSquared(Point(new_x, new_y)) < road_sq) {
+			double road_sq = pow(0.5 * (ROAD_WIDTH / M_PER_PIX - DEFAULT_CAR_WIDTH_PIX), 2);
+			if (global_point.distSquared(Point(new_x, new_y)) < road_sq) {
 				segment[j].x = new_x;
 				segment[j].y = new_y;
-			//}
+			}
 		}
 	}
 

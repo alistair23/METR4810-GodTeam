@@ -153,14 +153,18 @@ void Controller::getMidPoints(int camera, bool manual_mode)
 	}
 }
 
-void Controller::getObstacles(int camera)
-{
+void Controller::getObstacles(int camera) {
 	cv::Mat img_bgr;
 	vision_->update(camera);
 	vision_->getCamImg(camera, img_bgr);
 	vision_->applyTrans(img_bgr, camera);
 	planner_->obstacles[camera].clear();
-	vision_->getObstacles(img_bgr, planner_->obstacles[camera]);
+	if (camera == finish_line_camera_) {
+		cv::Point2f p(finish_line_pos_->x, finish_line_pos_->y);
+		vision_->getObstacles(img_bgr, planner_->obstacles[camera], p);
+	} else {
+		vision_->getObstacles(img_bgr, planner_->obstacles[camera]);
+	}
 }
 
 void Controller::getFinishLine(int camera) {
@@ -370,9 +374,9 @@ void Controller::sendCarCommand() {
 			old_time_ = update_time;
 			double dist_thresh_sq = pow(DEFAULT_CAR_LENGTH_PIX * 0.5, 2);
 			double max_speed = 0.775 / M_PER_PIX;	// pixels/second
-			double max_speed_allowed = max_speed * 0.3;
+			double max_speed_allowed = max_speed * 0.26;
 			double tight_turn_speed = max_speed * 0.3;
-			double tight_turn_angle_change = 25 * M_PI/180;
+			double tight_turn_angle_change = 30 * M_PI/180;
 			double radius_factor = 0.4;
 
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
@@ -386,13 +390,19 @@ void Controller::sendCarCommand() {
 
 			// Carrot approach - choose a goal point-+ certain distance ahead
 			float lookahead = 0.12 / M_PER_PIX;
-			int max_points_ahead = 9999; //lookahead / MIDPOINT_STEP_SIZE;
+			int max_points_ahead = lookahead / MIDPOINT_STEP_SIZE;
 			float stop_dist = 0.04 / M_PER_PIX;	// Stops if this close to goal
 			float touch_dist = 0.1 / M_PER_PIX;	// For checking if point has been passed
 
 			// Get goal point
 			int goal_index = planner_->getClosest(my_car_->getPos(),
 				*current_path_, lookahead, max_points_ahead);
+			
+			// Can't use 2nd point as that is locked to car
+			if (goal_index <= 1 && current_path_->size() > 2) {
+				goal_index = 2;
+			}
+
 			Point* goal = &(*current_path_)[goal_index];
 			// Get relative heading to point between -pi and pi radians.
 			float angle = my_car_->getPos().angle(*goal) - my_car_->getDir();
@@ -410,8 +420,8 @@ void Controller::sendCarCommand() {
 					my_car_->setRSpeed(0.7 * my_car_->getRSpeed());
 				}
 				else{
-					my_car_->setLSpeed(0.5 * max_speed_allowed);
-					my_car_->setRSpeed(0.5 * max_speed_allowed);
+					my_car_->setLSpeed(0.3 * max_speed_allowed);
+					my_car_->setRSpeed(0.3 * max_speed_allowed);
 				}
 			}
 			
@@ -425,7 +435,6 @@ void Controller::sendCarCommand() {
 				my_car_->setRSpeed(max_speed_allowed * (1 - angle/(80 * M_PI/180)));
 				was_beyond_thresh_ = false;
 				my_car_->step(wait_period / 1000.0);
-				
 			} else if (did_tight_turn_) {
 
 				// Stop and wait after tight turn
@@ -437,9 +446,9 @@ void Controller::sendCarCommand() {
 			} else if (!was_beyond_thresh_ && abs(angle) >= angle_thresh) {
 
 				// We were ok but heading error is now beyond threshold
-				// Stop
-				my_car_->setLSpeed(0);
-				my_car_->setRSpeed(0);
+				// Slow down
+				my_car_->setLSpeed(0.3 * max_speed_allowed);
+				my_car_->setRSpeed(0.3 * max_speed_allowed);
 				was_beyond_thresh_ = true;
 				wait_period = 350;
 			} else {
@@ -456,7 +465,7 @@ void Controller::sendCarCommand() {
 					my_car_->setDir(my_car_->getDir() - tight_turn_angle_change);
 				}
 				did_tight_turn_ = true;
-				wait_period = 500;
+				wait_period = 600;
 			}
 
 			/*float turn_radius = getPursuitRadius(); //returns the turn radius in pixels

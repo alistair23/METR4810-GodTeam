@@ -22,7 +22,7 @@ public:
 	Point getGlobalPathStart(int camera);
 	Point getGlobalPoint(int camera, int index);
 	std::size_t getGlobalPathLength(int camera);
-	std::vector<Point> getSegment(int curr_camera, int num_points = 20);
+	std::vector<Point> getSegment(int curr_camera, int num_points = 15);
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
 	int getClosest(Point& pos, std::vector<Point>& path,

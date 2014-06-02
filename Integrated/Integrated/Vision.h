@@ -49,9 +49,10 @@ public:
 	// and off-centre circle location in my_car_p2. Other car markers
 	// output in other_cars. Returns true if my car is found
 	bool getCarMarkers(cv::Mat& img_in, cv::Point2f& my_car_p1,
-		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars, int roi_mode);
+		cv::Point2f& my_car_p2, std::vector<cv::Point2f>& other_cars);
 
-	void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles);
+	void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacles,
+		cv::Point2f finish_line_pos = cv::Point2f(-1, -1));
 	bool findFinishTile(cv::Mat& img, Point& pos_out);
 
 	// Returns vector of 3 points, which are locations of 
