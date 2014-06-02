@@ -46,7 +46,6 @@ void View::createWindow() {
 }
 
 void View::setBackground(cv::Mat& background) {
-	background_ = background.clone();
 	background_no_dots_ = background.clone();
 }
 

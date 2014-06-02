@@ -304,6 +304,7 @@ void Controller::detectCar()
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
+			//my_car_->updateKalman(temp.getPos(), temp.getDir());
 			view_->updateMyCar(*my_car_);
 			Interlocked::Exchange(my_car_lock_, 0);	
 
@@ -405,8 +406,7 @@ void Controller::sendCarCommand() {
 			// Carrot approach - choose a goal point-+ certain distance ahead
 			float lookahead = 0.12 / M_PER_PIX;
 			int max_points_ahead = lookahead / MIDPOINT_STEP_SIZE;
-			float stop_dist = 0.04 / M_PER_PIX;	// Stops if this close to goal
-			float touch_dist = 0.1 / M_PER_PIX;	// For checking if point has been passed
+			float stop_dist = 0.05 / M_PER_PIX;	// Stops if this close to goal
 
 			// Get goal point
 			int goal_index = planner_->getClosest(my_car_->getPos(),

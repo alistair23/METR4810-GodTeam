@@ -11,16 +11,40 @@ MyCar::MyCar():
 	Car(),
 	axle_length_(0.075 / M_PER_PIX),
 	l_speed_(0),
-	r_speed_(0)
+	r_speed_(0),
+	kalman_(cv::KalmanFilter(4, 2, 0))
 {
+	kalman_.transitionMatrix = *(cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+	cv::Mat_<float> measurement(2,1);
+	measurement.setTo(cv::Scalar(0));
+	kalman_.statePre.at<float>(0) = pos_.x;
+	kalman_.statePre.at<float>(1) = pos_.y;
+	kalman_.statePre.at<float>(2) = 0;
+	kalman_.statePre.at<float>(3) = 0;
+	cv::setIdentity(kalman_.measurementMatrix);
+	cv::setIdentity(kalman_.processNoiseCov, cv::Scalar::all(1e-4));
+	cv::setIdentity(kalman_.measurementNoiseCov, cv::Scalar::all(1e-1));
+	cv::setIdentity(kalman_.errorCovPost, cv::Scalar::all(.1));
 }
 
 MyCar::MyCar(Point pos, double dir, double spd, double length, double width, double axle_length) :
 	Car(pos, dir, spd, length, width),
 	axle_length_(axle_length),
 	l_speed_(0),
-	r_speed_(0)
+	r_speed_(0),
+	kalman_(cv::KalmanFilter(4, 2, 0))
 {
+	kalman_.transitionMatrix = *(cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+	cv::Mat_<float> measurement(2,1);
+	measurement.setTo(cv::Scalar(0));
+	kalman_.statePre.at<float>(0) = pos_.x;
+	kalman_.statePre.at<float>(1) = pos_.y;
+	kalman_.statePre.at<float>(2) = 0;
+	kalman_.statePre.at<float>(3) = 0;
+	cv::setIdentity(kalman_.measurementMatrix);
+	cv::setIdentity(kalman_.processNoiseCov, cv::Scalar::all(1e-4));
+	cv::setIdentity(kalman_.measurementNoiseCov, cv::Scalar::all(1e-1));
+	cv::setIdentity(kalman_.errorCovPost, cv::Scalar::all(.1));
 }
 
 // Copy
@@ -47,6 +71,30 @@ const MyCar &MyCar::operator = (const MyCar& c) {
 	width_ = c.getWidth();
 	length_ = c.getLength();
 	return *this;
+}
+
+void MyCar::updateKalman(Point pos, double dir) { 
+
+	// First predict, to update the internal statePre variable
+	cv::Mat prediction = kalman_.predict();
+	cv::Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
+             
+	// Get mouse point
+	cv::Mat_<float> measurement(2,1);
+	measurement.setTo(cv::Scalar(0));
+	measurement(0) = pos.x;
+	measurement(1) = pos.y;
+             
+	cv::Point measPt(measurement(0),measurement(1));
+ 
+	// The "correct" phase that is going to use the predicted value and our measurement
+	cv::Mat estimated = kalman_.correct(measurement);
+	cv::Point statePt(estimated.at<float>(0),estimated.at<float>(1));
+
+	pos_.x = statePt.x;
+	pos_.y = statePt.y;
+	dir_ = dir;
+	update_time_ = time_now();
 }
 
 void MyCar::setRSpeed(double speed) {
