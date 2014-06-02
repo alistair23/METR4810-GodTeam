@@ -16,6 +16,7 @@ using namespace RaceControl;
 
 Controller::Controller() :
 	my_car_(new MyCar()),
+	other_cars_(new std::vector<Car>()),
 	vision_(new Vision()),
 	view_(new View()),
 	planner_(new LocalPlanner()),
@@ -69,6 +70,7 @@ Controller::~Controller() {
 
 Controller::!Controller() {
 	delete my_car_;
+	delete other_cars_;
 	delete vision_;
 	delete view_;
 	delete img;
@@ -211,6 +213,10 @@ void Controller::loadFromFile(int camera) {
 	vision_->loadFromFile(camera);
 }
 
+void Controller::setPitstopEntry(int camera) {
+	vision_->setPitstopEntry(camera);
+}
+
 void Controller::detectCar()
 {
 	while (true)
@@ -242,10 +248,22 @@ void Controller::detectCar()
 				num_tries = 1;
 			}
 
-			// Try detecting car in current camera
+			
 			int temp_camera = current_camera_;
+
+			// See if we need to switch to finish line camera for entering pitstop
+			float enter_thresh = 0.2 / M_PER_PIX;
+			if (wants_to_enter_pitstop && current_camera_ != finish_line_camera_) {
+				Point entry(vision_->pitstop_entry[current_camera_].x, 
+					vision_->pitstop_entry[current_camera_].y);
+				if (entry.x != 0 && entry.y != 0 && guess.dist(entry) < enter_thresh) {
+					temp_camera = finish_line_camera_;
+					num_tries = 10;
+				}
+			}
+
 			for (int i = 0; i < num_tries; i++) {
-				found_my_car = vision_->update(current_camera_, guess);
+				found_my_car = vision_->update(temp_camera, guess);
 				if (found_my_car) {
 					break;
 				}
@@ -304,6 +322,9 @@ void Controller::detectCar()
 			Car temp = vision_->getMyCarInfo();
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_->update(temp.getPos(), temp.getDir(), temp.getSpd());
+			if (pace_car_mode) {
+				*other_cars_ = vision_->getOtherCars();
+			}
 			//my_car_->updateKalman(temp.getPos(), temp.getDir());
 			view_->updateMyCar(*my_car_);
 			Interlocked::Exchange(my_car_lock_, 0);	
@@ -327,11 +348,16 @@ void Controller::runPlanner(){
 			Thread::Sleep(50);
 		} else {
 			MyCar my_car_temp;
+			std::vector<Car> other_cars_temp;
 			while (0 != Interlocked::Exchange(my_car_lock_, 1));
 			my_car_temp = *my_car_;
 			Interlocked::Exchange(my_car_lock_, 0);
 			planner_->updateMyCar(my_car_temp.getPos(), my_car_temp.getDir(), my_car_temp.getSpd());
-
+			if (pace_car_mode) {
+				planner_->updateOtherCars(*other_cars_);
+			} else {
+				planner_->updateOtherCars(std::vector<Car>());
+			}
 			while (0 != Interlocked::Exchange(current_path_lock_, 1));
 
 			if (wants_to_exit_pitstop) {
@@ -406,7 +432,7 @@ void Controller::sendCarCommand() {
 			// Carrot approach - choose a goal point-+ certain distance ahead
 			float lookahead = 0.12 / M_PER_PIX;
 			int max_points_ahead = lookahead / MIDPOINT_STEP_SIZE;
-			float stop_dist = 0.05 / M_PER_PIX;	// Stops if this close to goal
+			float stop_dist = 0.06 / M_PER_PIX;	// Stops if this close to goal
 
 			// Get goal point
 			int goal_index = planner_->getClosest(my_car_->getPos(),
@@ -427,8 +453,8 @@ void Controller::sendCarCommand() {
 				angle -= 2 * M_PI;
 			}
 
-			float angle_thresh = 20 * M_PI/180;
-			if (update_time - my_car_->getUpdateTime() > 800) {
+			float angle_thresh = 25 * M_PI/180;
+			if (update_time - my_car_->getUpdateTime() > 600) {
 				if(my_car_->getLSpeed() > 0.5 * max_speed_allowed && my_car_->getRSpeed() > 0.5 * max_speed_allowed){
 					my_car_->setLSpeed(0.7 * my_car_->getLSpeed());
 					my_car_->setRSpeed(0.7 * my_car_->getRSpeed());
@@ -437,9 +463,7 @@ void Controller::sendCarCommand() {
 					my_car_->setLSpeed(0.3 * max_speed_allowed);
 					my_car_->setRSpeed(0.3 * max_speed_allowed);
 				}
-			}
-			
-			else if (my_car_->getPos().dist(*goal) < stop_dist && is_entering_pitstop) {
+			} else if (is_entering_pitstop && my_car_->getPos().x < current_path_->back().x) {
 				my_car_->setLSpeed(0);
 				my_car_->setRSpeed(0);
 			} else if (abs(angle) < angle_thresh && !did_tight_turn_) {

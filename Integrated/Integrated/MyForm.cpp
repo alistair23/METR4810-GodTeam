@@ -189,6 +189,7 @@ System::Void RaceControl::MyForm::btn_get_transform_Click(System::Object^  sende
 	this->btn_get_obstacles->Enabled = true;
 	this->btn_get_finish_line->Enabled = true;
 	this->btn_save->Enabled = true;
+	this->btn_pitstop_entry->Enabled = true;
 }
 
 System::Void RaceControl::MyForm::btn_get_midpoints_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -293,5 +294,15 @@ System::Void RaceControl::MyForm::btn_load_Click(System::Object^ sender, System:
 	this->btn_get_obstacles->Enabled = true;
 	this->btn_get_finish_line->Enabled = true;
 	this->btn_save->Enabled = true;
+	this->btn_pitstop_entry->Enabled = true;
 }
 
+System::Void RaceControl::MyForm::btn_pitstop_entry_Click(System::Object^ sender, System::EventArgs^ e) {
+	System::Int16 camera = System::Convert::ToInt16(this->comboBox4->Text);
+	controller_->setPitstopEntry(camera);
+}
+
+System::Void RaceControl::MyForm::chkbox_pace_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
+	bool pace_mode = this->chkbox_pace->Checked;
+	controller_->pace_car_mode = pace_mode;
+}

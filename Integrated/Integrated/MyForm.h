@@ -181,6 +181,9 @@ private: System::Windows::Forms::CheckBox^  chkbox_manual_mode;
 private: System::Windows::Forms::Button^  btn_load;
 
 private: System::Windows::Forms::Button^  btn_save;
+private: System::Windows::Forms::Button^  btn_pitstop_entry;
+private: System::Windows::Forms::CheckBox^  chkbox_pace;
+
 
 
 
@@ -306,6 +309,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
+			this->btn_pitstop_entry = (gcnew System::Windows::Forms::Button());
 			this->btn_load = (gcnew System::Windows::Forms::Button());
 			this->btn_save = (gcnew System::Windows::Forms::Button());
 			this->chkbox_manual_mode = (gcnew System::Windows::Forms::CheckBox());
@@ -345,6 +349,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->textBox8 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox7 = (gcnew System::Windows::Forms::TextBox());
 			this->imageList1 = (gcnew System::Windows::Forms::ImageList(this->components));
+			this->chkbox_pace = (gcnew System::Windows::Forms::CheckBox());
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->trackBar2))->BeginInit();
@@ -364,6 +369,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			// 
 			// tabPage1
 			// 
+			this->tabPage1->Controls->Add(this->chkbox_pace);
 			this->tabPage1->Controls->Add(this->button5);
 			this->tabPage1->Controls->Add(this->button16);
 			this->tabPage1->Controls->Add(this->button14);
@@ -712,6 +718,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			// 
 			// tabPage2
 			// 
+			this->tabPage2->Controls->Add(this->btn_pitstop_entry);
 			this->tabPage2->Controls->Add(this->btn_load);
 			this->tabPage2->Controls->Add(this->btn_save);
 			this->tabPage2->Controls->Add(this->chkbox_manual_mode);
@@ -758,6 +765,17 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->tabPage2->Text = L"Camera Setup";
 			this->tabPage2->UseVisualStyleBackColor = true;
 			// 
+			// btn_pitstop_entry
+			// 
+			this->btn_pitstop_entry->Enabled = false;
+			this->btn_pitstop_entry->Location = System::Drawing::Point(429, 386);
+			this->btn_pitstop_entry->Name = L"btn_pitstop_entry";
+			this->btn_pitstop_entry->Size = System::Drawing::Size(121, 23);
+			this->btn_pitstop_entry->TabIndex = 94;
+			this->btn_pitstop_entry->Text = L"Pitstop Entry Point";
+			this->btn_pitstop_entry->UseVisualStyleBackColor = true;
+			this->btn_pitstop_entry->Click += gcnew System::EventHandler(this, &MyForm::btn_pitstop_entry_Click);
+			// 
 			// btn_load
 			// 
 			this->btn_load->Enabled = false;
@@ -785,7 +803,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->chkbox_manual_mode->AutoSize = true;
 			this->chkbox_manual_mode->Checked = true;
 			this->chkbox_manual_mode->CheckState = System::Windows::Forms::CheckState::Checked;
-			this->chkbox_manual_mode->Location = System::Drawing::Point(438, 329);
+			this->chkbox_manual_mode->Location = System::Drawing::Point(438, 322);
 			this->chkbox_manual_mode->Name = L"chkbox_manual_mode";
 			this->chkbox_manual_mode->Size = System::Drawing::Size(90, 17);
 			this->chkbox_manual_mode->TabIndex = 91;
@@ -905,7 +923,7 @@ private: System::Windows::Forms::Button^  btn_save;
 			// btn_get_go_signal
 			// 
 			this->btn_get_go_signal->Enabled = false;
-			this->btn_get_go_signal->Location = System::Drawing::Point(429, 362);
+			this->btn_get_go_signal->Location = System::Drawing::Point(429, 352);
 			this->btn_get_go_signal->Name = L"btn_get_go_signal";
 			this->btn_get_go_signal->Size = System::Drawing::Size(121, 23);
 			this->btn_get_go_signal->TabIndex = 76;
@@ -1115,6 +1133,17 @@ private: System::Windows::Forms::Button^  btn_save;
 			this->imageList1->ColorDepth = System::Windows::Forms::ColorDepth::Depth8Bit;
 			this->imageList1->ImageSize = System::Drawing::Size(16, 16);
 			this->imageList1->TransparentColor = System::Drawing::Color::Transparent;
+			// 
+			// chkbox_pace
+			// 
+			this->chkbox_pace->AutoSize = true;
+			this->chkbox_pace->Location = System::Drawing::Point(34, 425);
+			this->chkbox_pace->Name = L"chkbox_pace";
+			this->chkbox_pace->Size = System::Drawing::Size(98, 17);
+			this->chkbox_pace->TabIndex = 73;
+			this->chkbox_pace->Text = L"Pace car mode";
+			this->chkbox_pace->UseVisualStyleBackColor = true;
+			this->chkbox_pace->CheckedChanged += gcnew System::EventHandler(this, &MyForm::chkbox_pace_CheckedChanged);
 			// 
 			// MyForm
 			// 
@@ -1458,5 +1487,7 @@ private: System::Void button16_Click(System::Object^  sender, System::EventArgs^
 private: System::Void btn_preview_image_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void btn_save_Click(System::Object^  sender, System::EventArgs^  e);
 private: System::Void btn_load_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void btn_pitstop_entry_Click(System::Object^  sender, System::EventArgs^  e);
+private: System::Void chkbox_pace_CheckedChanged(System::Object^  sender, System::EventArgs^  e);
 };
 }

@@ -1,3 +1,8 @@
+// MyCar.cpp contains MyCar class, which inherits from Car. 
+// Used for storing position, direction and speed information,
+// and predicting future positions and directions.
+// Author: Joshua Song
+
 #include "MyCar.h"
 
 #define _USE_MATH_DEFINES
@@ -6,6 +11,7 @@
 #include "CommonFunctions.h"
 
 using namespace RaceControl;
+
 
 MyCar::MyCar():
 	Car(),

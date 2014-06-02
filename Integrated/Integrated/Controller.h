@@ -35,14 +35,17 @@ public:
 	void previewImg(int camera);
 	void saveToFile(int camera);
 	void loadFromFile(int camera);
+	void setPitstopEntry(int camera);
 
 	cv::Mat* img;
 	bool car_tracking_on;
 	bool local_planning_on;
 	bool go_signal_found;
+	bool pace_car_mode;
 
 private:
 	MyCar *my_car_;
+	std::vector<Car>* other_cars_;
 	MyForm^ form_;
 	Vision *vision_;
 	View *view_;

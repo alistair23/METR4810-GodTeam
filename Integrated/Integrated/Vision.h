@@ -36,13 +36,15 @@ public:
 	// If no argument is supplied for my car position guess, 
 	// jump straight to full image search.
 	// Returns true if my car is found, false otherwise
-	bool update(int camera, Point car_pos_guess = Point(-1, -1));
+	bool update(int camera, Point car_pos_guess = Point(-1, -1), bool pace_mode = false);
 
 	// Grab a camera image from RoboRealm server
 	// cam is the index of the camera to grab image from
 	void getCamImg(int cam, cv::Mat& img_out);
 
 	Car getMyCarInfo();
+
+	std::vector<Car> getOtherCars();
 
 	// Given an input image (BGR), looks for the car markers 
 	// (concentric circles). My car's centre is output in my_car_p1,
@@ -105,6 +107,12 @@ public:
 	// Save/load transform matrices to file
 	void saveToFile(int camera);
 	void loadFromFile(int camera);
+
+	// Set pitstop entry points for when parts of finish line
+	// are in other cameras
+	void setPitstopEntry(int camera);
+
+	std::vector<cv::Point2f> pitstop_entry;
 
 private:
 
@@ -181,7 +189,7 @@ private:
 	int last_car_size_; //Last known size of the car marker
 	Car my_car_;
 	std::vector<Car> other_cars_;
-
+	bool pace_mode_;
 };
 
 } // namespace RaceControl

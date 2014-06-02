@@ -25,6 +25,7 @@ public:
 	std::vector<Point> getSegment(int curr_camera, int num_points = 15);
 	void updateMyCar(Point pos, double dir, double spd);
 	void update(MyCar my_car, std::vector<Car> other_cars);
+	void updateOtherCars(std::vector<Car> other_cars);
 	int getClosest(Point& pos, std::vector<Point>& path,
 		double look_ahead, int max_points_ahead = -1);
 	void setPitstopPoints(int camera, Point finish_line_pos);

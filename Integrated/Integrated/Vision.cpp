@@ -45,6 +45,7 @@ struct sort_v_pred {
 
 Vision::Vision():
 	last_car_size_(50),
+	pace_mode_(false),
 	// Load tile images
 	finish_tile_1(cv::imread("Resources/finish_1.jpg"), 0),
 	finish_tile_2(cv::imread("Resources/finish_2.jpg"), 0)
@@ -72,6 +73,7 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 	approx_cam_m_per_pix_.clear();
 	lower_color_thresh_.clear();
 	upper_color_thresh_.clear();
+	pitstop_entry.clear();
 	for (std::size_t i = 0; i < port_nums.size(); i++) {
 		transform_mats_.push_back(cv::Mat());
 		inv_transform_mats_.push_back(cv::Mat());
@@ -79,6 +81,7 @@ void Vision::initCameras(std::vector<int> port_nums, std::string ip_address) {
 		approx_cam_m_per_pix_.push_back(0);
 		lower_color_thresh_.push_back(cv::Scalar(30, 0, 0));
 		upper_color_thresh_.push_back(cv::Scalar(150, 255, 255));
+		pitstop_entry.push_back(cv::Point2f(-1, -1));
 		//connectRoboRealm(i);
 	}
 }
@@ -132,6 +135,39 @@ void Vision::loadFromFile(int camera) {
 	int width = (int) fs["width"];
 	transform_sizes_[camera] = cv::Size(width, height);
 	std::cout << "Loaded transform matrices for camera " << camera << std::endl;
+}
+
+void Vision::setPitstopEntry(int camera) {
+
+	// Get image
+	cv::Mat img_in;
+	getCamImg(camera, img_in);
+	applyTrans(img_in, camera);
+
+	// Position from mouse click
+	cv::namedWindow("Mouse clicks");
+	cv::imshow("Mouse clicks", img_in);
+	cv::setMouseCallback("Mouse clicks", onMouse);
+	mouse_click_changed = false;
+	std::cout << "Click to set pitstop entry point. Hit spacebar when done." << std::endl;
+	cv::Point2f selected_pos(0, 0);
+	char keypress = 0;
+	while (keypress != ' ') {
+		if (mouse_click_changed) {
+			mouse_click_changed = false;
+			selected_pos = mouse_l_click_pos;
+		}
+		cv::Mat img_temp = img_in.clone();
+		cv::circle(img_temp, selected_pos, 2, cv::Scalar(255, 0, 0), 2);
+		cv::imshow("Mouse clicks", img_temp);
+		keypress = cv::waitKey(50);
+	}
+	if (selected_pos.x != 0 && selected_pos.y != 0) {
+		pitstop_entry[camera] = selected_pos;
+	} else {
+		pitstop_entry[camera] = cv::Point2f(-1, -1);
+	}
+	cv::destroyWindow("Mouse clicks");
 }
 
 // Gets the perspective transform for a camera
@@ -450,8 +486,9 @@ void Vision::generateTransform(cv::Point2f input_quad[4],
 // If no argument is supplied for my car position guess, 
 // jump straight to full image search.
 // Returns true if my car is found, false otherwise
-bool Vision::update(int camera, Point car_pos_guess) {
+bool Vision::update(int camera, Point car_pos_guess, bool pace_mode) {
 
+	pace_mode_ = pace_mode;
 	long long time1 = time_now();
 	cv::Mat img_in;
 	getCamImg(camera, img_in);
@@ -569,6 +606,10 @@ Car Vision::getMyCarInfo() {
 	return my_car_;
 }
 
+std::vector<Car> Vision::getOtherCars() {
+	return other_cars_;
+}
+
 // Given an input image (BGR), looks for the car markers 
 // (concentric circles). My car's centre is output in my_car_p1,
 // and off-centre circle location in my_car_p2. Other car markers
@@ -621,6 +662,8 @@ bool Vision::getCarMarkers(
 	// Max pixels between detected circle centres to consider circles concentric
 	float dist_thresh = 9;	
 	bool my_car_found = false;
+	int max_redness = -999;
+	int my_car_index = 0;
 
 	// Look for concentric circles: this indicates car markers
 	for (std::size_t i = 0; i < ellipses.size(); i++) {
@@ -632,11 +675,6 @@ bool Vision::getCarMarkers(
 			}
 			float centre_dist = dist(ellipses[i].center, ellipses[j].center);
 			if (centre_dist < dist_thresh && abs(ellipses[i].size.height - ellipses[j].size.height) > 7)  {
-
-				bool this_is_my_car = false;
-				if (my_car_found) {
-					continue;
-				}
 				
 				// Found two concentric circles. Now check if my car
 				// (three concentric circles)
@@ -670,18 +708,33 @@ bool Vision::getCarMarkers(
 							continue;
 						*/
 
-						// This is my car
+						// Color check - our marker is red
+						//cv::Scalar vals = getColor(img_in, ellipses[biggest].center, 20);
+						//int redness = vals[2] - vals[1] - vals[0];
+						//if (redness < max_redness) {
+						//	continue;
+						//} else {
+						//	max_redness = redness;
+						//	my_car_index = other_cars.size();
+						//}
+
 						float cam_angle = acos(ellipses[biggest].size.width/ellipses[biggest].size.height);
 						float adjust_length = 0.05 * ellipses[biggest].size.height/0.07;
 						float marker_angle = ellipses[biggest].angle * M_PI/180;
 						cv::Point2f marker_pos;
 						marker_pos.x = (ellipses[k].center.x + ellipses[i].center.x + ellipses[j].center.x)/3;
 						marker_pos.y = (ellipses[k].center.y + ellipses[i].center.y + ellipses[j].center.y)/3;
-						my_car_p1.x = marker_pos.x  + adjust_length * sin(cam_angle) * cos(marker_angle); //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
-						my_car_p1.y = marker_pos.y + adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
-						last_car_size_ = ellipses[biggest].size.height;
-						this_is_my_car = true;
-						my_car_found = true;
+
+						if (!pace_mode_) {
+
+							// This is my car
+							my_car_p1.x = marker_pos.x  + adjust_length * sin(cam_angle) * cos(marker_angle); //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
+							my_car_p1.y = marker_pos.y + adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
+							last_car_size_ = ellipses[biggest].size.height;
+							my_car_found = true;
+							my_car_index = other_cars.size();
+						}
+						
 						//std::cout<< "marker angle: " << marker_angle << std::endl;
 						//std::cout << "cam angle: " << cam_angle << "car height : " << my_car_.getHeight() << std::endl;
 						//std::cout << "ratio : " << ellipses[biggest].size.width/ellipses[biggest].size.height << std::endl;
@@ -708,6 +761,14 @@ bool Vision::getCarMarkers(
 							
 							float this_dist = dist(ellipses[a].center, marker_pos);
 							if (this_dist <= ellipses[biggest].size.height * 0.2) {
+
+								// This is my car
+								my_car_p1.x = marker_pos.x  + adjust_length * sin(cam_angle) * cos(marker_angle); //+ my_car_.getHeight() * sin(cam_angle);// * cos(-M_PI/2 + marker_angle);
+								my_car_p1.y = marker_pos.y + adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
+								last_car_size_ = ellipses[biggest].size.height;
+								my_car_found = true;
+								my_car_index = other_cars.size();
+
 								my_car_p2.x = ellipses[a].center.x + adjust_length * sin(cam_angle) * cos(marker_angle);//+  my_car_.getHeight();// * sin(cam_angle) * cos(-M_PI/2 + marker_angle);
 								my_car_p2.y = ellipses[a].center.y +  adjust_length * sin(cam_angle) * sin(marker_angle);// * sin(-M_PI/2 + marker_angle);
 								cv::ellipse(cdst, ellipses[a], cv::Scalar(0,255,0), 2);
@@ -720,12 +781,12 @@ bool Vision::getCarMarkers(
 						break;							
 					}
 				}
-				
-				if (!this_is_my_car) {
-					other_cars.push_back(ellipses[j].center);
-				}
+				other_cars.push_back(ellipses[j].center);
 			}
 		}
+	}
+	if (my_car_found) {
+		other_cars.erase(other_cars.begin() + my_car_index);
 	}
 	return my_car_found;
 }
@@ -747,7 +808,7 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-	float max_side = 0.05 / M_PER_PIX;	// Max side length for obstacle
+	float max_side = 0.1 / M_PER_PIX;	// Max side length for obstacle
 	float min_side = 0.007 / M_PER_PIX;	// Min side length to accept obstacle
 	float clearance = 0.03 / M_PER_PIX;	// Added to side length
 	float car_check_thresh = DEFAULT_CAR_LENGTH_PIX * 2;
@@ -757,16 +818,17 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 
 		// Check size is reasonable
 		if (rect.size.height > max_side || rect.size.width > max_side || 
-			rect.size.height < min_side || rect.size.width < min_side)
+			rect.size.height < min_side || rect.size.width < min_side) {
 			continue;
+		}
 
 		// TODO getPos(timeNow())
 		// Make sure we didn't detect a car as obstacle
 		if (my_car_.getPos().dist(Point(rect.center.x, rect.center.y)) <
-			car_check_thresh)
+			car_check_thresh) {
 			continue;
+		}
 
-		/*
 		bool is_other_car = false;
 		for (int j = 0; j < other_cars_.size(); j++) {
 			if (other_cars_[j].getPos().dist(Point(rect.center.x, rect.center.y)) < car_check_thresh) {
@@ -774,9 +836,9 @@ void Vision::getObstacles(cv::Mat& img_in, std::vector<cv::RotatedRect>& obstacl
 				break;
 			}
 		}
-		if (is_other_car)
+		if (is_other_car) {
 			continue;
-			*/
+		}
 
 		// No obstacles in finish line
 		float tile_length = TILE_M_LENGTH / M_PER_PIX;
@@ -954,8 +1016,22 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 		float min_diameter = GO_SIGNAL_DIAMETER_PIX * 0.7;
 		if (r.size.height/r.size.width > 1.2 || 
 			r.size.height > max_diameter ||
-			r.size.height < min_diameter)
+			r.size.height < min_diameter) {
 			continue;
+		}
+
+		// Don't fit ellipses to finish line markers
+		float marker_dist_pix = CIRCLE_MARK_DIST / M_PER_PIX;
+		float finish_thresh = 0.01 / M_PER_PIX;
+		cv::Point2f up_finish = finish_line_pos;
+		up_finish.y += marker_dist_pix * 0.5;
+		cv::Point2f down_finish = finish_line_pos;
+		down_finish.y -= marker_dist_pix * 0.5;
+		if (dist(r.center, up_finish) < finish_thresh ||
+			dist(r.center, down_finish) < finish_thresh) {
+			continue;
+		}
+
 
 		// Check distance to finish line is below threshold
 		if (dist(finish_line_pos, r.center) < GO_SIGNAL_MAX_DIST_TO_FINISH_LINE_PIX)
@@ -963,6 +1039,7 @@ std::vector<Point> Vision::findGoSignal(Point finish_line_pos_in, int camera) {
 			ellipses.push_back(r);
 			cv::ellipse(img, r, cv::Scalar(100,200,100), 3);
 		}
+
 	}
 	
 	int best[3] = {-1, -1, -1};
@@ -1172,6 +1249,15 @@ cv::Point getCentre(std::vector<cv::Point> corners)
 
 }
 
+// Used for defining racetrack. Given a starting point
+// and direction, follows the track until termination 
+// and returns a path (vector of points).
+// Args: 
+// img_in - BGR input image
+// img_white_warped - Binary image with perspective transform applied
+// start_pos - starting position for racetrack
+// start_dir - starting direction
+// camera - index of camera
 std::vector<Point> Vision::getMidpoints(cv::Mat& img_in,
 cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 		
@@ -1236,6 +1322,9 @@ cv::Mat& img_white_warped, cv::Point2f start_pos, float start_dir, int camera) {
 	return midpoints;
 }
 
+// User-interactive mode for manually selecting starting
+// points and directions for racetrack definition rather 
+// than using the car marker.
 std::vector<Point> Vision::getMidpointsManual(cv::Mat& img_in,
 cv::Mat& img_white_warped, int camera) {
 

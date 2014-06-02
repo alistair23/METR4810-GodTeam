@@ -69,6 +69,13 @@ void LocalPlanner::update(MyCar my_car, std::vector<Car> other_cars) {
 	other_cars_ = other_cars;
 }
 
+void LocalPlanner::updateOtherCars(std::vector<Car> other_cars) {
+	other_cars_ = other_cars;
+}
+
+// Returns a vector of points of length num_points, which is the
+// local path for guiding the car around the racetrack.
+// my_car_ should be updated before calling this.
 std::vector<Point> LocalPlanner::getSegment(int camera, int num_points) {
 	
 	std::vector<Point> segment;
