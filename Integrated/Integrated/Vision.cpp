@@ -569,19 +569,31 @@ bool Vision::update(int camera, Point car_pos_guess, bool pace_mode) {
 	double new_dir;
 
 	// If we failed to find smallest off-centre circle, direction is not valid
-	if (my_car_p2.x == 0 && my_car_p2.y == 0)
+	if (my_car_p2.x == 0 && my_car_p2.y == 0) {
 		new_dir = my_car_.getDir();
-	else 
+	} else { 
 		new_dir = angle(trans_points[0], trans_points[1]);
+	}
 	Point new_pos(trans_points[0].x, trans_points[0].y);
 	double seconds = (time_now() - my_car_.getUpdateTime()) * 0.001;
 	double new_spd = my_car_.getPos().dist(new_pos) / seconds;
 	my_car_.update(new_pos, new_dir, new_spd);
 
-	// TODO other cars
+	// Other cars (currently only for pace car)
+	std::vector<Car> cars_temp;
+	if (pace_mode_) {
+		for (std::size_t i = 0; i < other_cars_points.size(); i++) {
+			Point c_pos(trans_points[i].x, trans_points[i].y);
+			double c_dir = 0;
+			if (i < other_cars_.size()) {
+				c_dir = other_cars_[i].getPos().angle(c_pos);
+			}
+			cars_temp.push_back(Car(c_pos, c_dir, 0));
+		}
+		other_cars_ = cars_temp;
+	}
 	update_time += time_now() - time1;
 	return true;
-
 }
 
 void Vision::getCamImg(int camera, cv::Mat& img_out) {
