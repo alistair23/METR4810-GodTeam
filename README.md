@@ -1,20 +1,20 @@
 METR4810-GodTeam
 ================
 
-The Git repo for Team one
+The Git Repo for Team one
 
 -----------------
 
-Currently code is divided in three folders:
+Currently code is divided in two folders:
 
-1. Firmware: Code for the microcontroller
+1. Offboard Control:
+	- Computer vision
+	- Motion planning
+	- Off-board communication
+	- Car control
 
-2. RaceControl: Off-board code for communication and car control
-
-3. VisionPlanning: Computer vision and motion planning
-
-
-RaceControl and VisionPlanning will be merged later
+2. Onboard Firmware:
+	- Used by the ATMega328 to drive the car
 
 Requirements:
 - Visual Studio 2012
